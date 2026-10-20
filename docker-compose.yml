@@ -1,0 +1,78 @@
+# Plataforma distribuida de anotación de datos — Proyecto 2
+#
+# Redes:
+#   interna -> todos los servicios y motores de datos (sin puertos al host).
+#   borde   -> solo gateway (y el simulador, que solo puede hablar con el gateway).
+# El gateway es el único componente publicado en el host (puerto 8000).
+#
+# Perfiles:
+#   (sin perfil) -> plataforma completa con 1 worker de Spark.
+#   spark2       -> agrega el segundo worker de Spark (comparación 1 vs 2 workers).
+#   carga        -> contenedor del simulador para pruebas de carga.
+
+name: proyecto2
+
+x-servicio-python: &servicio-python
+  restart: unless-stopped
+  networks: [interna]
+  healthcheck:
+    test: ["CMD", "python", "-c", "import os,urllib.request; urllib.request.urlopen(f'http://localhost:{os.environ[\"PUERTO\"]}/salud', timeout=2)"]
+    interval: 10s
+    timeout: 3s
+    retries: 3
+
+services:
+  gateway:
+    <<: *servicio-python
+    build: ./servicios/gateway
+    ports:
+      - "8000:8000"
+    networks: [interna, borde]
+    environment:
+      SERVICIO: gateway
+      PUERTO: "8000"
+      REGISTRO_URL: http://registro:8001
+      SESION_URL: http://sesion:8002
+      HISTORIAL_URL: http://historial:8003
+      ANALITICA_URL: http://analitica:8004
+    # Sin "condition": el gateway debe arrancar y responder /salud aunque otra capa esté caída.
+    depends_on: [registro, sesion, historial, analitica]
+
+  registro:
+    <<: *servicio-python
+    build: ./servicios/registro
+    environment:
+      SERVICIO: registro
+      PUERTO: "8001"
+
+  sesion:
+    <<: *servicio-python
+    build: ./servicios/sesion
+    environment:
+      SERVICIO: sesion
+      PUERTO: "8002"
+
+  historial:
+    <<: *servicio-python
+    build: ./servicios/historial
+    environment:
+      SERVICIO: historial
+      PUERTO: "8003"
+
+  analitica:
+    <<: *servicio-python
+    build: ./servicios/analitica
+    environment:
+      SERVICIO: analitica
+      PUERTO: "8004"
+
+  # --- Bloque A (A1): mongo1, mongo2, mongo3 (replica set rs0) + mongo-init -------------
+  # --- Bloque B (B1): valkey con AOF everysec ------------------------------------------
+  # --- Bloque C (C1): cola-eventos (Valkey Stream propio del historial, AOF),
+  #                    spark-master, spark-worker, spark-worker-2 (perfil spark2) y
+  #                    volumen del lago (rw solo en historial, ro en analitica/spark) -----
+  # --- Simulador (A6, perfil carga): solo en la red "borde" ----------------------------
+
+networks:
+  interna:
+  borde:

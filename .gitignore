@@ -1,0 +1,21 @@
+# Notas locales
+.local/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+
+# Datos generados (se regeneran con el generador)
+datalake/*
+!datalake/.gitkeep
+dataset/salida/
+spark-warehouse/
+metastore_db/
+
+# Editor / SO
+.vscode/
+.idea/
+.DS_Store

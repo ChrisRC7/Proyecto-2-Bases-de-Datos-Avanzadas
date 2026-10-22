@@ -44,6 +44,11 @@ services:
     environment:
       SERVICIO: registro
       PUERTO: "8001"
+      # Solo MongoDB: el registro no tiene la dirección de ningún Valkey.
+      MONGO_URI: mongodb://mongo1:27017,mongo2:27017,mongo3:27017/?replicaSet=rs0
+      MONGO_DB: plataforma
+      MONGO_W: ${MONGO_W:-majority}
+      SESION_URL: http://sesion:8002
 
   sesion:
     <<: *servicio-python

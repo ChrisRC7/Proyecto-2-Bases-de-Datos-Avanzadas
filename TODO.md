@@ -9,12 +9,12 @@
 
 | Persona | Rol principal | Hechas / Total | Notas |
 |---|---|---|---|
-| A | Registro (MongoDB) + dataset operacional + simulador + carga | 3 / 34 | A1 listo |
+| A | Registro (MongoDB) + dataset operacional + simulador + carga | 12 / 34 | A1 y A2 listos (falta probar el latido con B2.7) |
 | B | Sesión (Valkey) + Gateway + salud | 0 / 29 | |
 | C | Historial (Parquet) + Analítica (Spark) + dataset histórico | 0 / 31 | |
 | Todos | Integración, informe, defensa | 0 / 12 | |
 
-_Última actualización: 2026-10-22 — corrección del 422 en comun.py (Fabricio)._
+_Última actualización: 2026-10-22 — A2: servicio registro (Fabricio)._
 
 ---
 
@@ -70,16 +70,19 @@ dataset · **S3–S4** integración y pruebas · **S5** informe, README final, e
 - [x] A1.3 Script que imprime `rs.status()` resumido (para P2 y P8).
 
 ### A2. Servicio `registro` (≤ 6 rutas, solo MongoDB, **nunca** Valkey)
-- [ ] A2.1 Esqueleto FastAPI + conexión con `w="majority"` configurable por variable de entorno (`MONGO_W=majority|1`).
-- [ ] A2.2 Stub inicial que responde según contrato (para que B y C no esperen). Publicarlo en S1.
-- [ ] A2.3 `POST /proyectos`: valida cliente, taxonomía (etiqueta + instrucción) y `sla_horas`.
-- [ ] A2.4 `POST /proyectos/{id}/lotes`: inserta batch + tareas (`insert_many` ordenado=false), valida sha256/uri/mime/modalidad/geometría.
-- [ ] A2.5 `POST /tareas/asignar`: `findOneAndUpdate` atómico (`disponible` **o** `abierta` con `vence_en < now`) ordenado por prioridad → `abierta`, `version+1`, `asignacion{anotador_id, token, tomada_en, vence_en}`. Devuelve la tarea o 204.
-- [ ] A2.6 `POST /tareas/{id}/transicion`: enviar / empezar revisión / aprobar / rechazar (exige motivo) / liberar. Filtro por `estado`, `asignacion.token` y `version` → si no matchea, 409. Rechazo deja `disponible` y limpia asignación.
-- [ ] A2.7 Cada transición devuelve los datos necesarios para que el gateway arme el evento (`event_id`, estado del lago — `rechazada` en rechazo —, `tomada_ts`, `sla_horas`, `equipo_id`...) y guarda `ultimo_evento_id`.
-- [ ] A2.8 `GET /proyectos/{id}/exportar?pagina=&tamano=` paginado por `_id` (cursor/keyset, no `skip` grande).
-- [ ] A2.9 `GET /salud` (incluye si hay PRIMARY) + latido cada 5 s a `POST sesion:/estado-capas` (D4); nunca escribe directo en Valkey.
-- [ ] A2.10 Timeouts cortos a Mongo (`serverSelectionTimeoutMS`) para que el gateway pueda devolver 503 rápido.
+- [x] A2.1 Esqueleto FastAPI + conexión con `w="majority"` configurable por variable de entorno (`MONGO_W=majority|1`).
+- [x] A2.2 Stub inicial que responde según contrato (para que B y C no esperen). Publicarlo en S1.
+      Nota: no hizo falta stub: el servicio real ya responde según el contrato (A2.3 a A2.8).
+- [x] A2.3 `POST /proyectos`: valida cliente, taxonomía (etiqueta + instrucción) y `sla_horas`.
+- [x] A2.4 `POST /proyectos/{id}/lotes`: inserta batch + tareas (`insert_many` ordenado=false), valida sha256/uri/mime/modalidad/geometría.
+- [x] A2.5 `POST /tareas/asignar`: `findOneAndUpdate` atómico (`disponible` **o** `abierta` con `vence_en < now`) ordenado por prioridad → `abierta`, `version+1`, `asignacion{anotador_id, token, tomada_en, vence_en}`. Devuelve la tarea o 204.
+- [x] A2.6 `POST /tareas/{id}/transicion`: enviar / empezar revisión / aprobar / rechazar (exige motivo) / liberar. Filtro por `estado`, `asignacion.token` y `version` → si no matchea, 409. Rechazo deja `disponible` y limpia asignación.
+- [x] A2.7 Cada transición devuelve los datos necesarios para que el gateway arme el evento (`event_id`, estado del lago — `rechazada` en rechazo —, `tomada_ts`, `sla_horas`, `equipo_id`...) y guarda `ultimo_evento_id`.
+- [x] A2.8 `GET /proyectos/{id}/exportar?pagina=&tamano=` paginado por `_id` (cursor/keyset, no `skip` grande).
+      Nota: se usa ?cursor=&limite= como en endpoints/gateway.md y registro.md.
+- [~] A2.9 `GET /salud` (incluye si hay PRIMARY) + latido cada 5 s a `POST sesion:/estado-capas` (D4); nunca escribe directo en Valkey.
+      Nota: salud y latido listos; falta verlo llegar al /estado-capas real de sesion (B2.7).
+- [x] A2.10 Timeouts cortos a Mongo (`serverSelectionTimeoutMS`) para que el gateway pueda devolver 503 rápido.
 
 ### A3. Índices
 - [ ] A3.1 Crear índices mínimos: `tareas(proyecto_id, estado, prioridad)`, `tareas(asignacion.anotador_id, estado)`, `tareas(batch_id)`, `proyectos(cliente_id, estado)`.

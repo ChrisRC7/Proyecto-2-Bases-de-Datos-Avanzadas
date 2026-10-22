@@ -35,6 +35,24 @@ para trazabilidad y Spark lo ignora en Q1–Q5 (documentarlo en el informe).
 Si el filtro (`_id`, estado, token, version) no coincide → `409`. Cada transición válida: `version += 1`,
 genera `event_id` (UUID) y lo guarda en `ultimo_evento_id`.
 Respuesta `200 {"tarea": {...}, "evento": {<fila según historial.md>}}` — el gateway reenvía `evento` al historial.
+`version` es opcional: el gateway la manda en `enviar` (la recibió en la asignación); en la revisión
+basta el filtro por estado, porque solo una petición puede encontrar la tarea en el estado requerido.
+
+### Errores
+
+| Código | `error` | Cuándo |
+|---|---|---|
+| 404 | `cliente_no_existe`, `proyecto_no_existe`, `anotador_no_existe`, `tarea_no_existe` | El id no está en la base. |
+| 409 | `transicion_invalida` | No coincide estado, token o versión. `detalle` trae el estado y la versión actuales. |
+| 422 | `validacion` | Cuerpo inválido (uuid, sha256, uri, taxonomía repetida, rechazo sin motivo...). |
+| 422 | `lote_invalido` | `tipo_tarea` o `mime` no corresponden a la modalidad del proyecto. |
+| 422 | `anotacion_invalida` | Geometría que no corresponde al tipo de tarea o etiquetas fuera de la taxonomía. |
+| 422 | `actor_no_es_revisor`, `proyecto_cerrado` | Revisión hecha por un anotador; lote para un proyecto cerrado. |
+| 503 | `mongodb_no_disponible` | No hay primario (responde en unos 2 s, `serverSelectionTimeoutMS`). |
+| 503 | `mongodb_sin_mayoria` | `w: majority` no se confirmó en `wtimeout`; la escritura pudo quedar en el primario. |
+
+`GET /salud` responde siempre 200: `{"servicio", "estado", "mongodb": {"estado": "operativo|caido",
+"primario", "secundarios"}, "ts"}`. Cada 5 s el registro publica ese estado en `sesion:/estado-capas` (D4).
 
 ## Modelo (BD `plataforma`)
 

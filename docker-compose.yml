@@ -135,6 +135,22 @@ services:
         print("sin PRIMARY despues de 60 s");
         quit(1);
 
+  # Carga de datos (A5, perfil datos): borra y recarga la BD plataforma con el generador.
+  #   docker compose --profile datos run --rm dataset
+  dataset:
+    build: ./dataset
+    profiles: [datos]
+    restart: "no"
+    # Con el usuario del host, para que dataset/salida y evidence/ no queden a nombre de root.
+    user: "${UID:-1000}:${GID:-1000}"
+    networks: [interna]
+    environment:
+      MONGO_URI: mongodb://mongo1:27017,mongo2:27017,mongo3:27017/?replicaSet=rs0
+      MONGO_DB: plataforma
+    volumes:
+      - ./dataset:/srv/dataset
+      - ./evidence:/srv/evidence
+
   # --- Bloque B (B1): valkey con AOF everysec ------------------------------------------
   # --- Bloque C (C1): cola-eventos (Valkey Stream propio del historial, AOF),
   #                    spark-master, spark-worker, spark-worker-2 (perfil spark2) y

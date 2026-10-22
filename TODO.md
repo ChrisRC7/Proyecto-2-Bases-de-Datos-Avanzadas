@@ -9,12 +9,12 @@
 
 | Persona | Rol principal | Hechas / Total | Notas |
 |---|---|---|---|
-| A | Registro (MongoDB) + dataset operacional + simulador + carga | 12 / 34 | A1 y A2 listos (falta probar el latido con B2.7) |
+| A | Registro (MongoDB) + dataset operacional + simulador + carga | 16 / 34 | A1, A2 y A5 listos (falta probar el latido con B2.7) |
 | B | Sesión (Valkey) + Gateway + salud | 0 / 29 | |
 | C | Historial (Parquet) + Analítica (Spark) + dataset histórico | 0 / 31 | |
 | Todos | Integración, informe, defensa | 0 / 12 | |
 
-_Última actualización: 2026-10-22 — A2: servicio registro (Fabricio)._
+_Última actualización: 2026-10-22 — A5: dataset operacional y carga desde cero (Fabricio)._
 
 ---
 
@@ -94,10 +94,12 @@ dataset · **S3–S4** integración y pruebas · **S5** informe, README final, e
 - [ ] A4.2 `POST /tareas/{id}/revision`: empezar revisión / aprobar / rechazar → registro; si 200, publicar evento a historial (función de B).
 
 ### A5. Dataset operacional (`dataset/`)
-- [ ] A5.1 Generador reproducible (semilla fija) de 60 clientes, 120 proyectos activos, 600 batches, 60 000 tareas (30/30/20/20 % texto/imagen/video/LiDAR con geometría correcta), 300 anotadores en 30 equipos (10 % revisores). Incluir el proyecto LiDAR de ejemplo con su taxonomía.
-- [ ] A5.2 Exportar IDs de los 60 proyectos cerrados y de clientes/anotadores para que C los use en el histórico (archivo compartido `dataset/salida/ids.json`).
-- [ ] A5.3 Script de carga desde cero (`make cargar` o `python -m dataset.cargar`) que borra y recarga; imprime conteos. Documentar en `datos/README.md`.
-- [ ] A5.4 Script "regenerar tareas disponibles" para cuando las pruebas de carga las agoten (anota fecha y motivo en evidence).
+- [x] A5.1 Generador reproducible (semilla fija) de 60 clientes, 120 proyectos activos, 600 batches, 60 000 tareas (30/30/20/20 % texto/imagen/video/LiDAR con geometría correcta), 300 anotadores en 30 equipos (10 % revisores). Incluir el proyecto LiDAR de ejemplo con su taxonomía.
+- [x] A5.2 Exportar IDs de los 60 proyectos cerrados y de clientes/anotadores para que C los use en el histórico (archivo compartido `dataset/salida/ids.json`).
+      Nota: dataset/salida/ está en .gitignore: el ids.json se obtiene corriendo la carga (semilla 2026, mismos ids en cualquier máquina).
+- [x] A5.3 Script de carga desde cero (`make cargar` o `python -m dataset.cargar`) que borra y recarga; imprime conteos. Documentar en `datos/README.md`.
+      Nota: docker compose --profile datos run --rm dataset · documentado en datos/README.md.
+- [x] A5.4 Script "regenerar tareas disponibles" para cuando las pruebas de carga las agoten (anota fecha y motivo en evidence).
 
 ### A6. Simulador (`simulador/`) — solo HTTP al gateway
 - [ ] A6.1 Cliente HTTP base (`httpx`), configuración por CLI (URL, número de usuarios, duración).

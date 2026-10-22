@@ -11,6 +11,7 @@ import uuid
 from datetime import datetime, timezone
 
 from fastapi import FastAPI, Request
+from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
@@ -81,6 +82,8 @@ def crear_app(titulo: str) -> FastAPI:
 
     @app.exception_handler(RequestValidationError)
     async def validacion_error(_request: Request, exc: RequestValidationError):
-        return error(422, "validacion", exc.errors())
+        # Los validadores propios dejan la excepción en "ctx"; se pasa a texto para poder
+        # serializarla (si no, el 422 termina en 500).
+        return error(422, "validacion", jsonable_encoder(exc.errors(), custom_encoder={Exception: str}))
 
     return app

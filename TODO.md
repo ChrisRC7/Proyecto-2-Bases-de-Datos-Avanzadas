@@ -14,7 +14,7 @@
 | C | Historial (Parquet) + Analítica (Spark) + dataset histórico | 0 / 31 | |
 | Todos | Integración, informe, defensa | 0 / 12 | |
 
-_Última actualización: 2026-10-22 — A1: replica set rs0 de MongoDB (Fabricio)._
+_Última actualización: 2026-10-22 — corrección del 422 en comun.py (Fabricio)._
 
 ---
 
@@ -238,3 +238,4 @@ dataset · **S3–S4** integración y pruebas · **S5** informe, README final, e
 
 ## Tareas nuevas descubiertas
 _(agregar aquí con persona sugerida y fecha)_
+- [x] (A, 2026-10-22) `comun.py`: el 422 de un validador propio terminaba en 500 (la excepción en `ctx` no se podía serializar). Corregido y copiado a los 5 servicios.

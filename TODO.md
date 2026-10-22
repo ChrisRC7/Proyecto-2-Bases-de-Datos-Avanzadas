@@ -9,12 +9,12 @@
 
 | Persona | Rol principal | Hechas / Total | Notas |
 |---|---|---|---|
-| A | Registro (MongoDB) + dataset operacional + simulador + carga | 0 / 34 | |
+| A | Registro (MongoDB) + dataset operacional + simulador + carga | 3 / 34 | A1 listo |
 | B | Sesión (Valkey) + Gateway + salud | 0 / 29 | |
 | C | Historial (Parquet) + Analítica (Spark) + dataset histórico | 0 / 31 | |
 | Todos | Integración, informe, defensa | 0 / 12 | |
 
-_Última actualización: 2026-10-20 — base del proyecto lista (ver "Base del proyecto (hecho)")._
+_Última actualización: 2026-10-22 — A1: replica set rs0 de MongoDB (Fabricio)._
 
 ---
 
@@ -65,9 +65,9 @@ dataset · **S3–S4** integración y pruebas · **S5** informe, README final, e
 ## Persona A — Registro (MongoDB) · dataset operacional · simulador · carga
 
 ### A1. Infraestructura MongoDB
-- [ ] A1.1 Servicios `mongo1`, `mongo2`, `mongo3` (`mongo:7`) con `--replSet rs0`, volúmenes, healthcheck. Sin puertos al host.
-- [ ] A1.2 Contenedor/script `mongo-init` que ejecuta `rs.initiate()` idempotente y espera PRIMARY.
-- [ ] A1.3 Script que imprime `rs.status()` resumido (para P2 y P8).
+- [x] A1.1 Servicios `mongo1`, `mongo2`, `mongo3` (`mongo:7`) con `--replSet rs0`, volúmenes, healthcheck. Sin puertos al host.
+- [x] A1.2 Contenedor/script `mongo-init` que ejecuta `rs.initiate()` idempotente y espera PRIMARY.
+- [x] A1.3 Script que imprime `rs.status()` resumido (para P2 y P8).
 
 ### A2. Servicio `registro` (≤ 6 rutas, solo MongoDB, **nunca** Valkey)
 - [ ] A2.1 Esqueleto FastAPI + conexión con `w="majority"` configurable por variable de entorno (`MONGO_W=majority|1`).

@@ -67,6 +67,69 @@ services:
       PUERTO: "8004"
 
   # --- Bloque A (A1): mongo1, mongo2, mongo3 (replica set rs0) + mongo-init -------------
+  mongo1: &mongo
+    image: mongo:7.0
+    hostname: mongo1
+    command: ["mongod", "--replSet", "rs0", "--bind_ip_all", "--wiredTigerCacheSizeGB", "0.25"]
+    restart: unless-stopped
+    networks: [interna]
+    volumes:
+      - mongo1:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  mongo2:
+    <<: *mongo
+    hostname: mongo2
+    volumes:
+      - mongo2:/data/db
+
+  mongo3:
+    <<: *mongo
+    hostname: mongo3
+    volumes:
+      - mongo3:/data/db
+
+  # Inicia rs0 una sola vez (si ya existe no hace nada) y espera a que haya PRIMARY.
+  mongo-init:
+    image: mongo:7.0
+    restart: "no"
+    networks: [interna]
+    depends_on:
+      mongo1:
+        condition: service_healthy
+      mongo2:
+        condition: service_healthy
+      mongo3:
+        condition: service_healthy
+    entrypoint: ["mongosh", "--quiet", "--host", "mongo1", "--eval"]
+    command:
+      - |
+        try {
+          rs.status();
+          print("rs0 ya estaba iniciado");
+        } catch (e) {
+          if (e.codeName !== "NotYetInitialized") throw e;
+          rs.initiate({ _id: "rs0", members: [
+            { _id: 0, host: "mongo1:27017" },
+            { _id: 1, host: "mongo2:27017" },
+            { _id: 2, host: "mongo3:27017" }
+          ] });
+          print("rs0 iniciado");
+        }
+        for (let i = 0; i < 60; i++) {
+          try {
+            const p = rs.status().members.find(m => m.stateStr === "PRIMARY");
+            if (p) { print("PRIMARY: " + p.name); quit(0); }
+          } catch (e) {}
+          sleep(1000);
+        }
+        print("sin PRIMARY despues de 60 s");
+        quit(1);
+
   # --- Bloque B (B1): valkey con AOF everysec ------------------------------------------
   # --- Bloque C (C1): cola-eventos (Valkey Stream propio del historial, AOF),
   #                    spark-master, spark-worker, spark-worker-2 (perfil spark2) y
@@ -76,3 +139,8 @@ services:
 networks:
   interna:
   borde:
+
+volumes:
+  mongo1:
+  mongo2:
+  mongo3:

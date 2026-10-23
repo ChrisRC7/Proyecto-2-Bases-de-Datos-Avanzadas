@@ -14,7 +14,7 @@
 | C | Historial (Parquet) + Analítica (Spark) + dataset histórico | 0 / 31 | |
 | Todos | Integración, informe, defensa | 0 / 12 | |
 
-_Última actualización: 2026-10-22 — A3: índices y explain del registro (Fabricio)._
+_Última actualización: 2026-10-22 — A7.1: P2 preliminar contra el registro (Fabricio)._
 
 ---
 
@@ -108,7 +108,8 @@ dataset · **S3–S4** integración y pruebas · **S5** informe, README final, e
 - [ ] A6.3 Registro de latencias por endpoint (CSV crudo) para P6.
 
 ### A7. Pruebas
-- [ ] A7.1 **P2**: estado del replica set + script con `ProcessPoolExecutor`: preparar exactamente 10 tareas libres, 50 solicitudes simultáneas → verificar 10 asignaciones, 40 sin tarea (204), ninguna tarea con 2 anotadores (consulta de verificación vía gateway/export), segundo envío → 409. Evidencia.
+- [~] A7.1 **P2**: estado del replica set + script con `ProcessPoolExecutor`: preparar exactamente 10 tareas libres, 50 solicitudes simultáneas → verificar 10 asignaciones, 40 sin tarea (204), ninguna tarea con 2 anotadores (consulta de verificación vía gateway/export), segundo envío → 409. Evidencia.
+      Nota: corrida preliminar contra el registro, sin gateway: 10/40, cero dobles, 409 en el reenvío (evidence/P2_concurrencia_registro_20261022-2007.md). Falta repetirla vía gateway (B3.4, B3.6).
 - [ ] A7.2 **P6**: 10, 40, 100 usuarios virtuales; 30 s calentamiento + 3 corridas de 90 s por nivel; p50/p95/p99 por endpoint, envíos/min, errores, `docker stats` muestreado. Características de la máquina.
 - [ ] A7.3 **P8 (Mongo)**: detener secundario (sigue escribiendo), detener primario (elección; lo que dio 200 sigue una sola vez), detener dos nodos (sin mayoría no escribe → 503). Medir RTO/RPO. Restaurar estado conocido y registrar acciones.
 - [ ] A7.4 Medición `w:"majority"` vs `w:1` (misma carga, mismo dataset) con la advertencia de que docker local no representa un clúster real.

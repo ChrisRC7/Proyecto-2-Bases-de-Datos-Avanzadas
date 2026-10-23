@@ -9,12 +9,12 @@
 
 | Persona | Rol principal | Hechas / Total | Notas |
 |---|---|---|---|
-| A | Registro (MongoDB) + dataset operacional + simulador + carga | 22 / 34 | A1, A2, A3, A5, A6 y A7.4 listos; P2 y P8 preliminares (faltan rutas del gateway de B) |
+| A | Registro (MongoDB) + dataset operacional + simulador + carga | 22 / 34 | 22 hechas, 5 a medias (falta el gateway), 4 bloqueadas por B, 3 del informe al final |
 | B | Sesión (Valkey) + Gateway + salud | 0 / 29 | |
 | C | Historial (Parquet) + Analítica (Spark) + dataset histórico | 0 / 31 | |
 | Todos | Integración, informe, defensa | 0 / 12 | |
 
-_Última actualización: 2026-10-22 — A7.3: P8 de MongoDB contra el registro (Fabricio)._
+_Última actualización: 2026-10-22 — tareas de A bloqueadas por el gateway de B (Fabricio)._
 
 ---
 
@@ -91,8 +91,10 @@ dataset · **S3–S4** integración y pruebas · **S5** informe, README final, e
       Nota: extra tareas {estado:1, prioridad:-1} para la asignación sin proyecto (60 000 → 1 documento examinado); la exportación no lleva índice propio. Ver evidence/A3_explain_registro_20261022-2003.md.
 
 ### A4. Rutas del gateway (sobre el núcleo de B)
-- [ ] A4.1 `POST /proyectos`, `POST /proyectos/{id}/lotes`, `GET /proyectos/{id}/exportar` → registro.
-- [ ] A4.2 `POST /tareas/{id}/revision`: empezar revisión / aprobar / rechazar → registro; si 200, publicar evento a historial (función de B).
+- [!] A4.1 `POST /proyectos`, `POST /proyectos/{id}/lotes`, `GET /proyectos/{id}/exportar` → registro.
+      Nota: bloqueada: van sobre el núcleo del gateway (B3.1 middleware, B3.2 cliente interno). El registro ya responde estas rutas.
+- [!] A4.2 `POST /tareas/{id}/revision`: empezar revisión / aprobar / rechazar → registro; si 200, publicar evento a historial (función de B).
+      Nota: bloqueada: necesita publicar_evento() de B (B3.3). El registro ya devuelve el evento listo en cada transición.
 
 ### A5. Dataset operacional (`dataset/`)
 - [x] A5.1 Generador reproducible (semilla fija) de 60 clientes, 120 proyectos activos, 600 batches, 60 000 tareas (30/30/20/20 % texto/imagen/video/LiDAR con geometría correcta), 300 anotadores en 30 equipos (10 % revisores). Incluir el proyecto LiDAR de ejemplo con su taxonomía.
@@ -112,7 +114,8 @@ dataset · **S3–S4** integración y pruebas · **S5** informe, README final, e
 ### A7. Pruebas
 - [~] A7.1 **P2**: estado del replica set + script con `ProcessPoolExecutor`: preparar exactamente 10 tareas libres, 50 solicitudes simultáneas → verificar 10 asignaciones, 40 sin tarea (204), ninguna tarea con 2 anotadores (consulta de verificación vía gateway/export), segundo envío → 409. Evidencia.
       Nota: corrida preliminar contra el registro, sin gateway: 10/40, cero dobles, 409 en el reenvío (evidence/P2_concurrencia_registro_20261022-2007.md). Falta repetirla vía gateway (B3.4, B3.6).
-- [ ] A7.2 **P6**: 10, 40, 100 usuarios virtuales; 30 s calentamiento + 3 corridas de 90 s por nivel; p50/p95/p99 por endpoint, envíos/min, errores, `docker stats` muestreado. Características de la máquina.
+- [!] A7.2 **P6**: 10, 40, 100 usuarios virtuales; 30 s calentamiento + 3 corridas de 90 s por nivel; p50/p95/p99 por endpoint, envíos/min, errores, `docker stats` muestreado. Características de la máquina.
+      Nota: bloqueada: P6 corre el simulador contra el gateway (B3.4-B3.7). El simulador (A6) ya está listo.
 - [~] A7.3 **P8 (Mongo)**: detener secundario (sigue escribiendo), detener primario (elección; lo que dio 200 sigue una sola vez), detener dos nodos (sin mayoría no escribe → 503). Medir RTO/RPO. Restaurar estado conocido y registrar acciones.
       Nota: corrida contra el registro, sin gateway: secundario sin errores; primario RTO 10,36 s; sin mayoría 503 y 2 errores que sí se escribieron; RPO 0 en los tres (evidence/P8_mongo_20261022-2028.md). Falta repetirla vía gateway (I.5).
 - [x] A7.4 Medición `w:"majority"` vs `w:1` (misma carga, mismo dataset) con la advertencia de que docker local no representa un clúster real.
@@ -120,10 +123,15 @@ dataset · **S3–S4** integración y pruebas · **S5** informe, README final, e
 
 ### A8. Informe y README
 - [ ] A8.1 Informe §2: modelo de registro, índices, explain, prueba de no doble adquisición.
+      Nota: pendiente: se escribe con la P2 final vía gateway; ya hay explain (A3) y la P2 preliminar.
 - [ ] A8.2 Informe §6: resultados de carga y cuellos de botella.
+      Nota: pendiente: depende de P6 (A7.2).
 - [ ] A8.3 Informe §7 (parte Mongo): fallas, RTO, RPO, enlaces a evidence.
-- [ ] A8.4 README: sección de carga de datos y simulador.
-- [ ] A8.5 Revisar PRs de **B** y preparar 5 preguntas/respuestas sobre sesión y gateway para la defensa.
+      Nota: pendiente: se escribe con la P8 final; ya está la corrida contra el registro (A7.3).
+- [~] A8.4 README: sección de carga de datos y simulador.
+      Nota: carga documentada en datos/README.md; falta pasarla al README general (B6.4) y agregar el simulador.
+- [!] A8.5 Revisar PRs de **B** y preparar 5 preguntas/respuestas sobre sesión y gateway para la defensa.
+      Nota: bloqueada: todavía no hay PRs de B.
 
 ---
 

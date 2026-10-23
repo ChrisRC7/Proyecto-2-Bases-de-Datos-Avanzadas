@@ -156,6 +156,20 @@ services:
   #                    spark-master, spark-worker, spark-worker-2 (perfil spark2) y
   #                    volumen del lago (rw solo en historial, ro en analitica/spark) -----
   # --- Simulador (A6, perfil carga): solo en la red "borde" ----------------------------
+  #   docker compose --profile carga run --rm simulador python -m simulador.simular --usuarios 10
+  simulador:
+    build: ./simulador
+    profiles: [carga]
+    restart: "no"
+    user: "${UID:-1000}:${GID:-1000}"
+    networks: [borde]  # solo ve al gateway (D12)
+    environment:
+      GATEWAY_URL: http://gateway:8000
+      IDS_JSON: /srv/ids/ids.json
+    volumes:
+      - ./simulador:/srv/simulador
+      - ./dataset/salida:/srv/ids:ro
+      - ./evidence:/srv/evidence
 
 networks:
   interna:

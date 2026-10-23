@@ -9,12 +9,12 @@
 
 | Persona | Rol principal | Hechas / Total | Notas |
 |---|---|---|---|
-| A | Registro (MongoDB) + dataset operacional + simulador + carga | 19 / 34 | A1, A2, A3 y A5 listos (falta probar el latido con B2.7) |
+| A | Registro (MongoDB) + dataset operacional + simulador + carga | 21 / 34 | A1, A2, A3, A5 y A6 listos; P2 preliminar (faltan rutas del gateway de B) |
 | B | Sesión (Valkey) + Gateway + salud | 0 / 29 | |
 | C | Historial (Parquet) + Analítica (Spark) + dataset histórico | 0 / 31 | |
 | Todos | Integración, informe, defensa | 0 / 12 | |
 
-_Última actualización: 2026-10-22 — A7.1: P2 preliminar contra el registro (Fabricio)._
+_Última actualización: 2026-10-22 — A6: simulador por HTTP al gateway (Fabricio)._
 
 ---
 
@@ -103,9 +103,11 @@ dataset · **S3–S4** integración y pruebas · **S5** informe, README final, e
 - [x] A5.4 Script "regenerar tareas disponibles" para cuando las pruebas de carga las agoten (anota fecha y motivo en evidence).
 
 ### A6. Simulador (`simulador/`) — solo HTTP al gateway
-- [ ] A6.1 Cliente HTTP base (`httpx`), configuración por CLI (URL, número de usuarios, duración).
-- [ ] A6.2 Flujo anotador: siguiente → (borradores, de B) → enviar; flujo revisor: revisión → aprobar/rechazar con motivo aleatorio.
-- [ ] A6.3 Registro de latencias por endpoint (CSV crudo) para P6.
+- [x] A6.1 Cliente HTTP base (`httpx`), configuración por CLI (URL, número de usuarios, duración).
+- [~] A6.2 Flujo anotador: siguiente → (borradores, de B) → enviar; flujo revisor: revisión → aprobar/rechazar con motivo aleatorio.
+      Nota: anotador y revisor listos y probados con un gateway de prueba que reenvía al registro real (10 usuarios, 113 envíos en 15 s, sin errores). Falta correrlo contra el gateway de B (B3.4-B3.7); los borradores cada 2 s se enganchan en anotar() (B4.2).
+- [x] A6.3 Registro de latencias por endpoint (CSV crudo) para P6.
+      Nota: CSV con ts, fase (calentamiento/medicion), usuario, rol, endpoint, status y ms; resumen p50/p95/p99 por endpoint y envíos/min.
 
 ### A7. Pruebas
 - [~] A7.1 **P2**: estado del replica set + script con `ProcessPoolExecutor`: preparar exactamente 10 tareas libres, 50 solicitudes simultáneas → verificar 10 asignaciones, 40 sin tarea (204), ninguna tarea con 2 anotadores (consulta de verificación vía gateway/export), segundo envío → 409. Evidencia.

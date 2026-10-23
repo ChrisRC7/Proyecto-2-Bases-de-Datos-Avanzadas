@@ -1,0 +1,50 @@
+# P8 MongoDB · sin-mayoria · 2026-10-23T02:30:30Z · commit fa0035b
+
+## Precondición
+Semilla 2026 · carga con w=majority en 4.1 s
+  tareas        60000
+2026-10-23T02:30:36Z
+conjunto: rs0  term: 6  consultado en: mongo1:27017
+mongo1:27017  PRIMARY                 health=1  optime=2026-10-23T02:30:35.000Z
+mongo2:27017  SECONDARY               health=1  optime=2026-10-23T02:30:35.000Z
+mongo3:27017  SECONDARY               health=1  optime=2026-10-23T02:30:35.000Z
+primario: mongo1 · secundarios: mongo2 mongo3 · se detiene: mongo2 mongo3
+
+## Sonda (cambios de estado)
+-- falla: docker compose kill mongo2 mongo3 · marca 1792722647.489877041 (2026-10-23T02:30:47.492Z)
+-- estado durante la falla:
+2026-10-23T02:31:02Z
+conjunto: rs0  term: 6  consultado en: mongo1:27017
+mongo1:27017  SECONDARY               health=1  optime=2026-10-23T02:30:52.000Z
+mongo2:27017  (not reachable/healthy) health=0  optime=-
+mongo3:27017  (not reachable/healthy) health=0  optime=-
+-- recuperación: docker compose start mongo2 mongo3 · 1792722669.043541616 (2026-10-23T02:31:09.047Z)
+02:30:39.872 asignar: ok
+02:30:52.233 asignar: error 503 mongodb_sin_mayoria
+02:31:01.558 asignar: error 503 mongodb_no_disponible
+02:31:19.379 asignar: ok
+
+## Después (conjunto restaurado)
+2026-10-23T02:32:11Z
+conjunto: rs0  term: 7  consultado en: mongo1:27017
+mongo1:27017  PRIMARY                 health=1  optime=2026-10-23T02:32:09.000Z
+mongo2:27017  SECONDARY               health=1  optime=2026-10-23T02:32:09.000Z
+mongo3:27017  SECONDARY               health=1  optime=2026-10-23T02:32:09.000Z
+
+## Verificación contra MongoDB
+filas: 520 · envíos: 255 · asignaciones con error: 10
+envíos confirmados (200): 255 · presentes en MongoDB: 255
+RPO (confirmados perdidos): 0
+confirmados con la versión esperada (aplicados una sola vez): 255 de 255
+envíos con error: 0 · de esos SÍ quedaron escritos: 0 · no escritos: 0
+asignaciones con error que SÍ quedaron escritas (tarea abierta a nombre de la sonda): 2
+
+marca de la falla: 1792722647.490
+último envío 200 antes de la falla: {'ts': '1792722647.009', 'op': 'enviar', 'tarea_id': '6a37398e-166f-4991-b681-ea65e975bb3d', 'version': '2', 'status': '200', 'error': '', 'ms': '12.6'}
+primer error: {'ts': '1792722652.234', 'op': 'asignar', 'tarea_id': '', 'version': '', 'status': '503', 'error': 'mongodb_sin_mayoria', 'ms': '5024.4'}
+último error: {'ts': '1792722679.085', 'op': 'asignar', 'tarea_id': '', 'version': '', 'status': '503', 'error': 'mongodb_no_disponible', 'ms': '2304.6'}
+errores después de la marca: 10 (503 mongodb_no_disponible, 503 mongodb_sin_mayoria)
+primer envío 200 después del último error: {'ts': '1792722679.393', 'op': 'enviar', 'tarea_id': '679f6d37-ea96-4943-aa2f-997e005a56f0', 'version': '2', 'status': '200', 'error': '', 'ms': '12.8'}
+RTO = 1792722679.393 - 1792722647.490 = 31.903 s
+desde que se encendieron los nodos (1792722669.044) hasta ese envío: 10.349 s
+nodos encendidos de nuevo 21.6 s después de la falla

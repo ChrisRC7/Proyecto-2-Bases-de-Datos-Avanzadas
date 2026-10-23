@@ -1,0 +1,47 @@
+# P8 MongoDB · sin-mayoria · 2026-10-23T02:24:04Z · commit fe91587
+
+## Precondición
+2026-10-23T02:24:04Z
+conjunto: rs0  term: 4  consultado en: mongo1:27017
+mongo1:27017  SECONDARY               health=1  optime=2026-10-23T02:23:54.000Z
+mongo2:27017  SECONDARY               health=1  optime=2026-10-23T02:23:54.000Z
+mongo3:27017  PRIMARY                 health=1  optime=2026-10-23T02:23:54.000Z
+primario: mongo3 · secundarios: mongo1 mongo2 · se detiene: mongo1 mongo2
+
+## Sonda (cambios de estado)
+-- falla: docker compose kill mongo1 mongo2 · marca 1792722255.582356190 (2026-10-23T02:24:15.586Z)
+-- estado durante la falla:
+2026-10-23T02:24:30Z
+conjunto: rs0  term: 4  consultado en: mongo3:27017
+mongo1:27017  (not reachable/healthy) health=0  optime=-
+mongo2:27017  (not reachable/healthy) health=0  optime=-
+mongo3:27017  SECONDARY               health=1  optime=2026-10-23T02:24:20.000Z
+-- recuperación: docker compose start mongo1 mongo2 · 1792722276.955704902 (2026-10-23T02:24:36.958Z)
+02:24:07.946 asignar: ok
+02:24:20.217 enviar: error 503 mongodb_sin_mayoria
+02:24:27.202 asignar: error 500 None
+02:24:29.705 asignar: error 503 mongodb_no_disponible
+02:24:46.573 asignar: ok
+
+## Después (conjunto restaurado)
+2026-10-23T02:25:40Z
+conjunto: rs0  term: 5  consultado en: mongo1:27017
+mongo1:27017  SECONDARY               health=1  optime=2026-10-23T02:25:37.000Z
+mongo2:27017  SECONDARY               health=1  optime=2026-10-23T02:25:37.000Z
+mongo3:27017  PRIMARY                 health=1  optime=2026-10-23T02:25:37.000Z
+
+## Verificación contra MongoDB
+filas: 531 · envíos: 261 · asignaciones con error: 9
+envíos confirmados (200): 260 · presentes en MongoDB: 260
+RPO (confirmados perdidos): 0
+confirmados con la versión esperada (aplicados una sola vez): 260 de 260
+envíos con error: 1 · de esos SÍ quedaron escritos: 1 · no escritos: 0
+
+marca de la falla: 1792722255.582
+último envío 200 antes:  {'ts': '1792722254.980', 'op': 'enviar', 'tarea_id': '0060f70c-c37c-4bd1-add2-f67c9674aeca', 'version': '2', 'status': '200', 'error': '', 'ms': '11.8'}
+primer error después:    {'ts': '1792722260.218', 'op': 'enviar', 'tarea_id': 'f41121b6-5e05-4526-8bfa-e98602d3898a', 'version': '2', 'status': '503', 'error': 'mongodb_sin_mayoria', 'ms': '5023.2'}
+último error:            {'ts': '1792722286.357', 'op': 'asignar', 'tarea_id': '', 'version': '', 'status': '503', 'error': 'mongodb_no_disponible', 'ms': '2006.1'}
+errores después de la marca: 10 (500 , 503 mongodb_no_disponible, 503 mongodb_sin_mayoria)
+primer envío 200 después de los errores: {'ts': '1792722286.586', 'op': 'enviar', 'tarea_id': '1364a47a-cd88-4616-822d-284dd2aa383e', 'version': '2', 'status': '200', 'error': '', 'ms': '12.5'}
+RTO = 1792722286.586 - 1792722255.582 = 31.004 s
+nodos encendidos de nuevo en 1792722276.956 (21.4 s después de la falla)

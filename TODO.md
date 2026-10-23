@@ -9,12 +9,12 @@
 
 | Persona | Rol principal | Hechas / Total | Notas |
 |---|---|---|---|
-| A | Registro (MongoDB) + dataset operacional + simulador + carga | 22 / 34 | A1, A2, A3, A5 y A6 listos; P2 preliminar (faltan rutas del gateway de B) |
+| A | Registro (MongoDB) + dataset operacional + simulador + carga | 22 / 34 | A1, A2, A3, A5, A6 y A7.4 listos; P2 y P8 preliminares (faltan rutas del gateway de B) |
 | B | Sesión (Valkey) + Gateway + salud | 0 / 29 | |
 | C | Historial (Parquet) + Analítica (Spark) + dataset histórico | 0 / 31 | |
 | Todos | Integración, informe, defensa | 0 / 12 | |
 
-_Última actualización: 2026-10-22 — corrección del 500 sin mayoría en registro (Fabricio)._
+_Última actualización: 2026-10-22 — A7.3: P8 de MongoDB contra el registro (Fabricio)._
 
 ---
 
@@ -113,7 +113,8 @@ dataset · **S3–S4** integración y pruebas · **S5** informe, README final, e
 - [~] A7.1 **P2**: estado del replica set + script con `ProcessPoolExecutor`: preparar exactamente 10 tareas libres, 50 solicitudes simultáneas → verificar 10 asignaciones, 40 sin tarea (204), ninguna tarea con 2 anotadores (consulta de verificación vía gateway/export), segundo envío → 409. Evidencia.
       Nota: corrida preliminar contra el registro, sin gateway: 10/40, cero dobles, 409 en el reenvío (evidence/P2_concurrencia_registro_20261022-2007.md). Falta repetirla vía gateway (B3.4, B3.6).
 - [ ] A7.2 **P6**: 10, 40, 100 usuarios virtuales; 30 s calentamiento + 3 corridas de 90 s por nivel; p50/p95/p99 por endpoint, envíos/min, errores, `docker stats` muestreado. Características de la máquina.
-- [ ] A7.3 **P8 (Mongo)**: detener secundario (sigue escribiendo), detener primario (elección; lo que dio 200 sigue una sola vez), detener dos nodos (sin mayoría no escribe → 503). Medir RTO/RPO. Restaurar estado conocido y registrar acciones.
+- [~] A7.3 **P8 (Mongo)**: detener secundario (sigue escribiendo), detener primario (elección; lo que dio 200 sigue una sola vez), detener dos nodos (sin mayoría no escribe → 503). Medir RTO/RPO. Restaurar estado conocido y registrar acciones.
+      Nota: corrida contra el registro, sin gateway: secundario sin errores; primario RTO 10,36 s; sin mayoría 503 y 2 errores que sí se escribieron; RPO 0 en los tres (evidence/P8_mongo_20261022-2028.md). Falta repetirla vía gateway (I.5).
 - [x] A7.4 Medición `w:"majority"` vs `w:1` (misma carga, mismo dataset) con la advertencia de que docker local no representa un clúster real.
       Nota: medido directo contra el registro (misma carga y dataset): +3 ms por escritura con majority sin cola; con 20 hilos manda la cola del registro. Ver evidence/A7.4_write_concern_20261022-2011.md.
 

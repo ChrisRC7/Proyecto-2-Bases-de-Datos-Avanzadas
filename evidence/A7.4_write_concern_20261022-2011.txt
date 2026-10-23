@@ -1,0 +1,124 @@
+# 2026-10-23T02:11:56Z · commit 3dd6c48 · 20 hilos, 10 s de calentamiento + 30 s medidos por corrida
+
+## corrida 1 · MONGO_W=majority
+ Container proyecto2-registro-1 Running 
+registro: MONGO_W=majority
+Semilla 2026 · carga con w=majority en 4.1 s
+registro http://registro:8001 · 20 hilos · 10 s de calentamiento + 30 s medidos · mongodb: {'estado': 'operativo', 'primario': 'mongo2:27017', 'secundarios': 2}
+operación               n      p50      p95      p99    ops/s  errores
+asignar              1150   131.49   181.18   207.91     38.3        0
+enviar               1157   131.38   180.29   201.99     38.6        0
+empezar_revision     1168   122.62   165.21   187.57     38.9        0
+aprobar              1170   124.17   170.34   193.35     39.0        0
+ciclos completos (aprobadas): 1170 = 39.0 por segundo
+
+## corrida 1 · MONGO_W=1
+ Container proyecto2-registro-1 Started 
+registro: MONGO_W=1
+Semilla 2026 · carga con w=majority en 4.3 s
+registro http://registro:8001 · 20 hilos · 10 s de calentamiento + 30 s medidos · mongodb: {'estado': 'operativo', 'primario': 'mongo2:27017', 'secundarios': 2}
+operación               n      p50      p95      p99    ops/s  errores
+asignar              1183   129.61   174.62   212.59     39.4        0
+enviar               1186   128.14   172.47   208.74     39.5        0
+empezar_revision     1192   119.88   158.78   182.40     39.7        0
+aprobar              1198   121.14   159.46   180.78     39.9        0
+ciclos completos (aprobadas): 1198 = 39.9 por segundo
+
+## corrida 2 · MONGO_W=majority
+ Container proyecto2-registro-1 Started 
+registro: MONGO_W=majority
+Semilla 2026 · carga con w=majority en 4.1 s
+registro http://registro:8001 · 20 hilos · 10 s de calentamiento + 30 s medidos · mongodb: {'estado': 'operativo', 'primario': 'mongo2:27017', 'secundarios': 2}
+operación               n      p50      p95      p99    ops/s  errores
+asignar              1120   135.61   183.46   206.89     37.3        0
+enviar               1132   135.21   184.77   219.45     37.7        0
+empezar_revision     1137   126.11   173.60   195.93     37.9        0
+aprobar              1137   126.70   172.70   197.65     37.9        0
+ciclos completos (aprobadas): 1137 = 37.9 por segundo
+
+## corrida 2 · MONGO_W=1
+ Container proyecto2-registro-1 Started 
+registro: MONGO_W=1
+Semilla 2026 · carga con w=majority en 4.1 s
+registro http://registro:8001 · 20 hilos · 10 s de calentamiento + 30 s medidos · mongodb: {'estado': 'operativo', 'primario': 'mongo2:27017', 'secundarios': 2}
+operación               n      p50      p95      p99    ops/s  errores
+asignar              1174   131.61   175.18   191.30     39.1        0
+enviar               1178   129.82   169.86   190.43     39.3        0
+empezar_revision     1186   122.02   157.19   180.82     39.5        0
+aprobar              1193   122.78   159.99   178.39     39.8        0
+ciclos completos (aprobadas): 1193 = 39.8 por segundo
+
+## corrida 3 · MONGO_W=majority
+ Container proyecto2-registro-1 Started 
+registro: MONGO_W=majority
+Semilla 2026 · carga con w=majority en 4.4 s
+registro http://registro:8001 · 20 hilos · 10 s de calentamiento + 30 s medidos · mongodb: {'estado': 'operativo', 'primario': 'mongo2:27017', 'secundarios': 2}
+operación               n      p50      p95      p99    ops/s  errores
+asignar              1132   136.12   186.68   222.85     37.7        0
+enviar               1139   133.01   182.18   214.69     38.0        0
+empezar_revision     1147   123.89   164.92   183.03     38.2        0
+aprobar              1151   126.01   168.89   196.38     38.4        0
+ciclos completos (aprobadas): 1151 = 38.4 por segundo
+
+## corrida 3 · MONGO_W=1
+ Container proyecto2-registro-1 Started 
+registro: MONGO_W=1
+Semilla 2026 · carga con w=majority en 4.2 s
+registro http://registro:8001 · 20 hilos · 10 s de calentamiento + 30 s medidos · mongodb: {'estado': 'operativo', 'primario': 'mongo2:27017', 'secundarios': 2}
+operación               n      p50      p95      p99    ops/s  errores
+asignar              1168   131.92   177.59   216.77     38.9        0
+enviar               1171   129.39   174.90   191.28     39.0        0
+empezar_revision     1175   121.79   164.06   185.17     39.2        0
+aprobar              1178   122.69   165.82   187.71     39.3        0
+ciclos completos (aprobadas): 1178 = 39.3 por segundo
+
+# 2026-10-23T02:18:37Z · complemento: 1 hilo (sin cola) y docker stats con 20 hilos
+
+## 1 hilo · MONGO_W=majority
+ Container proyecto2-registro-1 Running 
+registro: MONGO_W=majority
+Semilla 2026 · carga con w=majority en 3.6 s
+registro http://registro:8001 · 1 hilos · 5 s de calentamiento + 20 s medidos · mongodb: {'estado': 'operativo', 'primario': 'mongo2:27017', 'secundarios': 2}
+operación               n      p50      p95      p99    ops/s  errores
+asignar               418    11.94    18.87    25.82     20.9        0
+enviar                418    11.83    17.12    23.52     20.9        0
+empezar_revision      419    10.61    16.89    21.95     20.9        0
+aprobar               419    10.64    16.19    19.37     20.9        0
+ciclos completos (aprobadas): 419 = 20.9 por segundo
+
+## 1 hilo · MONGO_W=1
+ Container proyecto2-registro-1 Started 
+registro: MONGO_W=1
+Semilla 2026 · carga con w=majority en 4.1 s
+registro http://registro:8001 · 1 hilos · 5 s de calentamiento + 20 s medidos · mongodb: {'estado': 'operativo', 'primario': 'mongo2:27017', 'secundarios': 2}
+operación               n      p50      p95      p99    ops/s  errores
+asignar               550     9.48    14.50    19.57     27.5        0
+enviar                551     8.83    13.34    20.33     27.6        0
+empezar_revision      551     7.87    12.02    15.07     27.6        0
+aprobar               551     7.87    12.04    17.00     27.6        0
+ciclos completos (aprobadas): 551 = 27.6 por segundo
+
+## docker stats durante 20 hilos · MONGO_W=majority (5 muestras, una cada ~4 s)
+ Container proyecto2-registro-1 Started 
+Semilla 2026 · carga con w=majority en 4.8 s
+muestra 1: proyecto2-mongo1-1 cpu=46.65% mem=442.8MiB / 9.714GiB
+muestra 1: proyecto2-mongo2-1 cpu=85.77% mem=423.3MiB / 9.714GiB
+muestra 1: proyecto2-mongo3-1 cpu=60.03% mem=440.7MiB / 9.714GiB
+muestra 1: proyecto2-registro-1 cpu=92.04% mem=46.18MiB / 9.714GiB
+muestra 2: proyecto2-mongo1-1 cpu=75.31% mem=588.8MiB / 9.714GiB
+muestra 2: proyecto2-mongo2-1 cpu=88.52% mem=417.9MiB / 9.714GiB
+muestra 2: proyecto2-mongo3-1 cpu=91.98% mem=594.1MiB / 9.714GiB
+muestra 2: proyecto2-registro-1 cpu=64.23% mem=47.04MiB / 9.714GiB
+muestra 3: proyecto2-mongo1-1 cpu=47.37% mem=435.2MiB / 9.714GiB
+muestra 3: proyecto2-mongo2-1 cpu=85.43% mem=411.2MiB / 9.714GiB
+muestra 3: proyecto2-mongo3-1 cpu=47.17% mem=433.1MiB / 9.714GiB
+muestra 3: proyecto2-registro-1 cpu=103.51% mem=47.27MiB / 9.714GiB
+muestra 4: proyecto2-mongo1-1 cpu=52.81% mem=433.3MiB / 9.714GiB
+muestra 4: proyecto2-mongo2-1 cpu=89.50% mem=408.6MiB / 9.714GiB
+muestra 4: proyecto2-mongo3-1 cpu=47.80% mem=430.7MiB / 9.714GiB
+muestra 4: proyecto2-registro-1 cpu=94.88% mem=47.19MiB / 9.714GiB
+muestra 5: proyecto2-mongo1-1 cpu=89.98% mem=584.2MiB / 9.714GiB
+muestra 5: proyecto2-mongo2-1 cpu=100.72% mem=554.2MiB / 9.714GiB
+muestra 5: proyecto2-mongo3-1 cpu=87.09% mem=427.3MiB / 9.714GiB
+muestra 5: proyecto2-registro-1 cpu=67.05% mem=47.25MiB / 9.714GiB
+ciclos completos (aprobadas): 936 = 37.4 por segundo

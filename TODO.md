@@ -9,12 +9,12 @@
 
 | Persona | Rol principal | Hechas / Total | Notas |
 |---|---|---|---|
-| A | Registro (MongoDB) + dataset operacional + simulador + carga | 21 / 34 | A1, A2, A3, A5 y A6 listos; P2 preliminar (faltan rutas del gateway de B) |
+| A | Registro (MongoDB) + dataset operacional + simulador + carga | 22 / 34 | A1, A2, A3, A5 y A6 listos; P2 preliminar (faltan rutas del gateway de B) |
 | B | Sesión (Valkey) + Gateway + salud | 0 / 29 | |
 | C | Historial (Parquet) + Analítica (Spark) + dataset histórico | 0 / 31 | |
 | Todos | Integración, informe, defensa | 0 / 12 | |
 
-_Última actualización: 2026-10-22 — A6: simulador por HTTP al gateway (Fabricio)._
+_Última actualización: 2026-10-22 — A7.4: w majority frente a w 1 (Fabricio)._
 
 ---
 
@@ -114,7 +114,8 @@ dataset · **S3–S4** integración y pruebas · **S5** informe, README final, e
       Nota: corrida preliminar contra el registro, sin gateway: 10/40, cero dobles, 409 en el reenvío (evidence/P2_concurrencia_registro_20261022-2007.md). Falta repetirla vía gateway (B3.4, B3.6).
 - [ ] A7.2 **P6**: 10, 40, 100 usuarios virtuales; 30 s calentamiento + 3 corridas de 90 s por nivel; p50/p95/p99 por endpoint, envíos/min, errores, `docker stats` muestreado. Características de la máquina.
 - [ ] A7.3 **P8 (Mongo)**: detener secundario (sigue escribiendo), detener primario (elección; lo que dio 200 sigue una sola vez), detener dos nodos (sin mayoría no escribe → 503). Medir RTO/RPO. Restaurar estado conocido y registrar acciones.
-- [ ] A7.4 Medición `w:"majority"` vs `w:1` (misma carga, mismo dataset) con la advertencia de que docker local no representa un clúster real.
+- [x] A7.4 Medición `w:"majority"` vs `w:1` (misma carga, mismo dataset) con la advertencia de que docker local no representa un clúster real.
+      Nota: medido directo contra el registro (misma carga y dataset): +3 ms por escritura con majority sin cola; con 20 hilos manda la cola del registro. Ver evidence/A7.4_write_concern_20261022-2011.md.
 
 ### A8. Informe y README
 - [ ] A8.1 Informe §2: modelo de registro, índices, explain, prueba de no doble adquisición.

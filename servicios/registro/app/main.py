@@ -13,7 +13,7 @@ from datetime import datetime, timedelta, timezone
 
 from fastapi import Query, Response
 from pymongo import ReturnDocument
-from pymongo.errors import ConnectionFailure, PyMongoError, WTimeoutError
+from pymongo.errors import ConnectionFailure, PyMongoError, WriteConcernError
 
 from app.bd import bd, crear_indices, estado_mongo
 from app.comun import SERVICIO, ahora_iso, crear_app, error, log
@@ -43,10 +43,11 @@ async def mongo_sin_primario(_request, exc: ConnectionFailure):
     return error(503, "mongodb_no_disponible", str(exc).split(", Topology Description")[0])
 
 
-@app.exception_handler(WTimeoutError)
-async def mongo_sin_mayoria(_request, exc: WTimeoutError):
+@app.exception_handler(WriteConcernError)
+async def mongo_sin_mayoria(_request, exc: WriteConcernError):
+    # wtimeout vencido o el primario se degradó mientras esperaba (11602 InterruptedDueToReplStateChange).
     # La escritura pudo quedar en el primario aunque no llegó a la mayoría: error ≠ no escrito.
-    return error(503, "mongodb_sin_mayoria", str(exc).splitlines()[0])
+    return error(503, "mongodb_sin_mayoria", str(exc).split(", full error")[0])
 
 
 def ahora() -> datetime:

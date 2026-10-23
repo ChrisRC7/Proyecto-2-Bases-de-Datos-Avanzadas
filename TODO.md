@@ -14,7 +14,7 @@
 | C | Historial (Parquet) + Analítica (Spark) + dataset histórico | 0 / 31 | |
 | Todos | Integración, informe, defensa | 0 / 12 | |
 
-_Última actualización: 2026-10-22 — A7.4: w majority frente a w 1 (Fabricio)._
+_Última actualización: 2026-10-22 — corrección del 500 sin mayoría en registro (Fabricio)._
 
 ---
 
@@ -249,3 +249,4 @@ dataset · **S3–S4** integración y pruebas · **S5** informe, README final, e
 ## Tareas nuevas descubiertas
 _(agregar aquí con persona sugerida y fecha)_
 - [x] (A, 2026-10-22) `comun.py`: el 422 de un validador propio terminaba en 500 (la excepción en `ctx` no se podía serializar). Corregido y copiado a los 5 servicios.
+- [x] (A, 2026-10-22) registro: si el primario se degradaba mientras esperaba la mayoría, `WriteConcernError` (11602 `InterruptedDueToReplStateChange`) salía como 500. Ahora responde 503 `mongodb_sin_mayoria`. Lo encontró P8 sin mayoría (`evidence/P8_mongo_sin-mayoria_20261022-2024.txt`).

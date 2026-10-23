@@ -92,4 +92,5 @@ basta el filtro por estado, porque solo una petición puede encontrar la tarea e
 | `tareas {"asignacion.anotador_id":1, estado:1}` | Obligatorio. Tareas de un anotador / recuperación. |
 | `tareas {batch_id:1}` | Obligatorio. |
 | `proyectos {cliente_id:1, estado:1}` | Obligatorio. |
-| (extras) | Solo con `explain` en `evidence/` que lo justifique. |
+| `tareas {estado:1, prioridad:-1}` | Extra. Asignación sin `proyecto_id` (cola global): sin él, `COLLSCAN` de 60 000 tareas; con él, 1 documento examinado (`evidence/A3_explain_registro_20261022-2003.md`). |
+| (otros extras) | Solo con `explain` en `evidence/` que lo justifique. La exportación no lleva índice propio: ordena en memoria como máximo las aprobadas de un proyecto (≤ 500). |

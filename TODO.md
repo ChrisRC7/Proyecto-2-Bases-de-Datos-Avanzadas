@@ -9,12 +9,12 @@
 
 | Persona | Rol principal | Hechas / Total | Notas |
 |---|---|---|---|
-| A | Registro (MongoDB) + dataset operacional + simulador + carga | 16 / 34 | A1, A2 y A5 listos (falta probar el latido con B2.7) |
+| A | Registro (MongoDB) + dataset operacional + simulador + carga | 19 / 34 | A1, A2, A3 y A5 listos (falta probar el latido con B2.7) |
 | B | Sesión (Valkey) + Gateway + salud | 0 / 29 | |
 | C | Historial (Parquet) + Analítica (Spark) + dataset histórico | 0 / 31 | |
 | Todos | Integración, informe, defensa | 0 / 12 | |
 
-_Última actualización: 2026-10-22 — A5: dataset operacional y carga desde cero (Fabricio)._
+_Última actualización: 2026-10-22 — A3: índices y explain del registro (Fabricio)._
 
 ---
 
@@ -85,9 +85,10 @@ dataset · **S3–S4** integración y pruebas · **S5** informe, README final, e
 - [x] A2.10 Timeouts cortos a Mongo (`serverSelectionTimeoutMS`) para que el gateway pueda devolver 503 rápido.
 
 ### A3. Índices
-- [ ] A3.1 Crear índices mínimos: `tareas(proyecto_id, estado, prioridad)`, `tareas(asignacion.anotador_id, estado)`, `tareas(batch_id)`, `proyectos(cliente_id, estado)`.
-- [ ] A3.2 `explain("executionStats")` de la consulta de asignación y de exportación → guardar en `evidence/`.
-- [ ] A3.3 Justificar (con explain/medición) cualquier índice extra (p. ej. para tareas `abierta` vencidas).
+- [x] A3.1 Crear índices mínimos: `tareas(proyecto_id, estado, prioridad)`, `tareas(asignacion.anotador_id, estado)`, `tareas(batch_id)`, `proyectos(cliente_id, estado)`.
+- [x] A3.2 `explain("executionStats")` de la consulta de asignación y de exportación → guardar en `evidence/`.
+- [x] A3.3 Justificar (con explain/medición) cualquier índice extra (p. ej. para tareas `abierta` vencidas).
+      Nota: extra tareas {estado:1, prioridad:-1} para la asignación sin proyecto (60 000 → 1 documento examinado); la exportación no lleva índice propio. Ver evidence/A3_explain_registro_20261022-2003.md.
 
 ### A4. Rutas del gateway (sobre el núcleo de B)
 - [ ] A4.1 `POST /proyectos`, `POST /proyectos/{id}/lotes`, `GET /proyectos/{id}/exportar` → registro.

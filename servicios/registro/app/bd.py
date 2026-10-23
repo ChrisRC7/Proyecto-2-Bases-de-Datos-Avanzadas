@@ -25,12 +25,14 @@ cliente = MongoClient(
 )
 bd: Database = cliente[MONGO_DB]
 
-# Índices mínimos del enunciado (endpoints/registro.md).
+# Índices mínimos del enunciado + el extra justificado con explain (endpoints/registro.md).
 INDICES = {
     "tareas": [
         [("proyecto_id", ASCENDING), ("estado", ASCENDING), ("prioridad", DESCENDING)],
         [("asignacion.anotador_id", ASCENDING), ("estado", ASCENDING)],
         [("batch_id", ASCENDING)],
+        # Extra (A3.3): asignación sin proyecto_id. Sin él es un COLLSCAN de las 60 000 tareas.
+        [("estado", ASCENDING), ("prioridad", DESCENDING)],
     ],
     "proyectos": [
         [("cliente_id", ASCENDING), ("estado", ASCENDING)],

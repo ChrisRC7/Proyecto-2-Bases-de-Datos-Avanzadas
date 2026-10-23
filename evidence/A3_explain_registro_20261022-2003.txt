@@ -1,0 +1,31 @@
+# 2026-10-23T02:03:44Z · commit 67d6852 · MongoDB 7.0.45
+
+## 1) Solo los índices obligatorios
+(índice extra borrado)
+tareas: 60000 (300 aprobadas en el proyecto LiDAR)
+índices de tareas: _id_, proyecto_id_1_estado_1_prioridad_-1, asignacion.anotador_id_1_estado_1, batch_id_1
+índices de proyectos: _id_, cliente_id_1_estado_1
+== asignación con proyecto_id
+   plan: UPDATE <- LIMIT <- FETCH <- SORT_MERGE <- IXSCAN(proyecto_id_1_estado_1_prioridad_-1) + FETCH <- IXSCAN(proyecto_id_1_estado_1_prioridad_-1)
+   nReturned=1  totalKeysExamined=1  totalDocsExamined=1  executionTimeMillis=1
+== asignación sin proyecto_id (cola global)
+   plan: UPDATE <- SUBPLAN <- SORT <- COLLSCAN
+   nReturned=1  totalKeysExamined=0  totalDocsExamined=60000  executionTimeMillis=294
+== exportación, primera página (limite 100)
+   plan: SORT <- FETCH <- IXSCAN(proyecto_id_1_estado_1_prioridad_-1)
+   nReturned=100  totalKeysExamined=300  totalDocsExamined=300  executionTimeMillis=12
+
+## 2) Con el índice extra tareas {estado: 1, prioridad: -1}
+createIndex: estado_1_prioridad_-1
+tareas: 60000 (300 aprobadas en el proyecto LiDAR)
+índices de tareas: _id_, proyecto_id_1_estado_1_prioridad_-1, asignacion.anotador_id_1_estado_1, batch_id_1, estado_1_prioridad_-1
+índices de proyectos: _id_, cliente_id_1_estado_1
+== asignación con proyecto_id
+   plan: UPDATE <- LIMIT <- FETCH <- SORT_MERGE <- IXSCAN(proyecto_id_1_estado_1_prioridad_-1) + FETCH <- IXSCAN(proyecto_id_1_estado_1_prioridad_-1)
+   nReturned=1  totalKeysExamined=1  totalDocsExamined=1  executionTimeMillis=4
+== asignación sin proyecto_id (cola global)
+   plan: UPDATE <- SUBPLAN <- LIMIT <- FETCH <- SORT_MERGE <- FETCH <- IXSCAN(estado_1_prioridad_-1) + IXSCAN(estado_1_prioridad_-1)
+   nReturned=1  totalKeysExamined=1  totalDocsExamined=1  executionTimeMillis=0
+== exportación, primera página (limite 100)
+   plan: SORT <- FETCH <- IXSCAN(proyecto_id_1_estado_1_prioridad_-1)
+   nReturned=100  totalKeysExamined=300  totalDocsExamined=300  executionTimeMillis=7

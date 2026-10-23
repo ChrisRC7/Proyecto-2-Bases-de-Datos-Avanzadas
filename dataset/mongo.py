@@ -14,6 +14,7 @@ INDICES = {
         [("proyecto_id", ASCENDING), ("estado", ASCENDING), ("prioridad", DESCENDING)],
         [("asignacion.anotador_id", ASCENDING), ("estado", ASCENDING)],
         [("batch_id", ASCENDING)],
+        [("estado", ASCENDING), ("prioridad", DESCENDING)],  # extra, A3.3
     ],
     "proyectos": [
         [("cliente_id", ASCENDING), ("estado", ASCENDING)],

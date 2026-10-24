@@ -11,10 +11,10 @@
 |---|---|---|---|
 | A | Registro (MongoDB) + dataset operacional + simulador + carga | 22 / 34 | 22 hechas, 5 a medias (falta el gateway), 4 bloqueadas por B, 3 del informe al final |
 | B | Sesión (Valkey) + Gateway + salud | 0 / 29 | |
-| C | Historial (Parquet) + Analítica (Spark) + dataset histórico | 0 / 31 | |
+| C | Historial (Parquet) + Analítica (Spark) + dataset histórico | 3 / 31 | infraestructura lista |
 | Todos | Integración, informe, defensa | 0 / 12 | |
 
-_Última actualización: 2026-10-22 — tareas de A bloqueadas por el gateway de B (Fabricio)._
+_Última actualización: 2026-10-24 — C1: cola-eventos, Spark y montajes del lago._
 
 ---
 
@@ -183,9 +183,12 @@ dataset · **S3–S4** integración y pruebas · **S5** informe, README final, e
 ## Persona C — Historial (Parquet) · Analítica (Spark) · dataset histórico
 
 ### C1. Infraestructura Spark y lago
-- [ ] C1.0 Servicio `cola-eventos` (`valkey/valkey:8.0`, AOF everysec, volumen propio), solo accesible por `historial` (D3).
-- [ ] C1.1 Servicios `spark-master` y `spark-worker` (perfil `spark2` con 2 workers), volumen compartido `datalake` montado **solo lectura** en Spark/analítica.
-- [ ] C1.2 Volumen del lago montado lectura/escritura solo en `historial`.
+- [x] C1.0 Servicio `cola-eventos` (`valkey/valkey:8.0`, AOF everysec, volumen propio), solo accesible por `historial` (D3).
+      Nota: está solo en la red `cola`, que comparte únicamente con historial (D13); ni el gateway ni sesion lo resuelven por nombre.
+- [x] C1.1 Servicios `spark-master` y `spark-worker` (perfil `spark2` con 2 workers), volumen compartido `datalake` montado **solo lectura** en Spark/analítica.
+      Nota: `apache/spark:3.5.1-python3` en la red `spark` (solo analitica la ve). Worker de 2 núcleos y 2 GB (`SPARK_WORKER_CORES`, `SPARK_WORKER_MEMORY`); `spark-worker-2` en el perfil `spark2`. El lago es `./datalake` montado en `/datalake:ro`, la misma ruta que en el driver.
+- [x] C1.2 Volumen del lago montado lectura/escritura solo en `historial`.
+      Nota: historial corre con el UID del host para que los Parquet no queden a nombre de root.
 
 ### C2. Servicio `historial` (≤ 6 rutas)
 - [ ] C2.1 Stub `POST /eventos` que acepta y responde 202 (S1) para que el gateway pueda integrar.

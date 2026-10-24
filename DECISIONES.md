@@ -16,3 +16,4 @@ Registro de decisiones técnicas. Para cambiar una: PR que modifica esta tabla c
 | D10 | El repositorio **es** la carpeta `proyecto2/` del enunciado (archivos en la raíz del repo). | Estructura equivalente sin anidar `proyecto2/proyecto2/`; al clonar el repo `proyecto2` queda igual al enunciado. |
 | D11 | `liberar` genera evento `liberada` (no está en la tabla del enunciado); Q1–Q5 lo ignoran. | Trazabilidad sin alterar los KPIs. |
 | D12 | Simulador en la red `borde` (solo ve al gateway); servicios y motores en la red `interna`. | Evidencia de aislamiento a nivel de red. |
+| D13 | Redes propias para los motores de C: `cola` (solo historial ↔ cola-eventos) y `spark` (solo analitica ↔ spark-master/workers). | El aislamiento queda en la red, no solo en la configuración: ningún otro servicio puede resolver ni abrir conexión a esos motores. |

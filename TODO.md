@@ -11,10 +11,10 @@
 |---|---|---|---|
 | A | Registro (MongoDB) + dataset operacional + simulador + carga | 22 / 34 | 22 hechas, 5 a medias (falta el gateway), 4 bloqueadas por B, 3 del informe al final |
 | B | Sesión (Valkey) + Gateway + salud | 0 / 29 | |
-| C | Historial (Parquet) + Analítica (Spark) + dataset histórico | 3 / 31 | infraestructura lista |
+| C | Historial (Parquet) + Analítica (Spark) + dataset histórico | 8 / 31 | 8 hechas, 1 a medias (falta /estado-capas de B) |
 | Todos | Integración, informe, defensa | 0 / 12 | |
 
-_Última actualización: 2026-10-24 — C1: cola-eventos, Spark y montajes del lago._
+_Última actualización: 2026-10-25 — C2: servicio historial con cola durable y micro-lotes Parquet._
 
 ---
 
@@ -191,13 +191,18 @@ dataset · **S3–S4** integración y pruebas · **S5** informe, README final, e
       Nota: historial corre con el UID del host para que los Parquet no queden a nombre de root.
 
 ### C2. Servicio `historial` (≤ 6 rutas)
-- [ ] C2.1 Stub `POST /eventos` que acepta y responde 202 (S1) para que el gateway pueda integrar.
-- [ ] C2.2 Ingesta durable (D3): `POST /eventos` → `XADD eventos:tareas` en `cola-eventos`. Validar esquema del evento (`endpoints/historial.md`). Idempotente por `event_id`.
-- [ ] C2.3 Consumidor con consumer group: junta micro-lote (N eventos o T segundos) → escribe Parquet con `pyarrow` en `datalake/_tmp/` → `os.rename` atómico a `datalake/eventos/mes=AAAA-MM/part-{micro_lote_id}.parquet` → `XACK`. Nombre determinista por micro-lote (reprocesar = sobrescribir el mismo archivo, no duplicar).
-- [ ] C2.4 Recuperación: al arrancar, reclamar pendientes (`XAUTOCLAIM`) y limpiar `_tmp` huérfanos.
-- [ ] C2.5 `POST /flush`, `POST /reprocesar/{micro_lote_id}` y `GET /micro-lotes` (para P4).
+- [x] C2.1 Stub `POST /eventos` que acepta y responde 202 (S1) para que el gateway pueda integrar.
+      Nota: no hizo falta stub: el servicio real ya responde 202 según el contrato (C2.2).
+- [x] C2.2 Ingesta durable (D3): `POST /eventos` → `XADD eventos:tareas` en `cola-eventos`. Validar esquema del evento (`endpoints/historial.md`). Idempotente por `event_id`.
+      Nota: `SET visto:{event_id} NX` + `XADD` en un solo script Lua; responde `{aceptados, duplicados}`. Sin cola responde 503.
+- [x] C2.3 Consumidor con consumer group: junta micro-lote (N eventos o T segundos) → escribe Parquet con `pyarrow` en `datalake/_tmp/` → `os.rename` atómico a `datalake/eventos/mes=AAAA-MM/part-{micro_lote_id}.parquet` → `XACK`. Nombre determinista por micro-lote (reprocesar = sobrescribir el mismo archivo, no duplicar).
+      Nota: 500 eventos o 5 s (`MICRO_LOTE_EVENTOS`, `MICRO_LOTE_SEGUNDOS`); id = `<primer stream id>_<último>`; fsync del archivo y de la carpeta antes del XACK.
+- [x] C2.4 Recuperación: al arrancar, reclamar pendientes (`XAUTOCLAIM`) y limpiar `_tmp` huérfanos.
+      Nota: además rehace con el mismo nombre los micro-lotes que abrieron y no confirmaron (`microlotes:abiertos`).
+- [x] C2.5 `POST /flush`, `POST /reprocesar/{micro_lote_id}` y `GET /micro-lotes` (para P4).
 - [ ] C2.6 Compactación opcional de archivos pequeños por mes (documentar estrategia en el informe aunque sea manual).
-- [ ] C2.7 `GET /salud` + latido cada 5 s a `POST sesion:/estado-capas` (D4).
+- [~] C2.7 `GET /salud` + latido cada 5 s a `POST sesion:/estado-capas` (D4).
+      Nota: salud y latido listos; falta verlo llegar al /estado-capas real de sesion (B2.7).
 
 ### C3. Dataset histórico (`dataset/historico/`)
 - [ ] C3.1 Generador de ~800 000 eventos / 12 meses / 100 000 tareas, coherentes con las transiciones (abierta → anotada → en_revision → aprobada | rechazada → abierta ...), usando IDs de `ids.json` de A (o IDs propios si A aún no termina: el generador acepta ambos). Incluye los 60 proyectos cerrados.

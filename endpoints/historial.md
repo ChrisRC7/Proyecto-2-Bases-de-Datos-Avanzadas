@@ -23,6 +23,32 @@ Valkey de sesión para respetar el aislamiento entre servicios.
 
 Spark nunca lee `_tmp/` (empieza con `_`, Spark lo ignora) → no hay lecturas a medias.
 
+Recuperación al arrancar (o al volver la cola): borra los `_tmp/` huérfanos, `XAUTOCLAIM` de todo
+lo pendiente del grupo, rehace con el mismo rango (mismo nombre de archivo) los micro-lotes que
+quedaron en `microlotes:abiertos` y publica el resto de pendientes propios (`XREADGROUP ... 0`).
+
+## Respuestas
+
+| Ruta | Respuesta |
+|---|---|
+| `POST /eventos` | Body: un evento o una lista. `202 {"aceptados": n, "duplicados": m}` (un `event_id` ya visto no se vuelve a encolar). `422` esquema inválido (estado, modalidad/tipo, rechazada sin `motivo_rechazo`...). `503 cola_no_disponible` si cola-eventos no responde: el gateway reintenta (idempotente). |
+| `POST /flush` | `200 {"micro_lotes": [{"micro_lote_id", "filas", "archivos": [{"archivo", "filas"}]}]}`. `503` si el consumidor está detenido. |
+| `POST /reprocesar/{id}` | `200 {"micro_lote_id", "filas", "archivos", "reprocesado_en"}`. `404` id desconocido. `409 micro_lote_recortado` si el stream ya no tiene esas entradas. |
+| `GET /micro-lotes?ultimos=n` | `200 {"micro_lotes": [{"micro_lote_id", "primero", "ultimo", "filas", "estado", "archivos", "publicado_en", "reprocesado_en"?, "reprocesos"?}]}` |
+| `GET /salud` | Siempre `200 {"servicio", "estado": "operativo|degradado|caido", "cola": {"estado", "eventos_en_stream", "pendientes_sin_ack", "micro_lotes_abiertos"}, "lago": {"escribible"}, "consumidor": {"vivo", "error"}, "ultimo_micro_lote", "ts"}`. Cada 5 s se publica en `sesion:/estado-capas` (D4). |
+
+## Llaves de cola-eventos (solo las usa el historial)
+
+| Llave | Tipo | Uso |
+|---|---|---|
+| `eventos:tareas` | stream | Campo `evento` = JSON de la fila. Se recorta (`XTRIM MINID`) dejando lo necesario para reprocesar los últimos `RETENER_MICRO_LOTES` (2000). |
+| `visto:{event_id}` | string | Marca de idempotencia de `POST /eventos` (`SET NX` + `XADD` en un script Lua). TTL 7 días. |
+| `microlote:{id}` | hash | `primero`, `ultimo`, `filas`, `estado` (`escribiendo` → `publicado`), `archivos`, `publicado_en`. |
+| `microlotes` | sorted set | Micro-lotes publicados, score = epoch ms. |
+| `microlotes:abiertos` | set | Empezaron a escribirse y no confirmaron (se rehacen al arrancar). |
+
+La confirmación (`estado=publicado`, `ZADD`, `SREM` y `XACK`) va en una transacción `MULTI` después del rename.
+
 ## Layout del lago
 ```
 datalake/

@@ -49,6 +49,13 @@ quedaron en `microlotes:abiertos` y publica el resto de pendientes propios (`XRE
 
 La confirmación (`estado=publicado`, `ZADD`, `SREM` y `XACK`) va en una transacción `MULTI` después del rename.
 
+## Compactación (mantenimiento manual, no es una ruta)
+`docker compose exec historial python -m app.compactar --mes AAAA-MM [--conjunto eventos] --ejecutar`:
+lee los `part-*.parquet` del mes, quita duplicados de `event_id`, publica `part-compacto-<ts>.parquet`
+con el mismo `_tmp` + rename y luego borra los archivos que leyó. Entre la publicación y el borrado
+hay filas repetidas que Spark quita con `dropDuplicates`; una consulta que ya listó los archivos
+viejos puede fallar al abrirlos, por eso se corre fuera de las mediciones.
+
 ## Layout del lago
 ```
 datalake/

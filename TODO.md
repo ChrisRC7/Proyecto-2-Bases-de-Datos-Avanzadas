@@ -11,10 +11,10 @@
 |---|---|---|---|
 | A | Registro (MongoDB) + dataset operacional + simulador + carga | 22 / 34 | 22 hechas, 5 a medias (falta el gateway), 4 bloqueadas por B, 3 del informe al final |
 | B | Sesión (Valkey) + Gateway + salud | 0 / 29 | |
-| C | Historial (Parquet) + Analítica (Spark) + dataset histórico | 8 / 31 | 8 hechas, 1 a medias (falta /estado-capas de B) |
+| C | Historial (Parquet) + Analítica (Spark) + dataset histórico | 9 / 31 | 9 hechas, 1 a medias (falta /estado-capas de B) |
 | Todos | Integración, informe, defensa | 0 / 12 | |
 
-_Última actualización: 2026-10-25 — C2: servicio historial con cola durable y micro-lotes Parquet._
+_Última actualización: 2026-10-26 — C2.6: compactación manual de un mes del lago._
 
 ---
 
@@ -200,7 +200,8 @@ dataset · **S3–S4** integración y pruebas · **S5** informe, README final, e
 - [x] C2.4 Recuperación: al arrancar, reclamar pendientes (`XAUTOCLAIM`) y limpiar `_tmp` huérfanos.
       Nota: además rehace con el mismo nombre los micro-lotes que abrieron y no confirmaron (`microlotes:abiertos`).
 - [x] C2.5 `POST /flush`, `POST /reprocesar/{micro_lote_id}` y `GET /micro-lotes` (para P4).
-- [ ] C2.6 Compactación opcional de archivos pequeños por mes (documentar estrategia en el informe aunque sea manual).
+- [x] C2.6 Compactación opcional de archivos pequeños por mes (documentar estrategia en el informe aunque sea manual).
+      Nota: manual, `docker compose exec historial python -m app.compactar --mes AAAA-MM --ejecutar` (sin `--ejecutar` solo simula). Junta el mes en un `part-compacto-*.parquet` sin duplicados de event_id, lo publica con rename y después borra los viejos. Falta explicarla en el informe (C6.1).
 - [~] C2.7 `GET /salud` + latido cada 5 s a `POST sesion:/estado-capas` (D4).
       Nota: salud y latido listos; falta verlo llegar al /estado-capas real de sesion (B2.7).
 

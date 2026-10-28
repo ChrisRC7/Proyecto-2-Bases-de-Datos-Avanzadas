@@ -11,10 +11,10 @@
 |---|---|---|---|
 | A | Registro (MongoDB) + dataset operacional + simulador + carga | 22 / 34 | 22 hechas, 5 a medias (falta el gateway), 4 bloqueadas por B, 3 del informe al final |
 | B | Sesión (Valkey) + Gateway + salud | 0 / 29 | |
-| C | Historial (Parquet) + Analítica (Spark) + dataset histórico | 9 / 31 | 9 hechas, 1 a medias (falta /estado-capas de B) |
+| C | Historial (Parquet) + Analítica (Spark) + dataset histórico | 14 / 31 | 14 hechas, 1 a medias (falta /estado-capas de B) |
 | Todos | Integración, informe, defensa | 0 / 12 | |
 
-_Última actualización: 2026-10-26 — C2.6: compactación manual de un mes del lago._
+_Última actualización: 2026-10-27 — C3: dataset histórico principal, grande y de prueba._
 
 ---
 
@@ -206,11 +206,15 @@ dataset · **S3–S4** integración y pruebas · **S5** informe, README final, e
       Nota: salud y latido listos; falta verlo llegar al /estado-capas real de sesion (B2.7).
 
 ### C3. Dataset histórico (`dataset/historico/`)
-- [ ] C3.1 Generador de ~800 000 eventos / 12 meses / 100 000 tareas, coherentes con las transiciones (abierta → anotada → en_revision → aprobada | rechazada → abierta ...), usando IDs de `ids.json` de A (o IDs propios si A aún no termina: el generador acepta ambos). Incluye los 60 proyectos cerrados.
-- [ ] C3.2 Escribirlo con la misma convención de archivos/particiones que el historial.
-- [ ] C3.3 Casos conocidos pequeños (`conjunto=prueba`) con resultados esperados calculados a mano para validar Q1–Q5.
-- [ ] C3.4 `eventos_grande` (~10M filas) si la máquina lo permite; si no, documentar la limitación.
-- [ ] C3.5 Inyectar duplicados de `event_id` a propósito para probar la deduplicación.
+- [x] C3.1 Generador de ~800 000 eventos / 12 meses / 100 000 tareas, coherentes con las transiciones (abierta → anotada → en_revision → aprobada | rechazada → abierta ...), usando IDs de `ids.json` de A (o IDs propios si A aún no termina: el generador acepta ambos). Incluye los 60 proyectos cerrados.
+      Nota: 808 703 eventos de 100 000 tareas de los 60 proyectos cerrados, 2025-10 a 2026-09, en 19 s. Sin `ids.json` calcula los mismos ids con `dataset/generar.py`. Conteos en datos/README.md.
+- [x] C3.2 Escribirlo con la misma convención de archivos/particiones que el historial.
+- [x] C3.3 Casos conocidos pequeños (`conjunto=prueba`) con resultados esperados calculados a mano para validar Q1–Q5.
+      Nota: 7 tareas, 42 eventos + 1 duplicado (`dataset/historico/prueba.py`); esperado en `dataset/historico/esperado_prueba.json`.
+- [x] C3.4 `eventos_grande` (~10M filas) si la máquina lo permite; si no, documentar la limitación.
+      Nota: 10 107 232 eventos (1 250 000 tareas), 553 MB, 157 s. Se mide en P5.
+- [x] C3.5 Inyectar duplicados de `event_id` a propósito para probar la deduplicación.
+      Nota: 0,2 % de los eventos (1 634 en principal, 20 447 en grande) repetidos en archivos `-reentrega`.
 
 ### C4. Servicio `analitica` (solo lee Parquet)
 - [ ] C4.1 Cambiar la imagen de `analitica` a una con Java + `pyspark` (p. ej. base `apache/spark:3.5.1-python3`); `SparkSession` reutilizable; `conjunto=principal|grande|prueba`; latido de salud (D4).

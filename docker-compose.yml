@@ -230,6 +230,24 @@ services:
     hostname: spark-worker-2
     profiles: [spark2]
 
+  # Histórico de eventos (C3, perfil datos): borra y regenera datalake/eventos (o eventos_grande).
+  #   docker compose --profile datos run --rm dataset-historico
+  #   docker compose --profile datos run --rm dataset-historico python -m dataset.historico.generar --conjunto grande
+  #   docker compose --profile datos run --rm dataset-historico python -m dataset.historico.prueba
+  # Es la carga desde cero del lago, como "dataset" lo es de MongoDB; en operación solo escribe historial.
+  dataset-historico:
+    build: ./dataset
+    profiles: [datos]
+    restart: "no"
+    user: "${UID:-1000}:${GID:-1000}"
+    network_mode: none  # no habla con ningún servicio: lee ids.json (o lo calcula) y escribe archivos
+    command: ["python", "-m", "dataset.historico.generar"]
+    environment:
+      LAGO_DIR: /datalake
+    volumes:
+      - ./dataset:/srv/dataset
+      - ./datalake:/datalake
+      - ./evidence:/srv/evidence
   # --- Simulador (A6, perfil carga): solo en la red "borde" ----------------------------
   #   docker compose --profile carga run --rm simulador python -m simulador.simular --usuarios 10
   simulador:

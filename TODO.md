@@ -11,10 +11,10 @@
 |---|---|---|---|
 | A | Registro (MongoDB) + dataset operacional + simulador + carga | 22 / 34 | 22 hechas, 5 a medias (falta el gateway), 4 bloqueadas por B, 3 del informe al final |
 | B | Sesión (Valkey) + Gateway + salud | 0 / 29 | |
-| C | Historial (Parquet) + Analítica (Spark) + dataset histórico | 14 / 31 | 14 hechas, 1 a medias (falta /estado-capas de B) |
+| C | Historial (Parquet) + Analítica (Spark) + dataset histórico | 21 / 31 | 21 hechas, 2 a medias, 1 bloqueada por el gateway de B |
 | Todos | Integración, informe, defensa | 0 / 12 | |
 
-_Última actualización: 2026-10-27 — C3: dataset histórico principal, grande y de prueba._
+_Última actualización: 2026-10-28 — C4: analítica con Spark, Q1–Q5 y planes._
 
 ---
 
@@ -217,15 +217,20 @@ dataset · **S3–S4** integración y pruebas · **S5** informe, README final, e
       Nota: 0,2 % de los eventos (1 634 en principal, 20 447 en grande) repetidos en archivos `-reentrega`.
 
 ### C4. Servicio `analitica` (solo lee Parquet)
-- [ ] C4.1 Cambiar la imagen de `analitica` a una con Java + `pyspark` (p. ej. base `apache/spark:3.5.1-python3`); `SparkSession` reutilizable; `conjunto=principal|grande|prueba`; latido de salud (D4).
-- [ ] C4.2 Lectura con `dropDuplicates(["event_id"])` y partition pruning por `mes`.
-- [ ] C4.3 Q1 aprobadas por día y modalidad (últimos 90 días, D6).
-- [ ] C4.4 Q2 aprobadas / revisadas por equipo y mes (revisadas = aprobada + rechazada).
-- [ ] C4.5 Q3 duración media y p95 (`percentile_approx`) por modalidad y tipo de tarea (D7).
-- [ ] C4.6 Q4 rechazadas / revisadas por cliente y proyecto.
-- [ ] C4.7 Q5 toma→aprobación p50/p95 por cliente + % incumplimiento SLA.
-- [ ] C4.8 `GET /plan/{n}` → `explain("formatted")`; guardar planes de Q1 (agrupación por mes) y Q3 (ordenamiento).
-- [ ] C4.9 Ruta del gateway `GET /analitica/{q1..q5}?conjunto=` (sobre el núcleo de B).
+- [x] C4.1 Cambiar la imagen de `analitica` a una con Java + `pyspark` (p. ej. base `apache/spark:3.5.1-python3`); `SparkSession` reutilizable; `conjunto=principal|grande|prueba`; latido de salud (D4).
+      Nota: la SparkSession se crea al arrancar en un hilo (reintenta si el master no está) y /salud responde siempre. El latido a /estado-capas está listo; falta verlo llegar a sesion (B2.7).
+- [x] C4.2 Lectura con `dropDuplicates(["event_id"])` y partition pruning por `mes`.
+      Nota: filtro de estados antes de deduplicar (D14). Q1 poda por `mes >= mes de inicio de la ventana` (`PartitionFilters` en el plan).
+- [x] C4.3 Q1 aprobadas por día y modalidad (últimos 90 días, D6).
+      Nota: `max(ts)` sale de los footers (`spark.sql.parquet.aggregatePushdown`).
+- [x] C4.4 Q2 aprobadas / revisadas por equipo y mes (revisadas = aprobada + rechazada).
+- [x] C4.5 Q3 duración media y p95 (`percentile_approx`) por modalidad y tipo de tarea (D7).
+- [x] C4.6 Q4 rechazadas / revisadas por cliente y proyecto.
+- [x] C4.7 Q5 toma→aprobación p50/p95 por cliente + % incumplimiento SLA.
+- [~] C4.8 `GET /plan/{n}` → `explain("formatted")`; guardar planes de Q1 (agrupación por mes) y Q3 (ordenamiento).
+      Nota: la ruta está; los planes se guardan en evidence/ con P5 (C5.2).
+- [!] C4.9 Ruta del gateway `GET /analitica/{q1..q5}?conjunto=` (sobre el núcleo de B).
+      Nota: bloqueada: va sobre el núcleo del gateway (B3.1 middleware, B3.2 cliente interno). La analítica ya responde `GET /q/{n}`.
 
 ### C5. Pruebas
 - [ ] C5.1 **P4**: escribir lago vía flujo real, reprocesar un micro-lote, deduplicar por `event_id`, mostrar que no hay lecturas a medias (Spark leyendo en bucle mientras se escribe), medir segundos entre HTTP 200 y evento visible en Spark. Mostrar la fila `rechazada` en Parquet vs `disponible` en Mongo.

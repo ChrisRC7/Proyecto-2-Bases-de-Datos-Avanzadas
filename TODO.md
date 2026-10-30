@@ -11,10 +11,10 @@
 |---|---|---|---|
 | A | Registro (MongoDB) + dataset operacional + simulador + carga | 22 / 34 | 22 hechas, 5 a medias (falta el gateway), 4 bloqueadas por B, 3 del informe al final |
 | B | Sesión (Valkey) + Gateway + salud | 0 / 29 | |
-| C | Historial (Parquet) + Analítica (Spark) + dataset histórico | 23 / 31 | 23 hechas, 1 a medias, 1 bloqueada por el gateway de B |
+| C | Historial (Parquet) + Analítica (Spark) + dataset histórico | 23 / 31 | 23 hechas, 2 a medias (falta el gateway y /estado-capas de B), 1 bloqueada por B, 5 del informe y README al final |
 | Todos | Integración, informe, defensa | 0 / 12 | |
 
-_Última actualización: 2026-10-30 — C5.2: P5 de la analítica (validación, tiempos, workers y planes)._
+_Última actualización: 2026-10-30 — C5.1: P4 del historial (corrida preliminar sin gateway)._
 
 ---
 
@@ -233,7 +233,8 @@ dataset · **S3–S4** integración y pruebas · **S5** informe, README final, e
       Nota: bloqueada: va sobre el núcleo del gateway (B3.1 middleware, B3.2 cliente interno). La analítica ya responde `GET /q/{n}`.
 
 ### C5. Pruebas
-- [ ] C5.1 **P4**: escribir lago vía flujo real, reprocesar un micro-lote, deduplicar por `event_id`, mostrar que no hay lecturas a medias (Spark leyendo en bucle mientras se escribe), medir segundos entre HTTP 200 y evento visible en Spark. Mostrar la fila `rechazada` en Parquet vs `disponible` en Mongo.
+- [~] C5.1 **P4**: escribir lago vía flujo real, reprocesar un micro-lote, deduplicar por `event_id`, mostrar que no hay lecturas a medias (Spark leyendo en bucle mientras se escribe), medir segundos entre HTTP 200 y evento visible en Spark. Mostrar la fila `rechazada` en Parquet vs `disponible` en Mongo.
+      Nota: corrida preliminar contra registro + historial, sin gateway: 39 vueltas de Spark sin error durante 40 micro-lotes; reprocesar deja el mismo archivo y sha256; reenvío → duplicados 1; frescura mediana 7,42 s (1,32 s con flush); rechazada en Parquet y disponible en Mongo; kill del historial con 300 pendientes → 0 perdidos, 0 repetidos (evidence/P4_historial_20261030-1431.md). Falta repetirla vía gateway (B3.3-B3.6, I.5).
 - [x] C5.2 **P5**: Q1–Q5 validadas contra `conjunto=prueba`; tiempos 1ª ejecución vs siguientes (≥ 5 repeticiones); 1 vs 2 workers; principal vs grande.
       Nota: las 5 iguales a lo calculado a mano; 6 ejecuciones por consulta, principal y grande, 1 y 2 workers (con 2 núcleos físicos, 2 workers no acelera principal). Directo contra la analítica, sin gateway (C4.9). Ver evidence/P5_analitica_20261030-1410.md.
 

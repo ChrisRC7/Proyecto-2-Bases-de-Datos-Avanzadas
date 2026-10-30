@@ -11,10 +11,10 @@
 |---|---|---|---|
 | A | Registro (MongoDB) + dataset operacional + simulador + carga | 22 / 34 | 22 hechas, 5 a medias (falta el gateway), 4 bloqueadas por B, 3 del informe al final |
 | B | Sesión (Valkey) + Gateway + salud | 0 / 29 | |
-| C | Historial (Parquet) + Analítica (Spark) + dataset histórico | 21 / 31 | 21 hechas, 2 a medias, 1 bloqueada por el gateway de B |
+| C | Historial (Parquet) + Analítica (Spark) + dataset histórico | 23 / 31 | 23 hechas, 1 a medias, 1 bloqueada por el gateway de B |
 | Todos | Integración, informe, defensa | 0 / 12 | |
 
-_Última actualización: 2026-10-28 — C4: analítica con Spark, Q1–Q5 y planes._
+_Última actualización: 2026-10-30 — C5.2: P5 de la analítica (validación, tiempos, workers y planes)._
 
 ---
 
@@ -227,14 +227,15 @@ dataset · **S3–S4** integración y pruebas · **S5** informe, README final, e
 - [x] C4.5 Q3 duración media y p95 (`percentile_approx`) por modalidad y tipo de tarea (D7).
 - [x] C4.6 Q4 rechazadas / revisadas por cliente y proyecto.
 - [x] C4.7 Q5 toma→aprobación p50/p95 por cliente + % incumplimiento SLA.
-- [~] C4.8 `GET /plan/{n}` → `explain("formatted")`; guardar planes de Q1 (agrupación por mes) y Q3 (ordenamiento).
-      Nota: la ruta está; los planes se guardan en evidence/ con P5 (C5.2).
+- [x] C4.8 `GET /plan/{n}` → `explain("formatted")`; guardar planes de Q1 (agrupación por mes) y Q3 (ordenamiento).
+      Nota: evidence/P5_analitica_20261030-1410_plan_q1.txt (`PartitionFilters: mes >= 2026-07`) y _plan_q3.txt (`rangepartitioning(media_s DESC)` + Sort).
 - [!] C4.9 Ruta del gateway `GET /analitica/{q1..q5}?conjunto=` (sobre el núcleo de B).
       Nota: bloqueada: va sobre el núcleo del gateway (B3.1 middleware, B3.2 cliente interno). La analítica ya responde `GET /q/{n}`.
 
 ### C5. Pruebas
 - [ ] C5.1 **P4**: escribir lago vía flujo real, reprocesar un micro-lote, deduplicar por `event_id`, mostrar que no hay lecturas a medias (Spark leyendo en bucle mientras se escribe), medir segundos entre HTTP 200 y evento visible en Spark. Mostrar la fila `rechazada` en Parquet vs `disponible` en Mongo.
-- [ ] C5.2 **P5**: Q1–Q5 validadas contra `conjunto=prueba`; tiempos 1ª ejecución vs siguientes (≥ 5 repeticiones); 1 vs 2 workers; principal vs grande.
+- [x] C5.2 **P5**: Q1–Q5 validadas contra `conjunto=prueba`; tiempos 1ª ejecución vs siguientes (≥ 5 repeticiones); 1 vs 2 workers; principal vs grande.
+      Nota: las 5 iguales a lo calculado a mano; 6 ejecuciones por consulta, principal y grande, 1 y 2 workers (con 2 núcleos físicos, 2 workers no acelera principal). Directo contra la analítica, sin gateway (C4.9). Ver evidence/P5_analitica_20261030-1410.md.
 
 ### C6. Informe y README
 - [ ] C6.1 Informe §4: lago Parquet, compactación, duplicados, fila rechazada.

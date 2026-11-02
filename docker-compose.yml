@@ -56,6 +56,10 @@ services:
     environment:
       SERVICIO: sesion
       PUERTO: "8002"
+      VALKEY_URL: redis://valkey:6379/0
+    depends_on:
+      valkey:
+        condition: service_healthy
 
   historial:
     <<: *servicio-python
@@ -152,6 +156,23 @@ services:
       - ./evidence:/srv/evidence
 
   # --- Bloque B (B1): valkey con AOF everysec ------------------------------------------
+  valkey:
+    image: valkey/valkey:8.0
+    restart: unless-stopped
+    command:
+      - valkey-server
+      - --appendonly
+      - "yes"
+      - --appendfsync
+      - everysec
+    networks: [interna]
+    volumes:
+      - valkey_sesion:/data
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
   # --- Bloque C (C1): cola-eventos (Valkey Stream propio del historial, AOF),
   #                    spark-master, spark-worker, spark-worker-2 (perfil spark2) y
   #                    volumen del lago (rw solo en historial, ro en analitica/spark) -----
@@ -179,3 +200,4 @@ volumes:
   mongo1:
   mongo2:
   mongo3:
+  valkey_sesion:

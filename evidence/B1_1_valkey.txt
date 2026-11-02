@@ -1,0 +1,12 @@
+﻿Prueba: B1.1 - Infraestructura Valkey
+Fecha: 2026-11-01
+Imagen: valkey/valkey:8.0
+Comando: docker compose config --quiet | Resultado: sin errores
+Comando: docker compose ps valkey | Resultado: healthy, puerto 6379/tcp interno
+Comando: valkey-cli ping | Resultado: PONG
+Comando: CONFIG GET appendonly appendfsync | Resultado: yes, everysec
+Comando: SET prueba:b1:volumen persistencia_ok | Resultado: OK
+Comando: docker compose up -d --force-recreate valkey | Resultado: contenedor recreado
+Comando: GET prueba:b1:volumen | Resultado: persistencia_ok
+Comando: DEL prueba:b1:volumen | Resultado: 1
+Conclusion: persistencia verificada tras recreacion controlada, sin eliminar volumen.

@@ -10,12 +10,11 @@
 | Persona | Rol principal | Hechas / Total | Notas |
 |---|---|---|---|
 | A | Registro (MongoDB) + dataset operacional + simulador + carga | 22 / 34 | 22 hechas, 5 a medias (falta el gateway), 4 bloqueadas por B, 3 del informe al final |
-| B | Sesión (Valkey) + Gateway + salud | 0 / 29 | |
+| B | Sesión (Valkey) + Gateway + salud | 1 / 29 | B1.1 completada: Valkey 8.0 con AOF, healthcheck y persistencia comprobada. |
 | C | Historial (Parquet) + Analítica (Spark) + dataset histórico | 0 / 31 | |
 | Todos | Integración, informe, defensa | 0 / 12 | |
 
-_Última actualización: 2026-10-22 — tareas de A bloqueadas por el gateway de B (Fabricio)._
-
+_Última actualización: 2026-11-01 — Persona B completó B1.1 (Valkey con AOF y persistencia verificada). Se mantienen las dependencias de A respecto al gateway._
 ---
 
 ## Cómo está dividido el trabajo
@@ -138,7 +137,7 @@ dataset · **S3–S4** integración y pruebas · **S5** informe, README final, e
 ## Persona B — Sesión (Valkey) · Gateway · salud
 
 ### B1. Infraestructura Valkey, gateway y red
-- [ ] B1.1 Servicio `valkey` (`valkey/valkey:8`) con `--appendonly yes --appendfsync everysec`, volumen persistente, healthcheck. Sin puertos al host.
+- [x] B1.1 Servicio `valkey` (`valkey/valkey:8`) con `--appendonly yes --appendfsync everysec`, volumen persistente, healthcheck. Sin puertos al host.
 - [ ] B1.2 Mantener que solo el gateway publique puerto (`8000:8000`); UIs de admin (si hay) en `127.0.0.1:...`. Variables de conexión de Valkey **solo** en `sesion`.
 
 ### B2. Servicio `sesion` (≤ 6 rutas, solo Valkey, **no** decide el estado de la tarea)

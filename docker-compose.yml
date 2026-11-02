@@ -64,16 +64,41 @@ services:
   historial:
     <<: *servicio-python
     build: ./servicios/historial
+    # Con el usuario del host, para que los Parquet de datalake/ no queden a nombre de root.
+    user: "${UID:-1000}:${GID:-1000}"
+    networks: [interna, cola]  # único servicio que ve a cola-eventos
     environment:
       SERVICIO: historial
       PUERTO: "8003"
+      COLA_HOST: cola-eventos
+      COLA_PUERTO: "6379"
+      LAGO_DIR: /datalake
+      SESION_URL: http://sesion:8002
+      MICRO_LOTE_EVENTOS: "500"
+      MICRO_LOTE_SEGUNDOS: "5"
+    volumes:
+      - ./datalake:/datalake  # lectura/escritura solo aquí (C1.2)
+    depends_on: [cola-eventos]
 
   analitica:
     <<: *servicio-python
     build: ./servicios/analitica
+    hostname: analitica  # los ejecutores se conectan de vuelta al driver por este nombre
+    networks: [interna, spark]
     environment:
       SERVICIO: analitica
       PUERTO: "8004"
+      TZ: UTC
+      LAGO_DIR: /datalake
+      SPARK_MASTER: spark://spark-master:7077
+      SPARK_EXECUTOR_MEMORY: 1536m
+      SPARK_DRIVER_MEMORY: 1g
+      SPARK_SHUFFLE_PARTICIONES: "16"
+      SESION_URL: http://sesion:8002
+    volumes:
+      - ./datalake:/datalake:ro  # analítica solo lee el lago
+    # Sin "condition": si Spark no está, la analítica arranca igual y /salud lo reporta.
+    depends_on: [spark-master, spark-worker]
 
   # --- Bloque A (A1): mongo1, mongo2, mongo3 (replica set rs0) + mongo-init -------------
   mongo1: &mongo
@@ -176,6 +201,74 @@ services:
   # --- Bloque C (C1): cola-eventos (Valkey Stream propio del historial, AOF),
   #                    spark-master, spark-worker, spark-worker-2 (perfil spark2) y
   #                    volumen del lago (rw solo en historial, ro en analitica/spark) -----
+  # Cola durable de eventos (D3). Solo está en la red "cola", que comparte únicamente con historial.
+  cola-eventos:
+    image: valkey/valkey:8.0
+    command: ["valkey-server", "--appendonly", "yes", "--appendfsync", "everysec"]
+    restart: unless-stopped
+    networks: [cola]
+    volumes:
+      - cola-eventos:/data
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # Spark standalone. Master y workers solo en la red "spark", que comparten con analitica.
+  # Los workers montan el lago en la misma ruta que el driver (/datalake) y en solo lectura.
+  spark-master:
+    image: apache/spark:3.5.1-python3
+    hostname: spark-master
+    command: ["/opt/spark/bin/spark-class", "org.apache.spark.deploy.master.Master", "--host", "spark-master"]
+    restart: unless-stopped
+    networks: [spark]
+    environment:
+      SPARK_NO_DAEMONIZE: "true"
+    healthcheck:
+      test: ["CMD", "bash", "-c", "</dev/tcp/spark-master/7077"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  spark-worker: &spark-worker
+    image: apache/spark:3.5.1-python3
+    hostname: spark-worker
+    command: ["/opt/spark/bin/spark-class", "org.apache.spark.deploy.worker.Worker",
+              "spark://spark-master:7077", "--cores", "${SPARK_WORKER_CORES:-2}", "--memory", "${SPARK_WORKER_MEMORY:-2g}"]
+    restart: unless-stopped
+    networks: [spark]
+    environment:
+      SPARK_NO_DAEMONIZE: "true"
+    volumes:
+      - ./datalake:/datalake:ro
+    depends_on: [spark-master]
+
+  # Segundo worker para la comparación 1 vs 2 workers (P5):
+  #   docker compose --profile spark2 up -d spark-worker-2 && docker compose restart analitica
+  spark-worker-2:
+    <<: *spark-worker
+    hostname: spark-worker-2
+    profiles: [spark2]
+
+  # Histórico de eventos (C3, perfil datos): borra y regenera datalake/eventos (o eventos_grande).
+  #   docker compose --profile datos run --rm dataset-historico
+  #   docker compose --profile datos run --rm dataset-historico python -m dataset.historico.generar --conjunto grande
+  #   docker compose --profile datos run --rm dataset-historico python -m dataset.historico.prueba
+  # Es la carga desde cero del lago, como "dataset" lo es de MongoDB; en operación solo escribe historial.
+  dataset-historico:
+    build: ./dataset
+    profiles: [datos]
+    restart: "no"
+    user: "${UID:-1000}:${GID:-1000}"
+    network_mode: none  # no habla con ningún servicio: lee ids.json (o lo calcula) y escribe archivos
+    command: ["python", "-m", "dataset.historico.generar"]
+    environment:
+      LAGO_DIR: /datalake
+    volumes:
+      - ./dataset:/srv/dataset
+      - ./datalake:/datalake
+      - ./evidence:/srv/evidence
   # --- Simulador (A6, perfil carga): solo en la red "borde" ----------------------------
   #   docker compose --profile carga run --rm simulador python -m simulador.simular --usuarios 10
   simulador:
@@ -195,9 +288,12 @@ services:
 networks:
   interna:
   borde:
+  cola:   # historial <-> cola-eventos
+  spark:  # analitica <-> spark-master/workers
 
 volumes:
   mongo1:
   mongo2:
   mongo3:
   valkey_sesion:
+  cola-eventos:

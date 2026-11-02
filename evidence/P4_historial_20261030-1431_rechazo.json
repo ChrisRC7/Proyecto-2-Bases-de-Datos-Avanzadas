@@ -1,0 +1,41 @@
+{
+ "evento": {
+  "event_id": "e5c38980-3bb2-4123-8de2-b53f3ff79150",
+  "ts": "2026-10-30T20:34:08.586Z",
+  "tarea_id": "611cb84f-b3b3-41d8-8d1a-a1c124b8094f",
+  "proyecto_id": "18da990c-9704-464a-b54b-82d3b6e57418",
+  "cliente_id": "f38b2ffc-80a4-4f5a-91c9-bc701e7ea419",
+  "batch_id": "642a0954-3a41-4e41-9cf9-531739525c17",
+  "modalidad": "lidar",
+  "tipo_tarea": "cuboide_3d",
+  "estado": "rechazada",
+  "version": 4,
+  "anotador_id": "adbafed0-b600-460c-bbdc-fd55304374b3",
+  "equipo_id": "32e4034c-cb34-4cea-9c31-b9301543c8ef",
+  "revisor_id": "a40eecb5-c134-479b-9e3b-7dd373aa881e",
+  "motivo_rechazo": "GEOMETRIA_IMPRECISA",
+  "tomada_ts": "2026-10-30T20:34:08.548Z",
+  "sla_horas": 48,
+  "micro_lote_id": null
+ },
+ "mongo": {
+  "_id": "611cb84f-b3b3-41d8-8d1a-a1c124b8094f",
+  "estado": "disponible",
+  "version": 4,
+  "asignacion": null,
+  "ultima_revision": {
+   "revisor_id": "a40eecb5-c134-479b-9e3b-7dd373aa881e",
+   "resultado": "rechazada",
+   "motivo": "GEOMETRIA_IMPRECISA",
+   "en": "2026-10-30 20:34:08.586000+00:00"
+  },
+  "ultimo_evento_id": "e5c38980-3bb2-4123-8de2-b53f3ff79150"
+ },
+ "q4": {
+  "cliente_id": "f38b2ffc-80a4-4f5a-91c9-bc701e7ea419",
+  "proyecto_id": "18da990c-9704-464a-b54b-82d3b6e57418",
+  "rechazadas": 1,
+  "revisadas": 11,
+  "proporcion": 0.0909
+ }
+}

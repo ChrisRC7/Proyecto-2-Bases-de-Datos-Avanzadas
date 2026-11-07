@@ -1,0 +1,6 @@
+﻿/borradores/{tarea_id} PUT
+/estado-capas GET
+/estado-capas POST
+/locks/{tarea_id} POST
+/salud GET
+/sesiones/{anotador_id} POST

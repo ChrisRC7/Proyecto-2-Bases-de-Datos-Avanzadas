@@ -47,3 +47,40 @@ Vuelve a crear batches y tareas con la misma semilla (mismos ids, todas en `disp
 clientes, anotadores ni proyectos, y anota en `evidence/regeneraciones.md` la fecha, el motivo y
 los conteos por estado antes y después. Las corridas de antes y de después no son comparables si
 dependían de tareas ya consumidas; por eso queda registrado.
+
+## Histórico de eventos (lago Parquet)
+
+Lo genera `dataset/historico/generar.py` con la misma semilla **2026**: doce meses de eventos, del
+2025-10-01 al 2026-09-30 (termina justo donde empieza el dataset de MongoDB). Las tareas son de los
+60 proyectos cerrados, que solo existen en el historial, y usan los clientes, equipos y anotadores
+de `dataset/salida/ids.json`; si ese archivo no está, los mismos ids se calculan con
+`dataset/generar.py` (no hace falta MongoDB). Cada tarea recorre las transiciones del registro y
+cada fila sigue el esquema de `endpoints/historial.md`. Se escribe con la misma convención que el
+historial (`_tmp/` + rename a `<conjunto>/mes=AAAA-MM/part-<micro_lote_id>.parquet`).
+
+```bash
+docker compose --profile datos run --rm dataset-historico                       # principal
+docker compose --profile datos run --rm dataset-historico \
+  python -m dataset.historico.generar --conjunto grande                          # ~10M
+docker compose --profile datos run --rm dataset-historico python -m dataset.historico.prueba
+```
+
+Cada uno borra y vuelve a escribir su carpeta (`datalake/eventos` también tiene los eventos que
+escribió el historial en operación: se pierden). El resumen queda en `datalake/<conjunto>/_resumen.json`
+(empieza con `_`, Spark no lo lee).
+
+| Conjunto | Carpeta | Tareas | Eventos | Duplicados de `event_id` | Archivos | Tamaño | Tiempo |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| principal | `datalake/eventos` | 100 000 | 808 703 | 1 634 | 115 | 47 MB | 19 s |
+| grande | `datalake/eventos_grande` | 1 250 000 | 10 107 232 | 20 447 | 271 | 553 MB | 157 s |
+| prueba | `datalake/eventos_prueba` | 7 | 42 | 1 | 4 | — | — |
+
+Principal por estado: 229 726 `abierta`, 183 779 `anotada`, 183 727 `en_revision`, 99 942
+`aprobada`, 83 785 `rechazada` y 27 744 `liberada` (58 tareas quedan sin aprobar al cierre).
+Los duplicados son copias de eventos ya escritos en otro archivo del mismo mes
+(`part-<id>-reentrega.parquet`), como un micro-lote entregado dos veces; Spark los quita con
+`dropDuplicates(["event_id"])`. Se controla con `--duplicados` (0,002 por defecto).
+
+`prueba` son 7 tareas escritas a mano en `dataset/historico/prueba.py` (con una aprobada repetida, una
+liberada y aprobadas justo fuera de la ventana de Q1). Los resultados esperados de Q1–Q5, calculados
+a mano, están en `dataset/historico/esperado_prueba.json`.

@@ -11,10 +11,10 @@
 |---|---|---|---|
 | A | Registro (MongoDB) + dataset operacional + simulador + carga | 22 / 34 | 22 hechas, 5 a medias (falta el gateway), 4 bloqueadas por B, 3 del informe al final |
 | B | Sesión (Valkey) + Gateway + salud | 2 / 29 | B1.1 y B1.2 completadas: persistencia AOF y aislamiento de puertos verificados. |
-| C | Historial (Parquet) + Analítica (Spark) + dataset histórico | 0 / 31 | |
+| C | Historial (Parquet) + Analítica (Spark) + dataset histórico | 23 / 31 | 23 hechas, 2 a medias (falta el gateway y /estado-capas de B), 1 bloqueada por B, 5 del informe y README al final |
 | Todos | Integración, informe, defensa | 0 / 12 | |
 
-_Última actualización: 2026-11-01 — Persona B completó B1.1 y B1.2. Se mantienen las dependencias de A respecto al gateway._
+_Última actualización: 2026-11-01 — B completó B1.1 y B1.2; C reporta 23/31 actividades completadas. Pendientes las integraciones con gateway y /estado-capas._
 ---
 
 ## Cómo está dividido el trabajo
@@ -182,40 +182,60 @@ dataset · **S3–S4** integración y pruebas · **S5** informe, README final, e
 ## Persona C — Historial (Parquet) · Analítica (Spark) · dataset histórico
 
 ### C1. Infraestructura Spark y lago
-- [ ] C1.0 Servicio `cola-eventos` (`valkey/valkey:8.0`, AOF everysec, volumen propio), solo accesible por `historial` (D3).
-- [ ] C1.1 Servicios `spark-master` y `spark-worker` (perfil `spark2` con 2 workers), volumen compartido `datalake` montado **solo lectura** en Spark/analítica.
-- [ ] C1.2 Volumen del lago montado lectura/escritura solo en `historial`.
+- [x] C1.0 Servicio `cola-eventos` (`valkey/valkey:8.0`, AOF everysec, volumen propio), solo accesible por `historial` (D3).
+      Nota: está solo en la red `cola`, que comparte únicamente con historial (D13); ni el gateway ni sesion lo resuelven por nombre.
+- [x] C1.1 Servicios `spark-master` y `spark-worker` (perfil `spark2` con 2 workers), volumen compartido `datalake` montado **solo lectura** en Spark/analítica.
+      Nota: `apache/spark:3.5.1-python3` en la red `spark` (solo analitica la ve). Worker de 2 núcleos y 2 GB (`SPARK_WORKER_CORES`, `SPARK_WORKER_MEMORY`); `spark-worker-2` en el perfil `spark2`. El lago es `./datalake` montado en `/datalake:ro`, la misma ruta que en el driver.
+- [x] C1.2 Volumen del lago montado lectura/escritura solo en `historial`.
+      Nota: historial corre con el UID del host para que los Parquet no queden a nombre de root.
 
 ### C2. Servicio `historial` (≤ 6 rutas)
-- [ ] C2.1 Stub `POST /eventos` que acepta y responde 202 (S1) para que el gateway pueda integrar.
-- [ ] C2.2 Ingesta durable (D3): `POST /eventos` → `XADD eventos:tareas` en `cola-eventos`. Validar esquema del evento (`endpoints/historial.md`). Idempotente por `event_id`.
-- [ ] C2.3 Consumidor con consumer group: junta micro-lote (N eventos o T segundos) → escribe Parquet con `pyarrow` en `datalake/_tmp/` → `os.rename` atómico a `datalake/eventos/mes=AAAA-MM/part-{micro_lote_id}.parquet` → `XACK`. Nombre determinista por micro-lote (reprocesar = sobrescribir el mismo archivo, no duplicar).
-- [ ] C2.4 Recuperación: al arrancar, reclamar pendientes (`XAUTOCLAIM`) y limpiar `_tmp` huérfanos.
-- [ ] C2.5 `POST /flush`, `POST /reprocesar/{micro_lote_id}` y `GET /micro-lotes` (para P4).
-- [ ] C2.6 Compactación opcional de archivos pequeños por mes (documentar estrategia en el informe aunque sea manual).
-- [ ] C2.7 `GET /salud` + latido cada 5 s a `POST sesion:/estado-capas` (D4).
+- [x] C2.1 Stub `POST /eventos` que acepta y responde 202 (S1) para que el gateway pueda integrar.
+      Nota: no hizo falta stub: el servicio real ya responde 202 según el contrato (C2.2).
+- [x] C2.2 Ingesta durable (D3): `POST /eventos` → `XADD eventos:tareas` en `cola-eventos`. Validar esquema del evento (`endpoints/historial.md`). Idempotente por `event_id`.
+      Nota: `SET visto:{event_id} NX` + `XADD` en un solo script Lua; responde `{aceptados, duplicados}`. Sin cola responde 503.
+- [x] C2.3 Consumidor con consumer group: junta micro-lote (N eventos o T segundos) → escribe Parquet con `pyarrow` en `datalake/_tmp/` → `os.rename` atómico a `datalake/eventos/mes=AAAA-MM/part-{micro_lote_id}.parquet` → `XACK`. Nombre determinista por micro-lote (reprocesar = sobrescribir el mismo archivo, no duplicar).
+      Nota: 500 eventos o 5 s (`MICRO_LOTE_EVENTOS`, `MICRO_LOTE_SEGUNDOS`); id = `<primer stream id>_<último>`; fsync del archivo y de la carpeta antes del XACK.
+- [x] C2.4 Recuperación: al arrancar, reclamar pendientes (`XAUTOCLAIM`) y limpiar `_tmp` huérfanos.
+      Nota: además rehace con el mismo nombre los micro-lotes que abrieron y no confirmaron (`microlotes:abiertos`).
+- [x] C2.5 `POST /flush`, `POST /reprocesar/{micro_lote_id}` y `GET /micro-lotes` (para P4).
+- [x] C2.6 Compactación opcional de archivos pequeños por mes (documentar estrategia en el informe aunque sea manual).
+      Nota: manual, `docker compose exec historial python -m app.compactar --mes AAAA-MM --ejecutar` (sin `--ejecutar` solo simula). Junta el mes en un `part-compacto-*.parquet` sin duplicados de event_id, lo publica con rename y después borra los viejos. Falta explicarla en el informe (C6.1).
+- [~] C2.7 `GET /salud` + latido cada 5 s a `POST sesion:/estado-capas` (D4).
+      Nota: salud y latido listos; falta verlo llegar al /estado-capas real de sesion (B2.7).
 
 ### C3. Dataset histórico (`dataset/historico/`)
-- [ ] C3.1 Generador de ~800 000 eventos / 12 meses / 100 000 tareas, coherentes con las transiciones (abierta → anotada → en_revision → aprobada | rechazada → abierta ...), usando IDs de `ids.json` de A (o IDs propios si A aún no termina: el generador acepta ambos). Incluye los 60 proyectos cerrados.
-- [ ] C3.2 Escribirlo con la misma convención de archivos/particiones que el historial.
-- [ ] C3.3 Casos conocidos pequeños (`conjunto=prueba`) con resultados esperados calculados a mano para validar Q1–Q5.
-- [ ] C3.4 `eventos_grande` (~10M filas) si la máquina lo permite; si no, documentar la limitación.
-- [ ] C3.5 Inyectar duplicados de `event_id` a propósito para probar la deduplicación.
+- [x] C3.1 Generador de ~800 000 eventos / 12 meses / 100 000 tareas, coherentes con las transiciones (abierta → anotada → en_revision → aprobada | rechazada → abierta ...), usando IDs de `ids.json` de A (o IDs propios si A aún no termina: el generador acepta ambos). Incluye los 60 proyectos cerrados.
+      Nota: 808 703 eventos de 100 000 tareas de los 60 proyectos cerrados, 2025-10 a 2026-09, en 19 s. Sin `ids.json` calcula los mismos ids con `dataset/generar.py`. Conteos en datos/README.md.
+- [x] C3.2 Escribirlo con la misma convención de archivos/particiones que el historial.
+- [x] C3.3 Casos conocidos pequeños (`conjunto=prueba`) con resultados esperados calculados a mano para validar Q1–Q5.
+      Nota: 7 tareas, 42 eventos + 1 duplicado (`dataset/historico/prueba.py`); esperado en `dataset/historico/esperado_prueba.json`.
+- [x] C3.4 `eventos_grande` (~10M filas) si la máquina lo permite; si no, documentar la limitación.
+      Nota: 10 107 232 eventos (1 250 000 tareas), 553 MB, 157 s. Se mide en P5.
+- [x] C3.5 Inyectar duplicados de `event_id` a propósito para probar la deduplicación.
+      Nota: 0,2 % de los eventos (1 634 en principal, 20 447 en grande) repetidos en archivos `-reentrega`.
 
 ### C4. Servicio `analitica` (solo lee Parquet)
-- [ ] C4.1 Cambiar la imagen de `analitica` a una con Java + `pyspark` (p. ej. base `apache/spark:3.5.1-python3`); `SparkSession` reutilizable; `conjunto=principal|grande|prueba`; latido de salud (D4).
-- [ ] C4.2 Lectura con `dropDuplicates(["event_id"])` y partition pruning por `mes`.
-- [ ] C4.3 Q1 aprobadas por día y modalidad (últimos 90 días, D6).
-- [ ] C4.4 Q2 aprobadas / revisadas por equipo y mes (revisadas = aprobada + rechazada).
-- [ ] C4.5 Q3 duración media y p95 (`percentile_approx`) por modalidad y tipo de tarea (D7).
-- [ ] C4.6 Q4 rechazadas / revisadas por cliente y proyecto.
-- [ ] C4.7 Q5 toma→aprobación p50/p95 por cliente + % incumplimiento SLA.
-- [ ] C4.8 `GET /plan/{n}` → `explain("formatted")`; guardar planes de Q1 (agrupación por mes) y Q3 (ordenamiento).
-- [ ] C4.9 Ruta del gateway `GET /analitica/{q1..q5}?conjunto=` (sobre el núcleo de B).
+- [x] C4.1 Cambiar la imagen de `analitica` a una con Java + `pyspark` (p. ej. base `apache/spark:3.5.1-python3`); `SparkSession` reutilizable; `conjunto=principal|grande|prueba`; latido de salud (D4).
+      Nota: la SparkSession se crea al arrancar en un hilo (reintenta si el master no está) y /salud responde siempre. El latido a /estado-capas está listo; falta verlo llegar a sesion (B2.7).
+- [x] C4.2 Lectura con `dropDuplicates(["event_id"])` y partition pruning por `mes`.
+      Nota: filtro de estados antes de deduplicar (D14). Q1 poda por `mes >= mes de inicio de la ventana` (`PartitionFilters` en el plan).
+- [x] C4.3 Q1 aprobadas por día y modalidad (últimos 90 días, D6).
+      Nota: `max(ts)` sale de los footers (`spark.sql.parquet.aggregatePushdown`).
+- [x] C4.4 Q2 aprobadas / revisadas por equipo y mes (revisadas = aprobada + rechazada).
+- [x] C4.5 Q3 duración media y p95 (`percentile_approx`) por modalidad y tipo de tarea (D7).
+- [x] C4.6 Q4 rechazadas / revisadas por cliente y proyecto.
+- [x] C4.7 Q5 toma→aprobación p50/p95 por cliente + % incumplimiento SLA.
+- [x] C4.8 `GET /plan/{n}` → `explain("formatted")`; guardar planes de Q1 (agrupación por mes) y Q3 (ordenamiento).
+      Nota: evidence/P5_analitica_20261030-1410_plan_q1.txt (`PartitionFilters: mes >= 2026-07`) y _plan_q3.txt (`rangepartitioning(media_s DESC)` + Sort).
+- [!] C4.9 Ruta del gateway `GET /analitica/{q1..q5}?conjunto=` (sobre el núcleo de B).
+      Nota: bloqueada: va sobre el núcleo del gateway (B3.1 middleware, B3.2 cliente interno). La analítica ya responde `GET /q/{n}`.
 
 ### C5. Pruebas
-- [ ] C5.1 **P4**: escribir lago vía flujo real, reprocesar un micro-lote, deduplicar por `event_id`, mostrar que no hay lecturas a medias (Spark leyendo en bucle mientras se escribe), medir segundos entre HTTP 200 y evento visible en Spark. Mostrar la fila `rechazada` en Parquet vs `disponible` en Mongo.
-- [ ] C5.2 **P5**: Q1–Q5 validadas contra `conjunto=prueba`; tiempos 1ª ejecución vs siguientes (≥ 5 repeticiones); 1 vs 2 workers; principal vs grande.
+- [~] C5.1 **P4**: escribir lago vía flujo real, reprocesar un micro-lote, deduplicar por `event_id`, mostrar que no hay lecturas a medias (Spark leyendo en bucle mientras se escribe), medir segundos entre HTTP 200 y evento visible en Spark. Mostrar la fila `rechazada` en Parquet vs `disponible` en Mongo.
+      Nota: corrida preliminar contra registro + historial, sin gateway: 39 vueltas de Spark sin error durante 40 micro-lotes; reprocesar deja el mismo archivo y sha256; reenvío → duplicados 1; frescura mediana 7,42 s (1,32 s con flush); rechazada en Parquet y disponible en Mongo; kill del historial con 300 pendientes → 0 perdidos, 0 repetidos (evidence/P4_historial_20261030-1431.md). Falta repetirla vía gateway (B3.3-B3.6, I.5).
+- [x] C5.2 **P5**: Q1–Q5 validadas contra `conjunto=prueba`; tiempos 1ª ejecución vs siguientes (≥ 5 repeticiones); 1 vs 2 workers; principal vs grande.
+      Nota: las 5 iguales a lo calculado a mano; 6 ejecuciones por consulta, principal y grande, 1 y 2 workers (con 2 núcleos físicos, 2 workers no acelera principal). Directo contra la analítica, sin gateway (C4.9). Ver evidence/P5_analitica_20261030-1410.md.
 
 ### C6. Informe y README
 - [ ] C6.1 Informe §4: lago Parquet, compactación, duplicados, fila rechazada.

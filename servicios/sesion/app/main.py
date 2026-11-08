@@ -16,6 +16,8 @@ from app.comun import SERVICIO, ahora_iso, crear_app, error
 import valkey
 from app import locks
 
+from app import sesiones as almacenamiento_sesiones
+
 app = crear_app(SERVICIO)
 
 
@@ -85,9 +87,62 @@ def guardar_borrador(
     return pendiente("B2.4")
 
 
+
 @app.post("/sesiones/{anotador_id}")
 def sesiones(anotador_id: str, solicitud: SolicitudSesion):
-    return pendiente("B2.3-B2.5")
+    try:
+        if solicitud.accion == "abrir":
+            if not all([
+                solicitud.tarea_id,
+                solicitud.proyecto_id,
+                solicitud.etapa,
+                solicitud.token,
+            ]):
+                return error(
+                    422,
+                    "validacion",
+                    "Abrir requiere tarea_id, proyecto_id, etapa y token",
+                )
+
+            if solicitud.etapa not in ("anotando", "revisando"):
+                return error(422, "validacion", "Etapa no valida")
+
+            resultado = almacenamiento_sesiones.abrir(
+                anotador_id,
+                solicitud.tarea_id,
+                solicitud.proyecto_id,
+                solicitud.etapa,
+                solicitud.token,
+            )
+            return {"estado": "ok", "sesion": resultado}
+
+        if solicitud.accion == "cerrar":
+            if not solicitud.token:
+                return error(422, "validacion", "Falta el token")
+
+            resultado = almacenamiento_sesiones.cerrar(
+                anotador_id,
+                solicitud.token,
+            )
+
+            if resultado == "no_existe":
+                return error(404, "sesion_no_existe")
+
+            if resultado == "conflicto":
+                return error(409, "token_incorrecto")
+
+            return {"estado": "ok", "accion": "cerrar"}
+
+        # Pendientes: recuperación de borradores y latidos.
+        return pendiente("B2.4-B2.5")
+
+    except valkey.ValkeyError:
+        return error(
+            503,
+            "valkey_no_disponible",
+            "No se pudo acceder al almacenamiento de sesiones",
+        )
+
 
 
 @app.post("/estado-capas")

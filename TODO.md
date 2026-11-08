@@ -10,11 +10,11 @@
 | Persona | Rol principal | Hechas / Total | Notas |
 |---|---|---|---|
 | A | Registro (MongoDB) + dataset operacional + simulador + carga | 22 / 34 | 22 hechas, 5 a medias (falta el gateway), 4 bloqueadas por B, 3 del informe al final |
-| B | Sesión (Valkey) + Gateway + salud | 2 / 29 | B1.1 y B1.2 completadas: persistencia AOF y aislamiento de puertos verificados. |
+| B | Sesión (Valkey) + Gateway + salud | 5 / 29 | B1.1, B1.2 y B2.1–B2.3 completadas: persistencia AOF, aislamiento de puertos, stub S1, locks atómicos y sesiones activas en Valkey. |
 | C | Historial (Parquet) + Analítica (Spark) + dataset histórico | 23 / 31 | 23 hechas, 2 a medias (falta el gateway y /estado-capas de B), 1 bloqueada por B, 5 del informe y README al final |
 | Todos | Integración, informe, defensa | 0 / 12 | |
 
-_Última actualización: 2026-11-01 — B completó B1.1 y B1.2; C reporta 23/31 actividades completadas. Pendientes las integraciones con gateway y /estado-capas._
+_Última actualización: 2026-11-07 — B completó B1.1, B1.2 y B2.1–B2.3 (5/29). C reporta 23/31 actividades completadas. Pendientes las integraciones con gateway y /estado-capas._
 ---
 
 ## Cómo está dividido el trabajo
@@ -143,7 +143,7 @@ dataset · **S3–S4** integración y pruebas · **S5** informe, README final, e
 ### B2. Servicio `sesion` (≤ 6 rutas, solo Valkey, **no** decide el estado de la tarea)
 - [x] B2.1 Stub inicial según contrato (S1).
 - [x] B2.2 Locks: `SET lock:tarea:{id} <token> NX PX 120000`; renovar solo si el valor coincide (script Lua / `EVAL` compare-and-pexpire); soltar solo si coincide (compare-and-del).
-- [ ] B2.3 Sesión: `HSET sesion:{anotador}` (tarea, proyecto, etapa, token); `ZADD editando:{proyecto} <ts> <anotador>`; limpieza de entradas vencidas.
+- [x] B2.3 Sesión: `HSET sesion:{anotador}` (tarea, proyecto, etapa, token); `ZADD editando:{proyecto} <ts> <anotador>`; limpieza de entradas vencidas.
 - [ ] B2.4 Borradores: `HSET borrador:{tarea}` (contenido, anotador, token, guardado_en); se devuelven en `abrir`/`recuperar` de `/sesiones`. No generan eventos.
 - [ ] B2.5 Latidos: renovar lock + `editando` + timestamp de sesión.
 - [ ] B2.6 Almacenamiento temporal de envíos pendientes (si Mongo dio 503, conservar borrador; opcional `pendiente:{tarea}`).

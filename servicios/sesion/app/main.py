@@ -13,6 +13,9 @@ from pydantic import BaseModel
 
 from app.comun import SERVICIO, ahora_iso, crear_app, error
 
+import valkey
+from app import locks
+
 app = crear_app(SERVICIO)
 
 
@@ -44,8 +47,34 @@ def pendiente(actividad: str):
 
 
 @app.post("/locks/{tarea_id}")
-def locks(tarea_id: str, solicitud: SolicitudLock):
-    return pendiente("B2.2")
+def gestionar_lock(tarea_id: str, solicitud: SolicitudLock):
+    try:
+        if solicitud.accion == "adquirir":
+            exito = locks.adquirir(tarea_id, solicitud.token)
+        elif solicitud.accion == "renovar":
+            exito = locks.renovar(tarea_id, solicitud.token)
+        else:
+            exito = locks.soltar(tarea_id, solicitud.token)
+
+    except valkey.ValkeyError:
+        return error(
+            503,
+            "valkey_no_disponible",
+            "No se pudo acceder al almacenamiento de locks",
+        )
+
+    if not exito:
+        return error(
+            409,
+            "conflicto_lock",
+            "El lock está ocupado, venció o el token no coincide",
+        )
+
+    return {
+        "tarea_id": tarea_id,
+        "accion": solicitud.accion,
+        "estado": "ok",
+    }
 
 
 @app.put("/borradores/{tarea_id}")

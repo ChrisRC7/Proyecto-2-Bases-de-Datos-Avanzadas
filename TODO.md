@@ -142,7 +142,7 @@ dataset · **S3–S4** integración y pruebas · **S5** informe, README final, e
 
 ### B2. Servicio `sesion` (≤ 6 rutas, solo Valkey, **no** decide el estado de la tarea)
 - [x] B2.1 Stub inicial según contrato (S1).
-- [ ] B2.2 Locks: `SET lock:tarea:{id} <token> NX PX 120000`; renovar solo si el valor coincide (script Lua / `EVAL` compare-and-pexpire); soltar solo si coincide (compare-and-del).
+- [x] B2.2 Locks: `SET lock:tarea:{id} <token> NX PX 120000`; renovar solo si el valor coincide (script Lua / `EVAL` compare-and-pexpire); soltar solo si coincide (compare-and-del).
 - [ ] B2.3 Sesión: `HSET sesion:{anotador}` (tarea, proyecto, etapa, token); `ZADD editando:{proyecto} <ts> <anotador>`; limpieza de entradas vencidas.
 - [ ] B2.4 Borradores: `HSET borrador:{tarea}` (contenido, anotador, token, guardado_en); se devuelven en `abrir`/`recuperar` de `/sesiones`. No generan eventos.
 - [ ] B2.5 Latidos: renovar lock + `editando` + timestamp de sesión.

@@ -10,11 +10,11 @@
 | Persona | Rol principal | Hechas / Total | Notas |
 |---|---|---|---|
 | A | Registro (MongoDB) + dataset operacional + simulador + carga | 22 / 34 | 22 hechas, 5 a medias (falta el gateway), 4 bloqueadas por B, 3 del informe al final |
-| B | Sesión (Valkey) + Gateway + salud | 10 / 29 | B1.1, B1.2 y B2.1–B2.8 completadas; persistencia, aislamiento, locks, sesiones, borradores y latidos verificados. |
+| B | Sesión (Valkey) + Gateway + salud | 11 / 29 | B1.1, B1.2, B2.1–B2.8 y B3.1 completadas; persistencia, aislamiento, locks, sesiones, borradores, latidos, X-Request-Id, logging JSON, validación Pydantic y errores comunes verificados. |
 | C | Historial (Parquet) + Analítica (Spark) + dataset histórico | 23 / 31 | 23 hechas, 2 a medias (falta el gateway y /estado-capas de B), 1 bloqueada por B, 5 del informe y README al final |
 | Todos | Integración, informe, defensa | 0 / 12 | |
 
-_Última actualización: 2026-11-09 — B completó B1.1, B1.2 y B2.1–B2.8 (10/29). Pendientes las integraciones con gateway y /estado-capas._
+_Última actualización: 2026-11-09 — B completó B1.1, B1.2, B2.1–B2.8 y B3.1 (11/29). Middleware del gateway verificado con pruebas automatizadas. Evidencia: evidence/B3_1_middleware.txt. Pendientes las integraciones restantes del gateway._
 ---
 
 ## Cómo está dividido el trabajo
@@ -151,7 +151,7 @@ dataset · **S3–S4** integración y pruebas · **S5** informe, README final, e
 - [x] B2.8 `GET /salud` (incluye `PING` a Valkey y estado de AOF vía `INFO persistence`).
 
 ### B3. Núcleo del gateway (`servicios/gateway`)
-- [ ] B3.1 Middleware: `X-Request-Id` (generar/propagar), logging, validación básica (pydantic), formato de error común.
+- [x] B3.1 Middleware: `X-Request-Id` (generar/propagar), logging, validación básica (pydantic), formato de error común.
 - [ ] B3.2 Cliente interno con timeouts cortos y **reintentos seguros** (solo idempotentes: GET, PUT borrador; nunca reintentar `/enviar` → 503 sin reintento).
 - [ ] B3.3 Función común `publicar_evento()` → `POST historial:/eventos` (usada por A y C también). Si historial falla, no se pierde el 200 (encolar/reintentar en background y documentarlo).
 - [ ] B3.4 `POST /tareas/siguiente`: abre/actualiza sesión → asigna en registro → toma lock con el token → si el lock falla o Mongo falla, revertir (liberar en registro / soltar lock) → 204 si no hay tareas; incluir borrador recuperable si existe → evento `abierta`.

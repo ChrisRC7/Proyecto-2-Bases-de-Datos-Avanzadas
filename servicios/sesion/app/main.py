@@ -281,11 +281,41 @@ def consultar_estados():
 
 
 
+
 @app.get("/salud")
 def salud():
-    # Pendiente B2.8: PING e INFO persistence de Valkey.
-    return {
-        "servicio": SERVICIO,
-        "estado": "operativo",
-        "ts": ahora_iso(),
-    }
+    """Comprueba conexión con Valkey y persistencia AOF (B2.8)."""
+
+    try:
+        ping = bool(locks.cliente.ping())
+        persistencia = locks.cliente.info("persistence")
+
+        aof_activo = bool(persistencia.get("aof_enabled", 0))
+        aof_escribiendo = not bool(
+            persistencia.get("aof_last_write_status") == "err"
+        )
+
+        operativo = ping and aof_activo and aof_escribiendo
+
+        return {
+            "servicio": SERVICIO,
+            "estado": "operativo" if operativo else "degradado",
+            "valkey": {
+                "ping": ping,
+                "aof_activo": aof_activo,
+                "aof_escribiendo": aof_escribiendo,
+            },
+            "ts": ahora_iso(),
+        }
+
+    except valkey.ValkeyError:
+        return {
+            "servicio": SERVICIO,
+            "estado": "caido",
+            "valkey": {
+                "ping": False,
+                "aof_activo": False,
+                "aof_escribiendo": False,
+            },
+            "ts": ahora_iso(),
+        }

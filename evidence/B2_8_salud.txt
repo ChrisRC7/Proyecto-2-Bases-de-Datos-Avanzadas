@@ -1,0 +1,26 @@
+B2.8 - Salud del servicio sesion y persistencia AOF
+Fecha: 2026-11-09
+
+Prueba 1: Valkey disponible
+HTTP: 200
+estado: operativo
+ping: True
+aof_activo: True
+aof_escribiendo: True
+
+Prueba 2: Valkey detenido
+Comando: docker compose stop valkey
+HTTP: 200
+estado: caido
+ping: False
+aof_activo: False
+aof_escribiendo: False
+
+Prueba 3: Valkey reiniciado
+Comando: docker compose up -d --no-deps valkey
+estado: operativo
+ping: True
+aof_activo: True
+aof_escribiendo: True
+
+Resultado: las tres pruebas fueron satisfactorias.

@@ -208,8 +208,28 @@ def sesiones(anotador_id: str, solicitud: SolicitudSesion):
                 "borrador": borrador,
             }
 
-        # El latido se implementará en B2.5.
-        return pendiente("B2.5")
+
+        if solicitud.accion == "latido":
+            if not solicitud.token:
+                return error(422, "validacion", "Falta el token")
+
+            resultado = almacenamiento_sesiones.latido(
+                anotador_id,
+                solicitud.token,
+            )
+
+            if resultado == "no_existe":
+                return error(404, "sesion_no_existe")
+
+            if resultado == "conflicto":
+                return error(
+                    409,
+                    "conflicto_lock",
+                    "El token no coincide o el lock vencio",
+                )
+
+            return {"estado": "ok", "sesion": resultado}
+
 
 
     except valkey.ValkeyError:

@@ -3,6 +3,8 @@
 
 import time
 
+from app import locks
+
 from app.locks import cliente
 
 # Una entrada sin actividad durante 120 s deja de figurar como activa.
@@ -97,3 +99,46 @@ def cerrar(anotador_id: str, token: str) -> str:
         operaciones.execute()
 
     return "ok"
+
+
+def latido(anotador_id: str, token: str) -> dict | str:
+    """Renueva el lock y actualiza la actividad del anotador."""
+
+    datos = consultar(anotador_id)
+
+    if datos is None:
+        return "no_existe"
+
+    if datos.get("token") != token:
+        return "conflicto"
+
+    tarea_id = datos["tarea"]
+    proyecto_id = datos["proyecto"]
+
+    # Renovar el lock solo si coincide su token.
+    if not locks.renovar(tarea_id, token):
+        return "conflicto"
+
+    instante = ahora_ms()
+
+    with cliente.pipeline() as operaciones:
+        operaciones.hset(
+            f"sesion:{anotador_id}",
+            "actualizada_en",
+            instante,
+        )
+        operaciones.zadd(
+            f"editando:{proyecto_id}",
+            {anotador_id: instante},
+        )
+        operaciones.execute()
+
+    limpiar_editando(proyecto_id)
+
+    return {
+        "anotador_id": anotador_id,
+        "tarea_id": tarea_id,
+        "proyecto_id": proyecto_id,
+        "actualizada_en": instante,
+        "lock_renovado": True,
+    }

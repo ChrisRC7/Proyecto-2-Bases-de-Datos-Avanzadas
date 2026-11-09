@@ -10,11 +10,11 @@
 | Persona | Rol principal | Hechas / Total | Notas |
 |---|---|---|---|
 | A | Registro (MongoDB) + dataset operacional + simulador + carga | 22 / 34 | 22 hechas, 5 a medias (falta el gateway), 4 bloqueadas por B, 3 del informe al final |
-| B | Sesión (Valkey) + Gateway + salud | 7 / 29 | B1.1, B1.2 y B2.1–B2.5 completadas; persistencia, aislamiento, locks, sesiones, borradores y latidos verificados. |
+| B | Sesión (Valkey) + Gateway + salud | 8 / 29 | B1.1, B1.2 y B2.1–B2.6 completadas; persistencia, aislamiento, locks, sesiones, borradores y latidos verificados. |
 | C | Historial (Parquet) + Analítica (Spark) + dataset histórico | 23 / 31 | 23 hechas, 2 a medias (falta el gateway y /estado-capas de B), 1 bloqueada por B, 5 del informe y README al final |
 | Todos | Integración, informe, defensa | 0 / 12 | |
 
-_Última actualización: 2026-11-09 — B completó B1.1, B1.2 y B2.1–B2.5 (7/29). Pendientes las integraciones con gateway y /estado-capas._
+_Última actualización: 2026-11-09 — B completó B1.1, B1.2 y B2.1–B2.6 (8/29). Pendientes las integraciones con gateway y /estado-capas._
 ---
 
 ## Cómo está dividido el trabajo
@@ -146,7 +146,7 @@ dataset · **S3–S4** integración y pruebas · **S5** informe, README final, e
 - [x] B2.3 Sesión: `HSET sesion:{anotador}` (tarea, proyecto, etapa, token); `ZADD editando:{proyecto} <ts> <anotador>`; limpieza de entradas vencidas.
 - [x] B2.4 Borradores: `HSET borrador:{tarea}` (contenido, anotador, token, guardado_en); se devuelven en `abrir`/`recuperar` de `/sesiones`. No generan eventos.
 - [x] B2.5 Latidos: renovar lock + `editando` + timestamp de sesión.
-- [ ] B2.6 Almacenamiento temporal de envíos pendientes (si Mongo dio 503, conservar borrador; opcional `pendiente:{tarea}`).
+- [x] B2.6 Almacenamiento temporal de envíos pendientes (si Mongo dio 503, conservar borrador; opcional `pendiente:{tarea}`).
 - [ ] B2.7 Mensajes de salud: `POST /estado-capas` y `GET /estado-capas`, llaves `salud:{servicio}` con TTL 15 s (D4).
 - [ ] B2.8 `GET /salud` (incluye `PING` a Valkey y estado de AOF vía `INFO persistence`).
 

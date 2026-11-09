@@ -1,0 +1,6 @@
+﻿OK | Lock adquirido
+OK | Sesion abierta
+OK | Borrador guardado
+OK | Borrador conservado tras fallo simulado 503
+OK | Borrador recuperable para reintento
+B2.6_CONSERVACION_OK

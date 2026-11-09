@@ -1,0 +1,31 @@
+﻿OK | X-Request-Id generado
+OK | X-Request-Id propagado
+OK | Validacion correcta
+OK | Validacion HTTP 422
+OK | Formato comun de error HTTP 404
+B3.1_MIDDLEWARE_OK
+gateway-1  | {"ts": "2026-11-09T19:52:46.042932+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "aedfe471-2361-42d2-8391-0b4be6c6ed00", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 0.44}
+gateway-1  | {"ts": "2026-11-09T19:52:56.160747+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "c59e7ae1-c451-4c88-a0de-466d8c8a07e2", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 0.4}
+gateway-1  | INFO:     127.0.0.1:39800 - "GET /salud HTTP/1.1" 200 OK
+gateway-1  | {"ts": "2026-11-09T19:53:06.299055+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "df19fa2d-a909-4873-93b5-fc73052ca392", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 0.35}
+gateway-1  | INFO:     127.0.0.1:59262 - "GET /salud HTTP/1.1" 200 OK
+gateway-1  | {"ts": "2026-11-09T19:53:16.480447+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "8b86bea6-0b48-45d4-b2f1-93e5e13968f4", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 0.68}
+gateway-1  | INFO:     127.0.0.1:35608 - "GET /salud HTTP/1.1" 200 OK
+gateway-1  | {"ts": "2026-11-09T19:53:26.632601+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "2870b270-9a14-4107-83ee-4df9bad93733", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 0.48}
+gateway-1  | INFO:     127.0.0.1:60440 - "GET /salud HTTP/1.1" 200 OK
+gateway-1  | {"ts": "2026-11-09T19:53:36.773343+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "515543f0-981d-4db2-baf5-d865c3be6b8c", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 0.37}
+gateway-1  | INFO:     127.0.0.1:44652 - "GET /salud HTTP/1.1" 200 OK
+gateway-1  | INFO:     127.0.0.1:43106 - "GET /salud HTTP/1.1" 200 OK
+gateway-1  | {"ts": "2026-11-09T19:53:46.911164+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "5c786451-5add-40c6-8684-1e88fe2e711b", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 0.53}
+gateway-1  | {"ts": "2026-11-09T19:53:57.038714+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "2c11ad44-3f77-46d2-8b8f-b6f9934d199c", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 0.33}
+gateway-1  | INFO:     127.0.0.1:56742 - "GET /salud HTTP/1.1" 200 OK
+gateway-1  | {"ts": "2026-11-09T19:54:01.135147+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "92d1360f-3d7e-47f2-9154-e5acb61aa5a8", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 0.41}
+gateway-1  | INFO:     127.0.0.1:56744 - "GET /salud HTTP/1.1" 200 OK
+gateway-1  | {"ts": "2026-11-09T19:54:01.136858+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "31d8049d-01cc-4bd0-aeac-7c930c640f02", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 0.24}
+gateway-1  | INFO:     127.0.0.1:56758 - "GET /salud HTTP/1.1" 200 OK
+gateway-1  | {"ts": "2026-11-09T19:54:01.139603+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "b4470e83-cb95-4d94-a1eb-42c2a6c6ea6b", "metodo": "POST", "ruta": "/_prueba-validacion", "status": 200, "ms": 1.02}
+gateway-1  | INFO:     127.0.0.1:56762 - "POST /_prueba-validacion HTTP/1.1" 200 OK
+gateway-1  | INFO:     127.0.0.1:56776 - "POST /_prueba-validacion HTTP/1.1" 422 Unprocessable Entity
+gateway-1  | {"ts": "2026-11-09T19:54:01.141759+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "fbba826c-7fd8-47d7-ad14-ba43d9c48533", "metodo": "POST", "ruta": "/_prueba-validacion", "status": 422, "ms": 0.85}
+gateway-1  | INFO:     127.0.0.1:56786 - "GET /ruta-inexistente-b31 HTTP/1.1" 404 Not Found
+gateway-1  | {"ts": "2026-11-09T19:54:01.143463+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "734aafc8-dcab-4c63-806c-201278250d4f", "metodo": "GET", "ruta": "/ruta-inexistente-b31", "status": 404, "ms": 0.26}

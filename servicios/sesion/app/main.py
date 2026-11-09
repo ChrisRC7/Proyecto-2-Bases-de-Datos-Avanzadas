@@ -18,6 +18,9 @@ from app import locks
 
 from app import sesiones as almacenamiento_sesiones
 
+from app import borradores
+
+
 app = crear_app(SERVICIO)
 
 
@@ -79,12 +82,51 @@ def gestionar_lock(tarea_id: str, solicitud: SolicitudLock):
     }
 
 
+
 @app.put("/borradores/{tarea_id}")
-def guardar_borrador(
-    tarea_id: str,
-    cuerpo: dict = Body(...),
-):
-    return pendiente("B2.4")
+def guardar_borrador(tarea_id: str, cuerpo: dict = Body(...)):
+    anotador_id = cuerpo.get("anotador_id")
+    token = cuerpo.get("token")
+    contenido = cuerpo.get("contenido")
+
+    if not anotador_id or not token or contenido is None:
+        return error(
+            422,
+            "validacion",
+            "Se requieren anotador_id, token y contenido",
+        )
+
+    try:
+        resultado = borradores.guardar(
+            tarea_id,
+            anotador_id,
+            token,
+            contenido,
+        )
+    except valkey.ValkeyError:
+        return error(
+            503,
+            "valkey_no_disponible",
+            "No se pudo guardar el borrador",
+        )
+
+
+    if resultado is None:
+        return error(
+            409,
+            "conflicto_lock",
+            "El lock vencio o el token no coincide",
+        )
+
+    if resultado == "otro_anotador":
+        return error(
+            409,
+            "borrador_de_otro_anotador",
+            "El borrador pertenece a otro anotador",
+        )
+
+    return {"estado": "ok", "borrador": resultado}
+
 
 
 
@@ -107,6 +149,12 @@ def sesiones(anotador_id: str, solicitud: SolicitudSesion):
             if solicitud.etapa not in ("anotando", "revisando"):
                 return error(422, "validacion", "Etapa no valida")
 
+
+            borrador = borradores.recuperar(solicitud.tarea_id)
+
+            if borrador is not None and borrador["anotador_id"] != anotador_id:
+                return error(409, "borrador_de_otro_anotador")
+
             resultado = almacenamiento_sesiones.abrir(
                 anotador_id,
                 solicitud.tarea_id,
@@ -114,7 +162,13 @@ def sesiones(anotador_id: str, solicitud: SolicitudSesion):
                 solicitud.etapa,
                 solicitud.token,
             )
-            return {"estado": "ok", "sesion": resultado}
+
+            return {
+                "estado": "ok",
+                "sesion": resultado,
+                "borrador": borrador,
+            }
+
 
         if solicitud.accion == "cerrar":
             if not solicitud.token:
@@ -133,8 +187,30 @@ def sesiones(anotador_id: str, solicitud: SolicitudSesion):
 
             return {"estado": "ok", "accion": "cerrar"}
 
-        # Pendientes: recuperación de borradores y latidos.
-        return pendiente("B2.4-B2.5")
+
+        if solicitud.accion == "recuperar":
+            sesion_actual = almacenamiento_sesiones.consultar(anotador_id)
+
+            if sesion_actual is None:
+                return error(404, "sesion_no_existe")
+
+            if not solicitud.token or sesion_actual["token"] != solicitud.token:
+                return error(409, "token_incorrecto")
+
+            tarea_id = sesion_actual["tarea"]
+            borrador = borradores.recuperar(tarea_id)
+            if borrador is not None and borrador["anotador_id"] != anotador_id:
+                return error(409, "borrador_de_otro_anotador")
+
+            return {
+                "estado": "ok",
+                "sesion": sesion_actual,
+                "borrador": borrador,
+            }
+
+        # El latido se implementará en B2.5.
+        return pendiente("B2.5")
+
 
     except valkey.ValkeyError:
         return error(

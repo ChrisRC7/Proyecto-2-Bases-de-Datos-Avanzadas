@@ -1,0 +1,48 @@
+﻿{
+  "capas": {
+    "registro": {
+      "estado": "operativo",
+      "detalle": {
+        "mongodb": {
+          "estado": "operativo",
+          "primario": "mongo1:27017",
+          "secundarios": 2
+        }
+      },
+      "ts": "2026-11-09T17:48:17.057341+00:00"
+    },
+    "analitica": {
+      "estado": "operativo",
+      "detalle": {
+        "master": "spark://spark-master:7077",
+        "master_alcanzable": true,
+        "sesion_spark": true,
+        "arranque_ms": 6334.7,
+        "error": null,
+        "ejecutores": 1,
+        "nucleos": 2
+      },
+      "ts": "2026-11-09T17:48:19.466372+00:00"
+    },
+    "historial": {
+      "estado": "operativo",
+      "detalle": {
+        "estado": "operativo",
+        "cola": {
+          "estado": "operativo",
+          "eventos_en_stream": 0,
+          "pendientes_sin_ack": 0,
+          "micro_lotes_abiertos": 0
+        },
+        "lago": {
+          "escribible": true
+        },
+        "consumidor": {
+          "vivo": true,
+          "error": null
+        }
+      },
+      "ts": "2026-11-09T17:48:17.913888+00:00"
+    }
+  }
+}

@@ -19,6 +19,7 @@ from app import locks
 from app import sesiones as almacenamiento_sesiones
 
 from app import borradores
+from app import estado_capas
 
 
 app = crear_app(SERVICIO)
@@ -241,14 +242,43 @@ def sesiones(anotador_id: str, solicitud: SolicitudSesion):
 
 
 
+
 @app.post("/estado-capas")
 def publicar_estado(cuerpo: EstadoCapa):
-    return pendiente("B2.7")
+    if not cuerpo.servicio.strip() or not cuerpo.estado.strip():
+        return error(
+            422,
+            "validacion",
+            "Servicio y estado son obligatorios",
+        )
+
+    try:
+        resultado = estado_capas.publicar(
+            cuerpo.servicio,
+            cuerpo.estado,
+            cuerpo.detalle,
+        )
+    except valkey.ValkeyError:
+        return error(
+            503,
+            "valkey_no_disponible",
+            "No se pudo registrar el estado de la capa",
+        )
+
+    return {"estado": "ok", "capa": resultado}
 
 
 @app.get("/estado-capas")
 def consultar_estados():
-    return pendiente("B2.7")
+    try:
+        return estado_capas.consultar()
+    except valkey.ValkeyError:
+        return error(
+            503,
+            "valkey_no_disponible",
+            "No se pudieron consultar los estados",
+        )
+
 
 
 @app.get("/salud")

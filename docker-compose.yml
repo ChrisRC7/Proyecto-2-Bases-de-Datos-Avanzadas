@@ -35,6 +35,9 @@ services:
       SESION_URL: http://sesion:8002
       HISTORIAL_URL: http://historial:8003
       ANALITICA_URL: http://analitica:8004
+      EVENTOS_PENDIENTES_DB: /srv/pendientes/eventos.sqlite3
+    volumes:
+      - eventos_gateway:/srv/pendientes
     # Sin "condition": el gateway debe arrancar y responder /salud aunque otra capa esté caída.
     depends_on: [registro, sesion, historial, analitica]
 
@@ -297,3 +300,4 @@ volumes:
   mongo3:
   valkey_sesion:
   cola-eventos:
+  eventos_gateway:

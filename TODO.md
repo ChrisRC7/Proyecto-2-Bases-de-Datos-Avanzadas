@@ -10,11 +10,11 @@
 | Persona | Rol principal | Hechas / Total | Notas |
 |---|---|---|---|
 | A | Registro (MongoDB) + dataset operacional + simulador + carga | 22 / 34 | 22 hechas, 5 a medias (falta el gateway), 4 bloqueadas por B, 3 del informe al final |
-| B | Sesión (Valkey) + Gateway + salud | 12 / 29 | B1.1, B1.2, B2.1–B2.8 y B3.1–B3.2 completadas; cliente interno con timeouts y reintentos seguros verificado. |
+| B | Sesión (Valkey) + Gateway + salud | 13 / 29 | B1.1, B1.2, B2.1–B2.8 y B3.1–B3.3 completadas; publicación durable de eventos verificada. |
 | C | Historial (Parquet) + Analítica (Spark) + dataset histórico | 23 / 31 | 23 hechas, 2 a medias (falta el gateway y /estado-capas de B), 1 bloqueada por B, 5 del informe y README al final |
 | Todos | Integración, informe, defensa | 0 / 12 | |
 
-_Última actualización: 2026-11-09 — B completó B1.1, B1.2, B2.1–B2.8 y B3.1–B3.2 (12/29). Cliente interno probado con 7 casos automatizados. Pendientes las integraciones restantes del gateway._
+_Última actualización: 2026-11-09 — B completó B1.1, B1.2, B2.1–B2.8 y B3.1–B3.3 (13/29). Cola persistente SQLite y publicación de eventos verificadas. Pendiente integración completa con Registro._
 ---
 
 ## Cómo está dividido el trabajo
@@ -153,7 +153,7 @@ dataset · **S3–S4** integración y pruebas · **S5** informe, README final, e
 ### B3. Núcleo del gateway (`servicios/gateway`)
 - [x] B3.1 Middleware: `X-Request-Id` (generar/propagar), logging, validación básica (pydantic), formato de error común.
 - [x] B3.2 Cliente interno con timeouts cortos y **reintentos seguros** (solo idempotentes: GET, PUT borrador; nunca reintentar `/enviar` → 503 sin reintento).
-- [ ] B3.3 Función común `publicar_evento()` → `POST historial:/eventos` (usada por A y C también). Si historial falla, no se pierde el 200 (encolar/reintentar en background y documentarlo).
+- [x] B3.3 Función común `publicar_evento()` → `POST historial:/eventos` (usada por A y C también). Si historial falla, no se pierde el 200 (encolar/reintentar en background y documentarlo).
 - [ ] B3.4 `POST /tareas/siguiente`: abre/actualiza sesión → asigna en registro → toma lock con el token → si el lock falla o Mongo falla, revertir (liberar en registro / soltar lock) → 204 si no hay tareas; incluir borrador recuperable si existe → evento `abierta`.
 - [ ] B3.5 `PUT /tareas/{id}/borrador`: guarda borrador + renueva lock (409 si el token no coincide).
 - [ ] B3.6 `POST /tareas/{id}/enviar`: verifica lock/token → transición en registro → 200 / 409 / 503 (sin reintento, borrador queda) → evento `anotada` solo tras 200 → borra borrador y suelta lock.

@@ -5,8 +5,19 @@ from fastapi import Request
 
 from app.cliente_interno import ServicioNoDisponible
 from app.comun import SERVICIO, ahora_iso, crear_app, error
+from app import eventos
 
 app = crear_app(SERVICIO)
+
+
+@app.on_event("startup")
+async def startup():
+    await eventos.iniciar_publicador()
+
+
+@app.on_event("shutdown")
+async def shutdown():
+    await eventos.detener_publicador()
 
 
 @app.exception_handler(ServicioNoDisponible)

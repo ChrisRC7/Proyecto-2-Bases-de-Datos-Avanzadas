@@ -1,0 +1,21 @@
+﻿{"ts": "2026-11-09T20:59:31.722374+00:00", "nivel": "WARNING", "servicio": "gateway", "msg": "evento_pendiente", "event_id": "b1934e6b-2093-48c5-a94d-f99114f4fb48", "causa": "ServicioNoDisponible"}
+{"ts": "2026-11-09T20:59:31.736690+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "evento_entregado", "event_id": "b1934e6b-2093-48c5-a94d-f99114f4fb48"}
+OK | Evento guardado en SQLite
+OK | event_id idempotente
+OK | Historial ca├¡do: evento conservado
+OK | Pendiente recuperado desde SQLite
+OK | Historial recuperado: evento entregado
+OK | Contenido y event_id preservados
+B3.3_EVENTOS_OK
+
+PRUEBA DE INTEGRACION REAL
+Fecha: 2026-11-09
+El gateway entrego automaticamente un evento a Historial.
+event_id: 61b11b9a-6fd3-4610-85fb-f1082fcc250b
+Pendientes despues de la entrega: 0
+PRUEBA DE PERSISTENCIA ENTRE CONTENEDORES
+Primer contenedor: Pendientes: 1
+Segundo contenedor: OK | Evento persistente entre contenedores
+Limpieza: Pendientes restantes: 0
+El gateway se reinicio correctamente.
+Nota: las pruebas automatizadas simulan la caida de Historial. La integracion real verifico la entrega HTTP, no una caida real.

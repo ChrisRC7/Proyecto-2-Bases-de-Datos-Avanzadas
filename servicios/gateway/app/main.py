@@ -1,13 +1,48 @@
 
 """Servicio gateway - API de entrada."""
 
-from fastapi import Request
+from fastapi import Request,Header, Response
 
 from app.cliente_interno import ServicioNoDisponible
 from app.comun import SERVICIO, ahora_iso, crear_app, error
 from app import eventos
 
+from uuid import UUID
+
+from pydantic import BaseModel
+
+from app import asignacion
+
 app = crear_app(SERVICIO)
+
+
+class SolicitudSiguiente(BaseModel):
+    proyecto_id: UUID | None = None
+
+
+@app.post("/tareas/siguiente")
+async def tareas_siguiente(
+    request: Request,
+    cuerpo: SolicitudSiguiente,
+    anotador_id: UUID = Header(alias="X-Anotador-Id"),
+):
+    codigo, datos = await asignacion.siguiente(
+        anotador_id=anotador_id,
+        proyecto_id=cuerpo.proyecto_id,
+        request_id=request.state.request_id,
+    )
+
+    if codigo == 204:
+        return Response(status_code=204)
+
+    if codigo != 200:
+        return error(
+            codigo,
+            datos.get("error", "error_registro"),
+            datos.get("detalle"),
+        )
+
+    return datos
 
 
 @app.on_event("startup")

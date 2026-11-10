@@ -9,7 +9,7 @@
 
 | Persona | Rol principal | Hechas / Total | Notas |
 |---|---|---|---|
-| A | Registro (MongoDB) + dataset operacional + simulador + carga | 28 / 34 | 28 hechas, 1 a medias (README), 1 bloqueada (PRs de B), P6 y 3 del informe pendientes |
+| A | Registro (MongoDB) + dataset operacional + simulador + carga | 28 / 34 | 28 hechas, 1 a medias (README), 2 bloqueadas (P6 por el gateway, PRs de B), 3 del informe, 1 bloqueada (PRs de B), P6 y 3 del informe pendientes |
 | B | Sesión (Valkey) + Gateway + salud | 17 / 29 | B1.1, B1.2, B2.1–B2.8 y B3.1–B3.8 completadas  con excepcion de B3.6; publicación durable de eventos verificada. |
 | C | Historial (Parquet) + Analítica (Spark) + dataset histórico | 23 / 31 | 23 hechas, 2 a medias (falta el gateway y /estado-capas de B), 1 bloqueada por B, 5 del informe y README al final |
 | Todos | Integración, informe, defensa | 0 / 12 | |
@@ -113,8 +113,8 @@ dataset · **S3–S4** integración y pruebas · **S5** informe, README final, e
 ### A7. Pruebas
 - [x] A7.1 **P2**: estado del replica set + script con `ProcessPoolExecutor`: preparar exactamente 10 tareas libres, 50 solicitudes simultáneas → verificar 10 asignaciones, 40 sin tarea (204), ninguna tarea con 2 anotadores (consulta de verificación vía gateway/export), segundo envío → 409. Evidencia.
       Nota: vía gateway, desde el contenedor simulador (red borde): 10/40, cero dobles, 409 con token ajeno y en el reenvío, 10 aprobadas exportadas con su anotador (evidence/P2_concurrencia_gateway_20261110-1450.md). La preliminar contra el registro queda como respaldo (evidence/P2_concurrencia_registro_20261022-2007.md).
-- [ ] A7.2 **P6**: 10, 40, 100 usuarios virtuales; 30 s calentamiento + 3 corridas de 90 s por nivel; p50/p95/p99 por endpoint, envíos/min, errores, `docker stats` muestreado. Características de la máquina.
-      Nota: ya no está bloqueada: el gateway tiene las rutas de B (B3.4-B3.7) y la revisión (A4.2). El simulador (A6) ya está listo.
+- [!] A7.2 **P6**: 10, 40, 100 usuarios virtuales; 30 s calentamiento + 3 corridas de 90 s por nivel; p50/p95/p99 por endpoint, envíos/min, errores, `docker stats` muestreado. Características de la máquina.
+      Nota: bloqueada por el gateway: con 10 usuarios ya hay 57 % de 503 en `/tareas/siguiente` y cada llamada interna crea un cliente HTTP nuevo (ver «Tareas nuevas descubiertas», B, 2026-11-10). Medir P6 así mediría esos errores y no la plataforma. El simulador y las rutas de A están listos.
 - [x] A7.3 **P8 (Mongo)**: detener secundario (sigue escribiendo), detener primario (elección; lo que dio 200 sigue una sola vez), detener dos nodos (sin mayoría no escribe → 503). Medir RTO/RPO. Restaurar estado conocido y registrar acciones.
       Nota: vía gateway, la sonda en el simulador: secundario sin errores; primario RTO 10,53 s; sin mayoría RTO 30,93 s (7,98 s desde que vuelven los nodos); RPO 0 en los tres. Por el gateway hay más errores que sí se escribieron (1 y 9) porque corta a 1 s mientras el registro espera la mayoría (evidence/P8_mongo_gateway_20261110-1453.md). La corrida directa al registro queda como respaldo (evidence/P8_mongo_20261022-2028.md).
 - [x] A7.4 Medición `w:"majority"` vs `w:1` (misma carga, mismo dataset) con la advertencia de que docker local no representa un clúster real.

@@ -1,0 +1,43 @@
+# P8 MongoDB · secundario · sonda vía gateway · 2026-11-10T20:53:50Z · commit 898fff6
+
+## Precondición
+Semilla 2026 · carga con w=majority en 17.0 s
+  tareas        60000
+2026-11-10T20:54:13Z
+conjunto: rs0  term: 11  consultado en: mongo1:27017
+mongo1:27017  SECONDARY               health=1  optime=2026-11-10T20:54:11.000Z
+mongo2:27017  SECONDARY               health=1  optime=2026-11-10T20:54:11.000Z
+mongo3:27017  PRIMARY                 health=1  optime=2026-11-10T20:54:11.000Z
+primario: mongo3 · secundarios: mongo1 mongo2 · se detiene: mongo1
+
+## Sonda (cambios de estado)
+-- falla: docker compose kill mongo1 · marca 1794344072.757306901 (2026-11-10T20:54:32.764Z)
+-- estado durante la falla:
+2026-11-10T20:54:47Z
+conjunto: rs0  term: 11  consultado en: mongo2:27017
+mongo1:27017  (not reachable/healthy) health=0  optime=-
+mongo2:27017  SECONDARY               health=1  optime=2026-11-10T20:54:51.000Z
+mongo3:27017  PRIMARY                 health=1  optime=2026-11-10T20:54:49.000Z
+-- recuperación: docker compose start mongo1 · 1794344093.197090781 (2026-11-10T20:54:53.205Z)
+20:54:25.918 asignar: ok
+
+## Después (conjunto restaurado)
+2026-11-10T20:55:19Z
+conjunto: rs0  term: 11  consultado en: mongo1:27017
+mongo1:27017  SECONDARY               health=1  optime=2026-11-10T20:55:10.000Z
+mongo2:27017  SECONDARY               health=1  optime=2026-11-10T20:55:10.000Z
+mongo3:27017  PRIMARY                 health=1  optime=2026-11-10T20:55:10.000Z
+
+## Verificación contra MongoDB
+filas: 134 · envíos: 67 · asignaciones con error: 0
+envíos confirmados (200): 67 · presentes en MongoDB: 67
+RPO (confirmados perdidos): 0
+confirmados con la versión esperada (aplicados una sola vez): 67 de 67
+envíos con error: 0 · de esos SÍ quedaron escritos: 0 · no escritos: 0
+asignaciones con error que SÍ quedaron escritas (tarea abierta a nombre de la sonda): 0
+
+marca de la falla: 1794344072.757
+último envío 200 antes de la falla: {'ts': '1794344072.293', 'op': 'enviar', 'tarea_id': '2eeb522e-15ec-4efd-80f3-5e046aa9c597', 'version': '2', 'status': '200', 'error': '', 'ms': '218.9'}
+sin errores después de la marca: la escritura no se interrumpió (no aplica RTO)
+primer envío 200 después de la marca: {'ts': '1794344072.828', 'op': 'enviar', 'tarea_id': '5f3f5c45-d99b-4fef-8bc5-3687eff96b0c', 'version': '2', 'status': '200', 'error': '', 'ms': '196.7'}
+nodos encendidos de nuevo 20.4 s después de la falla

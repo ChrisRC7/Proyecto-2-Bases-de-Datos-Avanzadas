@@ -1,6 +1,8 @@
-"""Sonda de escrituras para P8 (MongoDB): asigna y envía tareas sin parar a través del registro.
+"""Sonda de escrituras para P8 (MongoDB): asigna y envía tareas sin parar.
 
-Cada vuelta hace dos escrituras: POST /tareas/asignar y, si dio 200, el envío de esa tarea.
+Modo gateway (prueba final, red borde): POST /tareas/siguiente y POST /tareas/{id}/enviar.
+Modo registro (corrida del 22/10, red interna): POST /tareas/asignar y /tareas/{id}/transicion.
+Cada vuelta hace dos escrituras: la asignación y, si dio 200, el envío de esa tarea.
 Escribe una fila por petición (ts de la respuesta, op, tarea, status, error, ms) para calcular
 después RTO y RPO con pruebas/p8_verificar.py. La orquesta pruebas/p8_mongo.sh.
 """
@@ -13,8 +15,13 @@ import urllib.error
 import urllib.request
 import uuid
 
-URL = os.getenv("REGISTRO_URL", "http://registro:8001")
-IDS = "/srv/dataset/salida/ids.json"
+URLS = {
+    "registro": os.getenv("REGISTRO_URL", "http://registro:8001"),
+    "gateway": os.getenv("GATEWAY_URL", "http://gateway:8000"),
+}
+IDS = [os.getenv("IDS_JSON", ""), "/srv/ids/ids.json", "/srv/dataset/salida/ids.json"]
+URL = URLS["registro"]
+ANOTADOR = None  # en modo gateway va en el header X-Anotador-Id
 GEOMETRIAS = {
     "span": {"tipo": "span", "inicio": 3, "fin": 12},
     "bbox": {"tipo": "bbox", "x": 10, "y": 20, "w": 100, "h": 80},
@@ -25,7 +32,10 @@ GEOMETRIAS = {
 
 
 def http(metodo: str, ruta: str, cuerpo=None):
-    peticion = urllib.request.Request(URL + ruta, method=metodo, headers={"Content-Type": "application/json"},
+    cabeceras = {"Content-Type": "application/json"}
+    if ANOTADOR:
+        cabeceras["X-Anotador-Id"] = ANOTADOR
+    peticion = urllib.request.Request(URL + ruta, method=metodo, headers=cabeceras,
                                       data=json.dumps(cuerpo).encode() if cuerpo is not None else None)
     try:
         with urllib.request.urlopen(peticion, timeout=15) as r:
@@ -40,15 +50,30 @@ def http(metodo: str, ruta: str, cuerpo=None):
         return 0, {"error": type(e).__name__}
 
 
+def codigo_error(cuerpo) -> str:
+    """El gateway responde 503 servicio_no_disponible y dice en el detalle qué servicio falló."""
+    cuerpo = cuerpo or {}
+    error = cuerpo.get("error") or ""
+    detalle = cuerpo.get("detalle")
+    if error == "servicio_no_disponible" and isinstance(detalle, dict) and detalle.get("servicio"):
+        error += f"({detalle['servicio']})"
+    return error
+
+
 def main() -> None:
+    global URL, ANOTADOR
     ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("--modo", choices=["gateway", "registro"], default="gateway")
     ap.add_argument("--duracion", type=float, default=60)
     ap.add_argument("--pausa", type=float, default=0.2)
     ap.add_argument("--csv", required=True)
     args = ap.parse_args()
 
-    ids = json.load(open(IDS))
+    ids = json.load(open(next(p for p in IDS if p and os.path.exists(p))))
     anotador = next(a["id"] for a in ids["anotadores"] if a["rol"] == "anotador")
+    URL = URLS[args.modo]
+    if args.modo == "gateway":
+        ANOTADOR = anotador
     etiquetas = {p["id"]: p["etiquetas"][0] for p in ids["proyectos_activos"]}
     fin = time.time() + args.duracion
     ultimo = None
@@ -60,7 +85,7 @@ def main() -> None:
         def anotar(op, tarea_id, version, status, cuerpo, t0):
             nonlocal ultimo
             ts = time.time()
-            error = (cuerpo or {}).get("error") if status not in (200, 204) else ""
+            error = codigo_error(cuerpo) if status not in (200, 204) else ""
             w.writerow({"ts": f"{ts:.3f}", "op": op, "tarea_id": tarea_id or "", "version": version, "status": status,
                         "error": error or "", "ms": round((ts - t0) * 1000, 1)})
             f.flush()
@@ -70,17 +95,25 @@ def main() -> None:
                 ultimo = estado
 
         while time.time() < fin:
-            token = str(uuid.uuid4())
             t0 = time.time()
-            s, d = http("POST", "/tareas/asignar", {"anotador_id": anotador, "token": token})
+            if args.modo == "gateway":
+                s, d = http("POST", "/tareas/siguiente", {})
+                token = d["token"] if s == 200 else None
+            else:
+                token = str(uuid.uuid4())
+                s, d = http("POST", "/tareas/asignar", {"anotador_id": anotador, "token": token})
             tarea = d["tarea"] if s == 200 else None
             anotar("asignar", tarea and tarea["tarea_id"], tarea and tarea["version"], s, d, t0)
             if tarea:
+                anotacion = {"etiquetas": [etiquetas[tarea["proyecto_id"]]],
+                             "geometria": GEOMETRIAS[tarea["tipo_tarea"]]}
                 t0 = time.time()
-                s, d = http("POST", f"/tareas/{tarea['tarea_id']}/transicion", {
-                    "accion": "enviar", "token": token, "version": tarea["version"], "actor_id": anotador,
-                    "anotacion": {"etiquetas": [etiquetas[tarea["proyecto_id"]]],
-                                  "geometria": GEOMETRIAS[tarea["tipo_tarea"]]}})
+                if args.modo == "gateway":
+                    s, d = http("POST", f"/tareas/{tarea['tarea_id']}/enviar", {"token": token, "anotacion": anotacion})
+                else:
+                    s, d = http("POST", f"/tareas/{tarea['tarea_id']}/transicion", {
+                        "accion": "enviar", "token": token, "version": tarea["version"], "actor_id": anotador,
+                        "anotacion": anotacion})
                 anotar("enviar", tarea["tarea_id"], tarea["version"] + 1, s, d, t0)  # versión esperada
             time.sleep(args.pausa)
 

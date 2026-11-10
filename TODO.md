@@ -9,12 +9,12 @@
 
 | Persona | Rol principal | Hechas / Total | Notas |
 |---|---|---|---|
-| A | Registro (MongoDB) + dataset operacional + simulador + carga | 26 / 34 | 26 hechas, 3 a medias (P8 vía gateway, simulador y README), 1 bloqueada (PRs de B), P6 y 3 del informe pendientes |
+| A | Registro (MongoDB) + dataset operacional + simulador + carga | 27 / 34 | 27 hechas, 2 a medias (simulador y README), 1 bloqueada (PRs de B), P6 y 3 del informe pendientes |
 | B | Sesión (Valkey) + Gateway + salud | 17 / 29 | B1.1, B1.2, B2.1–B2.8 y B3.1–B3.8 completadas  con excepcion de B3.6; publicación durable de eventos verificada. |
 | C | Historial (Parquet) + Analítica (Spark) + dataset histórico | 23 / 31 | 23 hechas, 2 a medias (falta el gateway y /estado-capas de B), 1 bloqueada por B, 5 del informe y README al final |
 | Todos | Integración, informe, defensa | 0 / 12 | |
 
-_Última actualización: 2026-11-10 — A completó las rutas del gateway A4.1 y A4.2, probadas de punta a punta, A2.9 y P2 vía gateway (26/34). B: B1.1, B1.2, B2.1–B2.8 y B3.1–B3.8 con excepcion de B3.6 (17/29)._
+_Última actualización: 2026-11-10 — A completó las rutas del gateway A4.1 y A4.2, probadas de punta a punta, A2.9, P2 y P8 vía gateway (27/34). B: B1.1, B1.2, B2.1–B2.8 y B3.1–B3.8 con excepcion de B3.6 (17/29)._
 ---
 
 ## Cómo está dividido el trabajo
@@ -115,8 +115,8 @@ dataset · **S3–S4** integración y pruebas · **S5** informe, README final, e
       Nota: vía gateway, desde el contenedor simulador (red borde): 10/40, cero dobles, 409 con token ajeno y en el reenvío, 10 aprobadas exportadas con su anotador (evidence/P2_concurrencia_gateway_20261110-1450.md). La preliminar contra el registro queda como respaldo (evidence/P2_concurrencia_registro_20261022-2007.md).
 - [ ] A7.2 **P6**: 10, 40, 100 usuarios virtuales; 30 s calentamiento + 3 corridas de 90 s por nivel; p50/p95/p99 por endpoint, envíos/min, errores, `docker stats` muestreado. Características de la máquina.
       Nota: ya no está bloqueada: el gateway tiene las rutas de B (B3.4-B3.7) y la revisión (A4.2). El simulador (A6) ya está listo.
-- [~] A7.3 **P8 (Mongo)**: detener secundario (sigue escribiendo), detener primario (elección; lo que dio 200 sigue una sola vez), detener dos nodos (sin mayoría no escribe → 503). Medir RTO/RPO. Restaurar estado conocido y registrar acciones.
-      Nota: corrida contra el registro, sin gateway: secundario sin errores; primario RTO 10,36 s; sin mayoría 503 y 2 errores que sí se escribieron; RPO 0 en los tres (evidence/P8_mongo_20261022-2028.md). Falta repetirla vía gateway (I.5).
+- [x] A7.3 **P8 (Mongo)**: detener secundario (sigue escribiendo), detener primario (elección; lo que dio 200 sigue una sola vez), detener dos nodos (sin mayoría no escribe → 503). Medir RTO/RPO. Restaurar estado conocido y registrar acciones.
+      Nota: vía gateway, la sonda en el simulador: secundario sin errores; primario RTO 10,53 s; sin mayoría RTO 30,93 s (7,98 s desde que vuelven los nodos); RPO 0 en los tres. Por el gateway hay más errores que sí se escribieron (1 y 9) porque corta a 1 s mientras el registro espera la mayoría (evidence/P8_mongo_gateway_20261110-1453.md). La corrida directa al registro queda como respaldo (evidence/P8_mongo_20261022-2028.md).
 - [x] A7.4 Medición `w:"majority"` vs `w:1` (misma carga, mismo dataset) con la advertencia de que docker local no representa un clúster real.
       Nota: medido directo contra el registro (misma carga y dataset): +3 ms por escritura con majority sin cola; con 20 hilos manda la cola del registro. Ver evidence/A7.4_write_concern_20261022-2011.md.
 

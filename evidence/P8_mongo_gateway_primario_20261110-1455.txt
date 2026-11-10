@@ -1,0 +1,48 @@
+# P8 MongoDB · primario · sonda vía gateway · 2026-11-10T20:55:32Z · commit 898fff6
+
+## Precondición
+Semilla 2026 · carga con w=majority en 16.4 s
+  tareas        60000
+2026-11-10T20:55:53Z
+conjunto: rs0  term: 11  consultado en: mongo1:27017
+mongo1:27017  SECONDARY               health=1  optime=2026-11-10T20:55:51.000Z
+mongo2:27017  SECONDARY               health=1  optime=2026-11-10T20:55:51.000Z
+mongo3:27017  PRIMARY                 health=1  optime=2026-11-10T20:55:51.000Z
+primario: mongo3 · secundarios: mongo1 mongo2 · se detiene: mongo3
+
+## Sonda (cambios de estado)
+-- falla: docker compose kill mongo3 · marca 1794344171.397184959 (2026-11-10T20:56:11.402Z)
+-- estado durante la falla:
+2026-11-10T20:56:26Z
+conjunto: rs0  term: 12  consultado en: mongo1:27017
+mongo1:27017  SECONDARY               health=1  optime=2026-11-10T20:56:30.000Z
+mongo2:27017  PRIMARY                 health=1  optime=2026-11-10T20:56:29.000Z
+mongo3:27017  (not reachable/healthy) health=0  optime=-
+-- recuperación: docker compose start mongo3 · 1794344209.020714146 (2026-11-10T20:56:49.037Z)
+20:56:05.707 asignar: ok
+20:56:11.952 asignar: error 503 servicio_no_disponible(registro)
+20:56:21.725 asignar: ok
+
+## Después (conjunto restaurado)
+2026-11-10T20:57:14Z
+conjunto: rs0  term: 12  consultado en: mongo1:27017
+mongo1:27017  SECONDARY               health=1  optime=2026-11-10T20:57:05.000Z
+mongo2:27017  PRIMARY                 health=1  optime=2026-11-10T20:57:05.000Z
+mongo3:27017  SECONDARY               health=1  optime=2026-11-10T20:57:05.000Z
+
+## Verificación contra MongoDB
+filas: 124 · envíos: 58 · asignaciones con error: 8
+envíos confirmados (200): 58 · presentes en MongoDB: 58
+RPO (confirmados perdidos): 0
+confirmados con la versión esperada (aplicados una sola vez): 58 de 58
+envíos con error: 0 · de esos SÍ quedaron escritos: 0 · no escritos: 0
+asignaciones con error que SÍ quedaron escritas (tarea abierta a nombre de la sonda): 1
+
+marca de la falla: 1794344171.397
+último envío 200 antes de la falla: {'ts': '1794344170.560', 'op': 'enviar', 'tarea_id': '1f25f839-59ed-4173-a167-1ae50b2fdf47', 'version': '2', 'status': '200', 'error': '', 'ms': '218.0'}
+primer error: {'ts': '1794344171.952', 'op': 'asignar', 'tarea_id': '', 'version': '', 'status': '503', 'error': 'servicio_no_disponible(registro)', 'ms': '1145.9'}
+último error: {'ts': '1794344181.214', 'op': 'asignar', 'tarea_id': '', 'version': '', 'status': '503', 'error': 'servicio_no_disponible(registro)', 'ms': '1118.5'}
+errores después de la marca: 8 (503 servicio_no_disponible(registro))
+primer envío 200 después del último error: {'ts': '1794344181.923', 'op': 'enviar', 'tarea_id': '2882159a-394d-4008-a897-d8687396738f', 'version': '2', 'status': '200', 'error': '', 'ms': '196.3'}
+RTO = 1794344181.923 - 1794344171.397 = 10.526 s
+nodos encendidos de nuevo 37.6 s después de la falla

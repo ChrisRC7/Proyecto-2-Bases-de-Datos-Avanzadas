@@ -193,17 +193,28 @@ def sesiones(anotador_id: str, solicitud: SolicitudSesion):
 
 
         if solicitud.accion == "recuperar":
-            sesion_actual = almacenamiento_sesiones.consultar(anotador_id)
+            sesion_actual = almacenamiento_sesiones.consultar(
+                anotador_id
+            )
 
             if sesion_actual is None:
                 return error(404, "sesion_no_existe")
 
-            if not solicitud.token or sesion_actual["token"] != solicitud.token:
+            # El Gateway recupera usando X-Anotador-Id.
+            # Si se proporciona un token, debe coincidir.
+            if (
+                solicitud.token is not None
+                and sesion_actual["token"] != solicitud.token
+            ):
                 return error(409, "token_incorrecto")
 
             tarea_id = sesion_actual["tarea"]
             borrador = borradores.recuperar(tarea_id)
-            if borrador is not None and borrador["anotador_id"] != anotador_id:
+
+            if (
+                borrador is not None
+                and borrador["anotador_id"] != anotador_id
+            ):
                 return error(409, "borrador_de_otro_anotador")
 
             return {
@@ -211,6 +222,7 @@ def sesiones(anotador_id: str, solicitud: SolicitudSesion):
                 "sesion": sesion_actual,
                 "borrador": borrador,
             }
+
 
 
         if solicitud.accion == "latido":

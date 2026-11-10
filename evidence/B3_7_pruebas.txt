@@ -1,0 +1,15 @@
+﻿{"ts": "2026-11-10T03:23:06.429138+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "8770192b-12f1-43c0-8757-efbc50659972", "metodo": "POST", "ruta": "/tareas/26ac4e07-e2e2-46cf-8f28-32a598153171/liberar", "status": 200, "ms": 2.04}
+{"ts": "2026-11-10T03:23:06.437065+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "191c00ea-6e73-4753-87d2-e08c4ff37e66", "metodo": "POST", "ruta": "/tareas/26ac4e07-e2e2-46cf-8f28-32a598153171/liberar", "status": 409, "ms": 3.32}
+{"ts": "2026-11-10T03:23:06.441627+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "2d96f8c9-859d-473c-a6d5-e2562c40a424", "metodo": "POST", "ruta": "/tareas/26ac4e07-e2e2-46cf-8f28-32a598153171/liberar", "status": 503, "ms": 2.18}
+{"ts": "2026-11-10T03:23:06.446825+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "5e1d8c97-e486-4a3b-aeb0-c98476186c33", "metodo": "POST", "ruta": "/sesiones/recuperar", "status": 200, "ms": 2.87}
+{"ts": "2026-11-10T03:23:06.449099+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "d446db87-53d9-45f0-957e-58675a1d0138", "metodo": "POST", "ruta": "/sesiones/recuperar", "status": 404, "ms": 0.41}
+{"ts": "2026-11-10T03:23:06.451188+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "4de2f6ee-7ea0-46eb-acd9-ab743628c1c1", "metodo": "POST", "ruta": "/sesiones/recuperar", "status": 409, "ms": 0.38}
+{"ts": "2026-11-10T03:23:06.452839+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "bfa8c2ba-cf6f-4ec3-afe2-2eeed3e26777", "metodo": "POST", "ruta": "/sesiones/recuperar", "status": 200, "ms": 0.44}
+OK | Liberar 200: evento y limpieza registrados
+OK | Liberar 409: no limpia ni publica
+OK | Liberar 503: sin reintento en gateway
+OK | Recuperar 200: sesion y borrador
+OK | Recuperar 404: sin sesion
+OK | Recuperar 409: conflicto
+OK | Recuperar 200: sesion sin borrador
+B3.7_PRUEBAS_OK

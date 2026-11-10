@@ -19,6 +19,10 @@ from app import envio
 
 from app import limpiezas
 
+from app import liberacion
+
+from datetime import datetime, timezone
+
 app = crear_app(SERVICIO)
 
 
@@ -152,3 +156,76 @@ async def enviar_anotacion(
         )
 
     return datos
+
+class SolicitudLiberar(BaseModel):
+    token: UUID
+
+
+@app.post("/tareas/{tarea_id}/liberar")
+async def liberar_tarea(
+    request: Request,
+    tarea_id: UUID,
+    cuerpo: SolicitudLiberar,
+    anotador_id: UUID = Header(alias="X-Anotador-Id"),
+):
+    codigo, datos = await liberacion.liberar(
+        tarea_id=tarea_id,
+        anotador_id=anotador_id,
+        token=cuerpo.token,
+        request_id=request.state.request_id,
+    )
+
+    if codigo != 200:
+        return error(
+            codigo,
+            datos.get("error", "error_liberacion"),
+            datos.get("detalle"),
+        )
+
+    return datos
+
+
+@app.post("/sesiones/recuperar")
+async def recuperar_sesion(
+    request: Request,
+    anotador_id: UUID = Header(alias="X-Anotador-Id"),
+):
+    respuesta = await solicitar(
+        "sesion",
+        "POST",
+        f"/sesiones/{anotador_id}",
+        json={"accion": "recuperar"},
+        request_id=request.state.request_id,
+    )
+
+    datos = respuesta.json()
+
+    if respuesta.status_code != 200:
+        return error(
+            respuesta.status_code,
+            datos.get("error", "error_recuperacion"),
+            datos.get("detalle"),
+        )
+
+    sesion = datos["sesion"]
+    borrador = datos.get("borrador")
+
+    return {
+        "tarea": {
+            "tarea_id": sesion["tarea"],
+            "proyecto_id": sesion["proyecto"],
+            "etapa": sesion["etapa"],
+        },
+        "token": sesion["token"],
+        "borrador": (
+            {
+                "contenido": borrador["contenido"],
+                "guardado_en": datetime.fromtimestamp(
+                    borrador["guardado_en"] / 1000,
+                    tz=timezone.utc,
+                ).isoformat(),
+            }
+            if borrador is not None
+            else None
+        ),
+    }

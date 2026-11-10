@@ -56,7 +56,7 @@ async def pruebas():
             ) as evento,
             patch.object(
                 liberacion.limpiezas,
-                "registrar",
+                "ejecutar",
                 new_callable=AsyncMock,
             ) as limpieza,
         ):
@@ -72,7 +72,7 @@ async def pruebas():
             evento.assert_awaited_once()
             limpieza.assert_awaited_once()
 
-        print("OK | Liberar 200: evento y limpieza registrados")
+        print("OK | Liberar 200: evento y limpieza ejecutada")
 
         # 2. Conflicto de Registro: no generar evento ni limpieza.
         with (
@@ -92,7 +92,7 @@ async def pruebas():
             ) as evento,
             patch.object(
                 liberacion.limpiezas,
-                "registrar",
+                "ejecutar",
                 new_callable=AsyncMock,
             ) as limpieza,
         ):

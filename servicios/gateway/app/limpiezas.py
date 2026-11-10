@@ -29,8 +29,11 @@ def _inicializar():
         """)
 
 
-def _registrar(tarea_id, anotador_id, token):
-    """Registra todas las limpiezas en una sola transaccion SQLite."""
+def _registrar(tarea_id, anotador_id, token, espera=0):
+    """Registra todas las limpiezas en una sola transaccion SQLite.
+
+    espera: segundos antes de que el trabajador en segundo plano las tome.
+    """
     acciones = [
         (
             "eliminar_borrador",
@@ -57,8 +60,8 @@ def _registrar(tarea_id, anotador_id, token):
             db.execute(
                 """
                 INSERT OR IGNORE INTO limpiezas
-                (tarea_id, token, accion, metodo, ruta, cuerpo)
-                VALUES (?, ?, ?, ?, ?, ?)
+                (tarea_id, token, accion, metodo, ruta, cuerpo, siguiente)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     tarea_id,
@@ -67,6 +70,7 @@ def _registrar(tarea_id, anotador_id, token):
                     metodo,
                     ruta,
                     json.dumps(cuerpo),
+                    time.time() + espera,
                 ),
             )
 
@@ -84,35 +88,17 @@ def _pendientes():
         ).fetchall()
 
 
-def _confirmar(tarea_id, token, accion):
+def _de_tarea(tarea_id, token):
     with eventos._conexion() as db:
-        db.execute(
+        return db.execute(
             """
-            DELETE FROM limpiezas
-            WHERE tarea_id = ? AND token = ? AND accion = ?
+            SELECT tarea_id, token, accion, metodo, ruta, cuerpo, intentos
+            FROM limpiezas
+            WHERE tarea_id = ? AND token = ?
+            ORDER BY rowid
             """,
-            (tarea_id, token, accion),
-        )
-
-
-def _reprogramar(tarea_id, token, accion, intentos):
-    demora = min(60, 2 ** min(intentos + 1, 6))
-
-    with eventos._conexion() as db:
-        db.execute(
-            """
-            UPDATE limpiezas
-            SET intentos = ?, siguiente = ?
-            WHERE tarea_id = ? AND token = ? AND accion = ?
-            """,
-            (
-                intentos + 1,
-                time.time() + demora,
-                tarea_id,
-                token,
-                accion,
-            ),
-        )
+            (tarea_id, token),
+        ).fetchall()
 
 
 async def registrar(tarea_id, anotador_id, token):
@@ -124,8 +110,39 @@ async def registrar(tarea_id, anotador_id, token):
     )
 
 
-async def procesar_pendientes():
-    filas = await asyncio.to_thread(_pendientes)
+def _cerrar_varias(cerradas, reprogramadas):
+    """Aplica el resultado de una pasada en una sola transacción SQLite."""
+    ahora = time.time()
+
+    with eventos._conexion() as db:
+        db.executemany(
+            """
+            DELETE FROM limpiezas
+            WHERE tarea_id = ? AND token = ? AND accion = ?
+            """,
+            cerradas,
+        )
+        db.executemany(
+            """
+            UPDATE limpiezas
+            SET intentos = ?, siguiente = ?
+            WHERE tarea_id = ? AND token = ? AND accion = ?
+            """,
+            [
+                (
+                    intentos + 1,
+                    ahora + min(60, 2 ** min(intentos + 1, 6)),
+                    tarea_id,
+                    token,
+                    accion,
+                )
+                for tarea_id, token, accion, intentos in reprogramadas
+            ],
+        )
+
+
+async def _procesar(filas):
+    cerradas, reprogramadas = [], []
 
     for tarea_id, token, accion, metodo, ruta, cuerpo, intentos in filas:
         try:
@@ -136,43 +153,9 @@ async def procesar_pendientes():
                 json=json.loads(cuerpo),
             )
 
-            # 404/409: ya no podemos completar esta limpieza con
-            # el token original. No debemos tocar un dueño nuevo.
-            if respuesta.status_code == 200:
-                await asyncio.to_thread(
-                    _confirmar, tarea_id, token, accion
-                )
-
-                log.info(
-                    "limpieza_finalizada",
-                    extra={"datos": {
-                        "tarea_id": tarea_id,
-                        "accion": accion,
-                        "status": respuesta.status_code,
-                    }},
-                )
-
-            else:
-                await asyncio.to_thread(
-                    _reprogramar,
-                    tarea_id, token, accion, intentos,
-                )
-
-                log.warning(
-                    "limpieza_no_confirmada",
-                    extra={"datos": {
-                        "tarea_id": tarea_id,
-                        "accion": accion,
-                        "status": respuesta.status_code,
-                    }},
-                )
-
-
         except ServicioNoDisponible:
-            await asyncio.to_thread(
-                _reprogramar,
-                tarea_id, token, accion, intentos,
-            )
+            # Sesión no responde: se reintenta más tarde.
+            reprogramadas.append((tarea_id, token, accion, intentos))
 
             log.warning(
                 "limpieza_reprogramada",
@@ -181,6 +164,53 @@ async def procesar_pendientes():
                     "accion": accion,
                 }},
             )
+            continue
+
+        # Cualquier respuesta < 500 cierra la limpieza. 404/409: el borrador,
+        # el lock o la sesión ya no son de este token (no existen, vencieron o
+        # son de un dueño nuevo); reintentar no lo cambia y no debemos tocarlos.
+        cerradas.append((tarea_id, token, accion))
+
+        log.info(
+            "limpieza_finalizada" if respuesta.status_code == 200
+            else "limpieza_descartada",
+            extra={"datos": {
+                "tarea_id": tarea_id,
+                "accion": accion,
+                "status": respuesta.status_code,
+            }},
+        )
+
+    if cerradas or reprogramadas:
+        await asyncio.to_thread(_cerrar_varias, cerradas, reprogramadas)
+
+
+async def procesar_pendientes():
+    filas = await asyncio.to_thread(_pendientes)
+    await _procesar(filas)
+
+
+async def ejecutar(tarea_id, anotador_id, token):
+    """Registra las limpiezas y las corre en el momento.
+
+    El lock se suelta antes de responder: si la tarea se rechaza y vuelve a
+    la cola, el siguiente anotador ya puede tomarla. Lo que falle porque
+    Sesión no responde queda en SQLite y lo reintenta el trabajador; la
+    espera de 30 s evita que el trabajador las tome mientras corren aquí.
+    """
+    tarea_id, anotador_id, token = str(tarea_id), str(anotador_id), str(token)
+    await asyncio.to_thread(_registrar, tarea_id, anotador_id, token, 30)
+
+    try:
+        filas = await asyncio.to_thread(_de_tarea, tarea_id, token)
+        await _procesar(filas)
+    except Exception:
+        # MongoDB ya confirmó: no se cambia la respuesta. Lo que quedó en
+        # SQLite lo termina el trabajador.
+        log.exception(
+            "error_limpieza_inmediata",
+            extra={"datos": {"tarea_id": tarea_id}},
+        )
 
 
 async def _trabajar():

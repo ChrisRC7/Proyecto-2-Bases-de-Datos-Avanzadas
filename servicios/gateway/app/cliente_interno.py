@@ -21,6 +21,33 @@ ESPERA_REINTENTO = 0.1
 
 ERRORES_TEMPORALES = {502, 503, 504}
 
+# Un solo cliente para todo el gateway. Crear un httpx.AsyncClient cuesta CPU (arma el contexto TLS)
+# y bloquea el event loop; con uno por llamada, 50 peticiones juntas hacían fila detrás de ~150
+# clientes nuevos (evidence/P2_concurrencia_gateway_20261110-1450.md). Se crea al primer uso y se
+# cierra al apagar. keepalive_expiry < 5 s (keep-alive de uvicorn) para no reusar una conexión que
+# el servicio ya cerró: un POST que falla así no se reintenta.
+_compartido: httpx.AsyncClient | None = None
+
+
+def cliente_compartido() -> httpx.AsyncClient:
+    global _compartido
+    if _compartido is None or _compartido.is_closed:
+        _compartido = httpx.AsyncClient(
+            limits=httpx.Limits(
+                max_connections=200,
+                max_keepalive_connections=100,
+                keepalive_expiry=2.0,
+            ),
+        )
+    return _compartido
+
+
+async def cerrar_cliente():
+    global _compartido
+    if _compartido is not None:
+        await _compartido.aclose()
+        _compartido = None
+
 
 class ServicioNoDisponible(Exception):
     """Fallo de comunicación con un servicio interno."""
@@ -119,8 +146,4 @@ async def solicitar(
 
         raise ServicioNoDisponible(servicio, "Intentos agotados")
 
-    if cliente is not None:
-        return await ejecutar(cliente)
-
-    async with httpx.AsyncClient() as http:
-        return await ejecutar(http)
+    return await ejecutar(cliente or cliente_compartido())

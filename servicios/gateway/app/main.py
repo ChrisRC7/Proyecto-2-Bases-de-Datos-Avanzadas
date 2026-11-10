@@ -3,7 +3,7 @@
 
 from fastapi import Request,Header, Response
 
-from app.cliente_interno import ServicioNoDisponible
+from app.cliente_interno import ServicioNoDisponible, cerrar_cliente
 from app.comun import SERVICIO, ahora_iso, crear_app, error
 from app import eventos
 
@@ -75,6 +75,7 @@ async def startup():
 async def shutdown():
     await limpiezas.detener()
     await eventos.detener_publicador()
+    await cerrar_cliente()
 
 
 

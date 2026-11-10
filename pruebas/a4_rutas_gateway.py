@@ -10,7 +10,6 @@ Solo usa la biblioteca estándar y los ids de dataset/salida/ids.json (archivo, 
 import json
 import os
 import sys
-import time
 import urllib.error
 import urllib.request
 import uuid
@@ -106,15 +105,19 @@ def main():
     caso("revision rechazar otra vez", 409, "POST", f"/tareas/{t2}/revision",
          {"accion": "rechazar", "motivo": "ETIQUETA_INCORRECTA"}, revisor)
     caso("revision tarea inexistente", 404, "POST", f"/tareas/{uuid.uuid4()}/revision", {"accion": "empezar"}, revisor)
-    # Después del envío el gateway suelta el lock en segundo plano (cada 2 s). Si la tarea rechazada
-    # se pide antes de eso, el lock viejo sigue en Valkey y la asignación responde 503.
-    time.sleep(3)
+    # Sin esperar: el gateway suelta el lock al enviar, así que la rechazada se puede tomar en seguida.
     datos = caso("la rechazada se vuelve a ofrecer", 200, "POST", "/tareas/siguiente",
                  {"proyecto_id": proyecto_id}, anotador)
     if datos["tarea"]["tarea_id"] != t2:
         print("FALLA la tarea ofrecida no es la rechazada")
         sys.exit(1)
     caso("POST /tareas/{id}/liberar", 200, "POST", f"/tareas/{t2}/liberar", {"token": datos["token"]}, anotador)
+    datos = caso("la liberada se vuelve a ofrecer", 200, "POST", "/tareas/siguiente",
+                 {"proyecto_id": proyecto_id}, anotador)
+    if datos["tarea"]["tarea_id"] != t2:
+        print("FALLA la tarea ofrecida no es la liberada")
+        sys.exit(1)
+    caso("POST /tareas/{id}/liberar otra vez", 200, "POST", f"/tareas/{t2}/liberar", {"token": datos["token"]}, anotador)
 
     print("== A4.1 exportar")
     datos = caso("GET /proyectos/{id}/exportar", 200, "GET", f"/proyectos/{proyecto_id}/exportar?limite=10")

@@ -34,6 +34,10 @@ async def pruebas():
                     json={"estado": "degradado"},
                 )
 
+            if escenario == "registro_caido" and nombre == "registro":
+                # MongoDB sin primario: registro responde 200 con estado caido.
+                return httpx.Response(200, json={"estado": "caido"})
+
             return httpx.Response(
                 200,
                 json={"estado": "operativo"},
@@ -84,6 +88,13 @@ async def pruebas():
     assert datos["capas"]["historial"]["estado"] == "caido"
     assert datos["capas"]["analitica"]["estado"] == "degradado"
     print("OK | Fallo parcial: gateway degradado")
+
+    # Registro (MongoDB) caído: no se puede asignar ni enviar.
+    datos, duracion = await ejecutar("registro_caido")
+    assert datos["estado"] == "caido"
+    assert datos["capas"]["registro"]["estado"] == "caido"
+    assert datos["capas"]["sesion"]["estado"] == "operativo"
+    print("OK | Registro caido: gateway caido aunque el resto responda")
 
     # Todos los servicios inaccesibles.
     datos, duracion = await ejecutar("caidos")

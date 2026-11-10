@@ -1,0 +1,171 @@
+Correcciones al gateway de B hechas por A en la rama integracion-a-b-c. 2026-11-10 17:13 (UTC-6)
+Máquina: Ryzen 7 5700U, 16 GB (4 CPU y 9,7 GiB para WSL 2), Docker Desktop 29.5.2.
+
+Qué se cambió (servicios/gateway/app):
+1. cliente_interno.py: un solo httpx.AsyncClient para todo el gateway (antes uno nuevo por llamada).
+   salud.py usa el mismo cliente. Se cierra en el shutdown (main.py).
+2. limpiezas.py, envio.py, liberacion.py: después de un envío o una liberación con 200, el borrador,
+   el lock y la sesión se limpian en el momento (limpiezas.ejecutar), antes de responder. Siguen
+   registradas en SQLite antes de correrlas; lo que falle porque sesion no responde lo reintenta el
+   trabajador. Antes se dejaban todas al trabajador, que corre cada 2 s.
+3. limpiezas.py: 404 y 409 cierran la limpieza (el borrador, lock o sesión ya no es de ese token).
+   Antes se reprogramaban para siempre, hasta cada 60 s.
+4. salud.py: caido si registro o sesion están caídos, aunque historial y analítica respondan
+   (regla de endpoints/gateway.md). Antes solo era caido si los cuatro estaban caídos.
+Pruebas de B ajustadas al cambio: prueba_envio_b36, prueba_limpiezas_b36, prueba_b37 y un caso
+nuevo en prueba_salud_b38 (registro caído).
+
+== Pruebas de B dentro del contenedor (docker compose exec -T -e EVENTOS_PENDIENTES_DB=/tmp/p.sqlite3 gateway python -m app.<prueba>)
+-- prueba_middleware_b31
+OK | X-Request-Id generado
+OK | X-Request-Id propagado
+OK | Validacion correcta
+OK | Validacion HTTP 422
+OK | Formato comun HTTP 404
+OK | Logging JSON
+B3.1_MIDDLEWARE_OK
+-- prueba_cliente_b32
+OK | GET reintentado ante HTTP 503
+OK | PUT borrador reintentado sin alterar datos
+OK | POST enviar no se reintenta
+OK | Reintentos restringidos a operaciones permitidas
+OK | Error de conexión tras agotar reintentos
+OK | HTTP 409 preservado sin reintento
+OK | X-Request-Id propagado al servicio interno
+B3.2_CLIENTE_INTERNO_OK
+-- prueba_eventos_b33
+OK | Evento guardado en SQLite
+OK | event_id idempotente
+OK | Historial caído: evento conservado
+OK | Pendiente recuperado desde SQLite
+OK | Historial recuperado: evento entregado
+OK | Contenido y event_id preservados
+B3.3_EVENTOS_OK
+-- prueba_asignacion_b34
+OK | Sin tareas disponibles: 204
+OK | Asignación, lock, sesión y borrador
+OK | Fallo de lock: compensación en Registro
+OK | Registro caído: sin reintento automático
+B3.4_ASIGNACION_OK
+-- prueba_borrador_b35
+OK | Borrador enviado a Sesión con token y anotador
+OK | Token incorrecto: HTTP 409
+OK | Reintentos permitidos solo para PUT borrador
+OK | Ruta pública de borradores registrada
+B3.5_BORRADORES_OK
+-- prueba_envio_b36
+OK | HTTP 200: evento y limpieza posterior
+OK | Lock 409: sin envio ni evento
+OK | Registro 409: borrador conservado
+OK | Registro 503: sin reintento ni limpieza
+OK | SQLite falla: sin limpiar borrador
+OK | Fallo de limpieza: no repetir envio, queda en SQLite
+B3.6_ENVIO_OK
+-- prueba_limpiezas_b36
+OK | Tres limpiezas guardadas en SQLite
+OK | Sesión caída: limpiezas conservadas
+OK | Limpiezas recuperadas tras reinicializar
+OK | Recuperación: tres limpiezas ejecutadas
+OK | Registro idempotente de limpiezas
+OK | HTTP 409: limpiezas descartadas, no se reintentan
+OK | ejecutar: borrador, lock y sesión en el momento
+B3.6_LIMPIEZAS_OK
+-- prueba_b37
+OK | Liberar 200: evento y limpieza ejecutada
+OK | Liberar 409: no limpia ni publica
+OK | Liberar 503: sin reintento en gateway
+OK | Recuperar 200: sesion y borrador
+OK | Recuperar 404: sin sesion
+OK | Recuperar 409: conflicto
+OK | Recuperar 200: sesion sin borrador
+B3.7_PRUEBAS_OK
+-- prueba_salud_b38
+OK | Cuatro servicios operativos
+OK | Fallo parcial: gateway degradado
+OK | Registro caido: gateway caido aunque el resto responda
+OK | Todos caidos: gateway responde HTTP 200
+OK | Consultas paralelas verificadas
+Duracion: 0.203 s
+B3.8_SALUD_OK
+
+== 1. Cliente interno (docker compose exec -T -w /srv gateway python - < pruebas/cliente_gateway.py), dos corridas
+-- antes (uno nuevo por llamada)
+crear httpx.AsyncClient: CPU media 10.6 ms, mediana 9.1 ms (20 veces)
+solicitar('registro', GET /salud) x50 seguidas: p50 17.2 ms, max 31.4 ms
+30 solicitar a la vez: p50 389.8 ms, max 476.6 ms, total 504 ms
+crear httpx.AsyncClient: CPU media 9.4 ms, mediana 8.0 ms (20 veces)
+solicitar('registro', GET /salud) x50 seguidas: p50 17.6 ms, max 69.5 ms
+30 solicitar a la vez: p50 237.0 ms, max 419.0 ms, total 444 ms
+-- después (uno compartido)
+crear httpx.AsyncClient: CPU media 10.5 ms, mediana 9.0 ms (20 veces)
+solicitar('registro', GET /salud) x50 seguidas: p50 6.0 ms, max 20.5 ms
+30 solicitar a la vez: p50 129.0 ms, max 146.8 ms, total 164 ms
+crear httpx.AsyncClient: CPU media 8.9 ms, mediana 7.5 ms (20 veces)
+solicitar('registro', GET /salud) x50 seguidas: p50 3.9 ms, max 15.2 ms
+30 solicitar a la vez: p50 72.3 ms, max 85.7 ms, total 92 ms
+Crear un cliente cuesta de 9 a 11 ms de CPU en estas corridas (el 10/11 a las 14:50, con más carga en la
+máquina, se midieron ~35 ms). Ese trabajo bloquea el único proceso del gateway: con 30 llamadas juntas
+el p50 baja de 238-390 ms a 72-129 ms, y una llamada sola de ~17 ms a 4-6 ms.
+
+== 2 y 3. Limpiezas
+Al arrancar el gateway corregido había 637 limpiezas viejas en SQLite reprogramándose cada 60 s;
+se cerraron en la primera pasada de cada una (todas 404/409) y la tabla quedó en 0.
+Prueba de A4 sin la espera de 3 s que tenía antes de pedir otra vez la tarea rechazada, y con un caso
+nuevo: la tarea liberada se vuelve a ofrecer en seguida (python3 pruebas/a4_rutas_gateway.py):
+== A4.1 proyectos y lotes
+OK    POST /proyectos cliente inexistente          esperado 404 obtenido 404  {"error": "cliente_no_existe", "detalle": "0aaf0561-ed79-4e00-b67e-b31a3034f3d7"}
+OK    POST /proyectos sin taxonomía                esperado 422 obtenido 422  {"error": "validacion", "detalle": [{"type": "too_short", "loc": ["body", "taxonomia"], "msg": "List should have at least 1 item after validation, not
+OK    POST /proyectos                              esperado 201 obtenido 201  {"proyecto_id": "77ba68d9-bb9f-4dea-a16a-e9bc53ffcb99"}
+OK    POST /proyectos/{id}/lotes mime de imagen    esperado 422 obtenido 422  {"error": "lote_invalido", "detalle": [{"tarea": 0, "error": "mime 'image/png' no corresponde a 'lidar'"}]}
+OK    POST /proyectos/{id}/lotes proyecto inexistente esperado 404 obtenido 404  {"error": "proyecto_no_existe", "detalle": "a031dbc3-3b6a-41cd-9313-810010b3514c"}
+OK    POST /proyectos/{id}/lotes                   esperado 201 obtenido 201  {"batch_id": "fa491b55-98cf-4ccf-b052-8c7be4f20043", "tareas": 2}
+== A4.2 revisión: aprobar
+OK    POST /tareas/siguiente                       esperado 200 obtenido 200  {"tarea": {"tarea_id": "90f8ad36-4eec-42f6-9ee8-c355038466b0", "proyecto_id": "77ba68d9-bb9f-4dea-a16a-e9bc53ffcb99", "modalidad": "lidar", "tipo_tare
+OK    POST /tareas/{id}/enviar                     esperado 200 obtenido 200  {"estado": "anotada", "version": 2, "event_id": "0293f76d-125d-41e6-99a3-d34203b6b425"}
+OK    revision aprobar sin empezar                 esperado 409 obtenido 409  {"error": "transicion_invalida", "detalle": {"accion": "aprobar", "estado": "anotada", "version": 2}}
+OK    revision empezar por un anotador             esperado 422 obtenido 422  {"error": "actor_no_es_revisor", "detalle": "adbafed0-b600-460c-bbdc-fd55304374b3"}
+OK    revision empezar                             esperado 200 obtenido 200  {"estado": "en_revision", "version": 3, "event_id": "e4f80139-804f-4718-8198-1441942491c3"}
+OK    revision empezar otra vez                    esperado 409 obtenido 409  {"error": "transicion_invalida", "detalle": {"accion": "empezar_revision", "estado": "en_revision", "version": 3}}
+OK    revision aprobar                             esperado 200 obtenido 200  {"estado": "aprobada", "version": 4, "event_id": "1765027e-d4eb-49df-9cb8-d9095dd318aa"}
+== A4.2 revisión: rechazar
+OK    POST /tareas/siguiente                       esperado 200 obtenido 200  {"tarea": {"tarea_id": "4d9ed945-c2bb-4348-a253-da87c43f6e84", "proyecto_id": "77ba68d9-bb9f-4dea-a16a-e9bc53ffcb99", "modalidad": "lidar", "tipo_tare
+OK    POST /tareas/{id}/enviar                     esperado 200 obtenido 200  {"estado": "anotada", "version": 2, "event_id": "45cbdf62-86b8-4868-917d-6b7504e22aed"}
+OK    revision empezar                             esperado 200 obtenido 200  {"estado": "en_revision", "version": 3, "event_id": "0e99f77a-2b90-4ea7-b49a-0d7a449c5fa7"}
+OK    revision rechazar sin motivo                 esperado 422 obtenido 422  {"error": "validacion", "detalle": [{"type": "value_error", "loc": ["body"], "msg": "Value error, 'rechazar' requiere un motivo", "input": {"accion": 
+OK    revision rechazar motivo inventado           esperado 422 obtenido 422  {"error": "validacion", "detalle": [{"type": "literal_error", "loc": ["body", "motivo"], "msg": "Input should be 'ETIQUETA_INCORRECTA', 'GEOMETRIA_IMP
+OK    revision rechazar                            esperado 200 obtenido 200  {"estado": "disponible", "version": 4, "event_id": "648b295f-ade9-46b2-9e95-4fb13d0b5da6"}
+OK    revision rechazar otra vez                   esperado 409 obtenido 409  {"error": "transicion_invalida", "detalle": {"accion": "rechazar", "estado": "disponible", "version": 4}}
+OK    revision tarea inexistente                   esperado 404 obtenido 404  {"error": "tarea_no_existe", "detalle": "04742faf-5456-4be8-a3be-d9794ec5d9f3"}
+OK    la rechazada se vuelve a ofrecer             esperado 200 obtenido 200  {"tarea": {"tarea_id": "4d9ed945-c2bb-4348-a253-da87c43f6e84", "proyecto_id": "77ba68d9-bb9f-4dea-a16a-e9bc53ffcb99", "modalidad": "lidar", "tipo_tare
+OK    POST /tareas/{id}/liberar                    esperado 200 obtenido 200  {"estado": "disponible"}
+OK    la liberada se vuelve a ofrecer              esperado 200 obtenido 200  {"tarea": {"tarea_id": "4d9ed945-c2bb-4348-a253-da87c43f6e84", "proyecto_id": "77ba68d9-bb9f-4dea-a16a-e9bc53ffcb99", "modalidad": "lidar", "tipo_tare
+OK    POST /tareas/{id}/liberar otra vez           esperado 200 obtenido 200  {"estado": "disponible"}
+== A4.1 exportar
+OK    GET /proyectos/{id}/exportar                 esperado 200 obtenido 200  {"tareas": [{"tarea_id": "90f8ad36-4eec-42f6-9ee8-c355038466b0", "batch_id": "fa491b55-98cf-4ccf-b052-8c7be4f20043", "modalidad": "lidar", "tipo_tarea
+      exportadas ['90f8ad36-4eec-42f6-9ee8-c355038466b0'] (se esperaba solo 90f8ad36-4eec-42f6-9ee8-c355038466b0), siguiente_cursor None
+OK    GET /proyectos/{id}/exportar inexistente     esperado 404 obtenido 404  {"error": "proyecto_no_existe", "detalle": "24f44319-19e2-4607-8989-8838df378f33"}
+
+proyecto 77ba68d9-bb9f-4dea-a16a-e9bc53ffcb99 · aprobada 90f8ad36-4eec-42f6-9ee8-c355038466b0 · rechazada 4d9ed945-c2bb-4348-a253-da87c43f6e84
+FALLAS: 0
+
+== 4. GET /salud con MongoDB sin primario
+== Estado del replica set antes
+2026-11-10T23:11:52Z
+conjunto: rs0  term: 13  consultado en: mongo1:27017
+mongo1:27017  SECONDARY               health=1  optime=2026-11-10T23:11:52.000Z
+mongo2:27017  PRIMARY                 health=1  optime=2026-11-10T23:11:52.000Z
+mongo3:27017  SECONDARY               health=1  optime=2026-11-10T23:11:52.000Z
+== GET /salud con todo arriba
+estado: operativo · registro: operativo, sesion: operativo, historial: operativo, analitica: operativo
+== docker compose kill mongo1 mongo2 (sin mayoría) 17:11:53
+== GET /salud 15 s después
+estado: caido · registro: caido, sesion: operativo, historial: operativo, analitica: operativo
+registro.mongodb: {'estado': 'caido', 'primario': None, 'secundarios': 1}
+== docker compose start mongo1 mongo2 17:12:09
+== GET /salud cuando vuelve (6 s después de encender)
+estado: operativo · registro: operativo, sesion: operativo, historial: operativo, analitica: operativo
+2026-11-10T23:12:16Z
+conjunto: rs0  term: 14  consultado en: mongo1:27017
+mongo1:27017  SECONDARY               health=1  optime=2026-11-10T23:12:14.000Z
+mongo2:27017  SECONDARY               health=1  optime=2026-11-10T23:12:14.000Z
+mongo3:27017  PRIMARY                 health=1  optime=2026-11-10T23:12:14.000Z

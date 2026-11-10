@@ -31,9 +31,9 @@ async def liberar(tarea_id, anotador_id, token, request_id=None):
     # MongoDB ya confirmó: persistir evento para Historial.
     await eventos.publicar_evento(datos["evento"])
 
-    # La limpieza se guarda en SQLite para reintentarla
-    # automáticamente si Sesión no está disponible.
-    await limpiezas.registrar(
+    # La limpieza corre en el momento; si Sesión no está disponible
+    # queda en SQLite y se reintenta automáticamente.
+    await limpiezas.ejecutar(
         tarea_id,
         anotador_id,
         token,

@@ -49,9 +49,9 @@ async def enviar(tarea_id, anotador_id, token, anotacion, request_id=None):
     await eventos.publicar_evento(evento)
 
 
-    # 4. Mongo ya confirmó. Registrar las limpiezas
-    # para que sobrevivan a reinicios del gateway.
-    await limpiezas.registrar(
+    # 4. Mongo ya confirmó. Borrar borrador, soltar lock y cerrar sesión
+    # en el momento; lo que falle queda en SQLite y se reintenta.
+    await limpiezas.ejecutar(
         tarea_id,
         anotador_id,
         token,

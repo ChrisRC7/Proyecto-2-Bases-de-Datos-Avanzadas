@@ -2,6 +2,8 @@
 """Pruebas B3.6: envio, errores y limpieza segura."""
 
 import asyncio
+import tempfile
+from pathlib import Path
 from unittest.mock import AsyncMock, patch
 from uuid import uuid4
 
@@ -44,37 +46,33 @@ async def pruebas():
 
     argumentos = (tarea_id, anotador_id, token, anotacion)
 
-    # 1. Envio correcto: Registro 200, evento y limpieza.
+    # 1. Envio correcto: Registro 200, evento y limpieza en el momento.
     solicitudes = AsyncMock(side_effect=[
         respuesta(200, {"estado": "ok"}),  # renovar lock
         respuesta(200, datos_registro),    # transicion Registro
-        respuesta(200, {"estado": "ok"}),  # borrar borrador
-        respuesta(200, {"estado": "ok"}),  # soltar lock
-        respuesta(200, {"estado": "ok"}),  # cerrar sesion
     ])
+    limpiar = AsyncMock()
 
     publicar = AsyncMock(return_value={"estado": "pendiente"})
 
     with patch.object(envio, "solicitar", solicitudes), \
-         patch.object(envio.eventos, "publicar_evento", publicar):
+         patch.object(envio.eventos, "publicar_evento", publicar), \
+         patch.object(envio.limpiezas, "ejecutar", limpiar):
         codigo, datos = await envio.enviar(*argumentos)
 
     assert codigo == 200
     assert datos["estado"] == "anotada"
     assert datos["version"] == 2
     assert datos["event_id"] == evento["event_id"]
-    assert solicitudes.await_count == 5
+    assert solicitudes.await_count == 2
     publicar.assert_awaited_once_with(evento)
+    limpiar.assert_awaited_once_with(tarea_id, anotador_id, token)
 
     rutas = [c.args[2] for c in solicitudes.await_args_list]
     assert rutas == [
         f"/locks/{tarea_id}",
         f"/tareas/{tarea_id}/transicion",
-        f"/borradores/{tarea_id}",
-        f"/locks/{tarea_id}",
-        f"/sesiones/{anotador_id}",
     ]
-    assert solicitudes.await_args_list[2].args[1] == "DELETE"
     print("OK | HTTP 200: evento y limpieza posterior")
 
     # 2. Conflicto de token: no llamar Registro.
@@ -146,23 +144,37 @@ async def pruebas():
     print("OK | SQLite falla: sin limpiar borrador")
 
     # 6. Falla limpieza tras Registro 200: no repetir envio.
+    # La limpieza que no se pudo hacer queda en SQLite para el trabajador.
     solicitudes = AsyncMock(side_effect=[
         respuesta(200, {"estado": "ok"}),
         respuesta(200, datos_registro),
+    ])
+    sesion = AsyncMock(side_effect=[
         ServicioNoDisponible("sesion", "Sin conexion"),
         respuesta(200, {"estado": "ok"}),
         respuesta(200, {"estado": "ok"}),
     ])
     publicar = AsyncMock(return_value={"estado": "pendiente"})
 
-    with patch.object(envio, "solicitar", solicitudes), \
+    with tempfile.TemporaryDirectory() as carpeta, \
+         patch.object(envio.eventos, "DB_PATH", Path(carpeta) / "p.sqlite3"), \
+         patch.object(envio, "solicitar", solicitudes), \
+         patch.object(envio.limpiezas, "solicitar", sesion), \
          patch.object(envio.eventos, "publicar_evento", publicar):
+        envio.limpiezas._inicializar()
         codigo, _ = await envio.enviar(*argumentos)
 
+        with envio.eventos._conexion() as db:
+            quedan = db.execute(
+                "SELECT accion FROM limpiezas"
+            ).fetchall()
+
     assert codigo == 200
-    assert solicitudes.await_count == 5
+    assert solicitudes.await_count == 2
+    assert sesion.await_count == 3
+    assert quedan == [("eliminar_borrador",)]
     publicar.assert_awaited_once_with(evento)
-    print("OK | Fallo de limpieza: no repetir envio")
+    print("OK | Fallo de limpieza: no repetir envio, queda en SQLite")
 
     print("B3.6_ENVIO_OK")
 

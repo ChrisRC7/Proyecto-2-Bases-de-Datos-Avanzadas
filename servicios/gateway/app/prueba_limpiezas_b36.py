@@ -132,8 +132,30 @@ async def pruebas():
                     "SELECT COUNT(*) FROM limpiezas"
                 ).fetchone()[0]
 
-            assert cantidad == 3
-            print("OK | HTTP 409: limpiezas conservadas")
+            assert cantidad == 0
+            print("OK | HTTP 409: limpiezas descartadas, no se reintentan")
+
+            # 7. ejecutar: registra y corre las tres en el momento.
+            llamadas = []
+
+            with patch.object(
+                limpiezas, "solicitar",
+                side_effect=sesion_recuperada
+            ):
+                await limpiezas.ejecutar(tarea, anotador, token)
+
+            with eventos._conexion() as db:
+                cantidad = db.execute(
+                    "SELECT COUNT(*) FROM limpiezas"
+                ).fetchone()[0]
+
+            assert llamadas == [
+                f"/borradores/{tarea}",
+                f"/locks/{tarea}",
+                f"/sesiones/{anotador}",
+            ]
+            assert cantidad == 0
+            print("OK | ejecutar: borrador, lock y sesión en el momento")
 
 
     print("B3.6_LIMPIEZAS_OK")

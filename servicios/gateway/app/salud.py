@@ -3,12 +3,14 @@
 
 import asyncio
 
-import httpx
-
-from app.cliente_interno import SERVICIOS
+from app.cliente_interno import SERVICIOS, cliente_compartido
 from app.comun import ahora_iso
 
 TIMEOUT = 1.0
+
+# Sin registro (MongoDB) o sin sesión (Valkey) no se puede asignar ni enviar: el sistema está caído
+# aunque historial y analítica respondan (regla de endpoints/gateway.md).
+CRITICAS = ("registro", "sesion")
 
 
 async def revisar_servicio(cliente, nombre, url):
@@ -69,10 +71,10 @@ async def consultar_salud(cliente=None):
         capas = dict(zip(nombres, resultados))
         estados = [capa["estado"] for capa in capas.values()]
 
-        if all(e == "operativo" for e in estados):
-            general = "operativo"
-        elif all(e == "caido" for e in estados):
+        if any(capas[n]["estado"] == "caido" for n in CRITICAS if n in capas):
             general = "caido"
+        elif all(e == "operativo" for e in estados):
+            general = "operativo"
         else:
             general = "degradado"
 
@@ -84,11 +86,7 @@ async def consultar_salud(cliente=None):
         }
 
     try:
-        if cliente is not None:
-            return await consultar(cliente)
-
-        async with httpx.AsyncClient() as http:
-            return await consultar(http)
+        return await consultar(cliente or cliente_compartido())
 
     except Exception as exc:
         return {

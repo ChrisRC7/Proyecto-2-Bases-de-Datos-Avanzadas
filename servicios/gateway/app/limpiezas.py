@@ -33,6 +33,7 @@ def _registrar(tarea_id, anotador_id, token, espera=0):
     """Registra todas las limpiezas en una sola transaccion SQLite.
 
     espera: segundos antes de que el trabajador en segundo plano las tome.
+    Devuelve las filas como las lee _pendientes, para correrlas en el momento.
     """
     acciones = [
         (
@@ -54,25 +55,22 @@ def _registrar(tarea_id, anotador_id, token, espera=0):
             {"accion": "cerrar", "token": token},
         ),
     ]
+    filas = [
+        (tarea_id, token, nombre, metodo, ruta, json.dumps(cuerpo), 0)
+        for nombre, metodo, ruta, cuerpo in acciones
+    ]
 
     with eventos._conexion() as db:
-        for nombre, metodo, ruta, cuerpo in acciones:
-            db.execute(
-                """
-                INSERT OR IGNORE INTO limpiezas
-                (tarea_id, token, accion, metodo, ruta, cuerpo, siguiente)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-                """,
-                (
-                    tarea_id,
-                    token,
-                    nombre,
-                    metodo,
-                    ruta,
-                    json.dumps(cuerpo),
-                    time.time() + espera,
-                ),
-            )
+        db.executemany(
+            """
+            INSERT OR IGNORE INTO limpiezas
+            (tarea_id, token, accion, metodo, ruta, cuerpo, intentos, siguiente)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            [fila + (time.time() + espera,) for fila in filas],
+        )
+
+    return filas
 
 
 def _pendientes():
@@ -85,19 +83,6 @@ def _pendientes():
             LIMIT 50
             """,
             (time.time(),),
-        ).fetchall()
-
-
-def _de_tarea(tarea_id, token):
-    with eventos._conexion() as db:
-        return db.execute(
-            """
-            SELECT tarea_id, token, accion, metodo, ruta, cuerpo, intentos
-            FROM limpiezas
-            WHERE tarea_id = ? AND token = ?
-            ORDER BY rowid
-            """,
-            (tarea_id, token),
         ).fetchall()
 
 
@@ -199,10 +184,11 @@ async def ejecutar(tarea_id, anotador_id, token):
     espera de 30 s evita que el trabajador las tome mientras corren aquí.
     """
     tarea_id, anotador_id, token = str(tarea_id), str(anotador_id), str(token)
-    await asyncio.to_thread(_registrar, tarea_id, anotador_id, token, 30)
+    filas = await asyncio.to_thread(
+        _registrar, tarea_id, anotador_id, token, 30
+    )
 
     try:
-        filas = await asyncio.to_thread(_de_tarea, tarea_id, token)
         await _procesar(filas)
     except Exception:
         # MongoDB ya confirmó: no se cambia la respuesta. Lo que quedó en

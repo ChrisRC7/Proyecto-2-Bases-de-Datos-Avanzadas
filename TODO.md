@@ -10,11 +10,11 @@
 | Persona | Rol principal | Hechas / Total | Notas |
 |---|---|---|---|
 | A | Registro (MongoDB) + dataset operacional + simulador + carga | 28 / 34 | 28 hechas, 1 a medias (README), 1 bloqueada (PRs de B), P6 y 3 del informe pendientes |
-| B | Sesión (Valkey) + Gateway + salud | 17 / 29 | B1.1, B1.2, B2.1–B2.8 y B3.1–B3.8 completadas  con excepcion de B3.6; publicación durable de eventos verificada. A corrigió cuatro errores del gateway en `integracion-a-b-c` (ver «Tareas nuevas descubiertas»). |
+| B | Sesión (Valkey) + Gateway + salud | 17 / 29 | B1.1, B1.2, B2.1–B2.8 y B3.1–B3.8 completadas  con excepcion de B3.6; publicación durable de eventos verificada. A corrigió cinco errores del gateway en `integracion-a-b-c` (ver «Tareas nuevas descubiertas»). |
 | C | Historial (Parquet) + Analítica (Spark) + dataset histórico | 23 / 31 | 23 hechas, 2 a medias (falta el gateway y /estado-capas de B), 1 bloqueada por B, 5 del informe y README al final |
 | Todos | Integración, informe, defensa | 0 / 12 | |
 
-_Última actualización: 2026-11-10 — En `integracion-a-b-c` (A, B y C juntos) A corrigió cuatro errores del gateway de B (cliente HTTP por llamada, limpiezas en segundo plano y para siempre, regla de `/salud`), con las pruebas de B ajustadas y pasando; P6 queda desbloqueada (28/34). B: B1.1, B1.2, B2.1–B2.8 y B3.1–B3.8 con excepcion de B3.6 (17/29)._
+_Última actualización: 2026-11-10 — En `integracion-a-b-c` (A, B y C juntos) A corrigió errores del gateway de B (cliente HTTP por llamada, limpiezas en segundo plano y para siempre, regla de `/salud`, bloqueos de SQLite), con las pruebas de B ajustadas y pasando, y repitió P2, P8 y el simulador; P6 queda desbloqueada (28/34). B: B1.1, B1.2, B2.1–B2.8 y B3.1–B3.8 con excepcion de B3.6 (17/29)._
 ---
 
 ## Cómo está dividido el trabajo
@@ -106,7 +106,7 @@ dataset · **S3–S4** integración y pruebas · **S5** informe, README final, e
 ### A6. Simulador (`simulador/`) — solo HTTP al gateway
 - [x] A6.1 Cliente HTTP base (`httpx`), configuración por CLI (URL, número de usuarios, duración).
 - [x] A6.2 Flujo anotador: siguiente → (borradores, de B) → enviar; flujo revisor: revisión → aprobar/rechazar con motivo aleatorio.
-      Nota: corrido contra el gateway real (10 usuarios, 30 s): 69 envíos y 55 revisiones sin error, pero 79 de 139 `/tareas/siguiente` dieron 503 por tareas rechazadas con el lock viejo todavía en Valkey (diagnóstico en evidence/A6.2_simulador_gateway_20261110-1501.txt). Los borradores cada 2 s se enganchan en anotar() (B4.2).
+      Nota: corrido contra el gateway real (10 usuarios, 30 s). Antes de corregir el gateway: 79 de 139 `/tareas/siguiente` con 503 por locks viejos (evidence/A6.2_simulador_gateway_20261110-1501.txt). Con las correcciones aparecieron esperas de 10 s por «database is locked» en el SQLite del gateway (evidence/A6.2_simulador_gateway_20261110-1721.txt); con SQLite en WAL: 0 errores, 179 asignaciones, 186 envíos (372 por minuto) y 91 revisiones (evidence/A6.2_simulador_gateway_20261110-1726.txt). Los borradores cada 2 s se enganchan en anotar() (B4.2).
 - [x] A6.3 Registro de latencias por endpoint (CSV crudo) para P6.
       Nota: CSV con ts, fase (calentamiento/medicion), usuario, rol, endpoint, status y ms; resumen p50/p95/p99 por endpoint y envíos/min.
 
@@ -291,6 +291,8 @@ _(agregar aquí con persona sugerida y fecha)_
       Nota: corregido por A: un solo cliente compartido (también en `/salud`). 30 llamadas juntas: p50 de 238-390 ms a 72-129 ms.
 - [x] (B, 2026-11-10) gateway: una tarea rechazada con el lock viejo todavía en Valkey bloquea la cola. Cada `/tareas/siguiente` la toma (prioridad alta), falla el lock, la devuelve con liberar y responde 503; con 10 usuarios, 5 tareas así causaron 79 de 139 errores (evidence/A6.2_simulador_gateway_20261110-1501.txt). Sale de soltar el lock en segundo plano después del envío, atrasado por las limpiezas que se reintentan para siempre. Bloquea P6 (A7.2).
       Nota: se resuelve con las dos correcciones de limpiezas; la prueba de A4 ya toma la rechazada y la liberada sin esperar.
+- [x] (B, 2026-11-10) gateway SQLite (`eventos.py`): con varias peticiones escribiendo a la vez aparecen esperas de 10 s y `database is locked`; las conexiones no se cerraban y el journal por defecto hace que leer bloquee a quien confirma. Salió al probar la corrección de las limpiezas, que suma escrituras en cada envío.
+      Nota: corregido por A: WAL (un fsync por commit, ~10 ms contra ~22 ms), conexión que siempre se cierra y un commit por pasada del publicador. Con 10 usuarios, 0 errores (evidence/A6.2_simulador_gateway_20261110-1721.txt y -1726.txt).
 - [ ] (B, 2026-11-10) sesion `abrir`: si una tarea vuelve a la cola con el borrador de otro anotador todavía en Valkey (lock y plazo vencidos sin enviar), `abrir` responde 409 `borrador_de_otro_anotador`, el gateway compensa y `/tareas/siguiente` da 503; como la tarea sigue primera en la cola, se repite y solo el anotador original la puede tomar (visto en el código, sin prueba todavía). Toca a P3 («dejar vencer el candado y comprobar que la tarea vuelve a ofrecerse»). No afecta P6 porque el simulador todavía no guarda borradores (B4.2).
 - [ ] (B, 2026-11-10) gateway `/salud` consulta el `/salud` de cada servicio y no lee los mensajes que las capas dejan en Valkey (`sesion:/estado-capas`); el enunciado pide usar Valkey para esos mensajes (§7, `GET /salud`).
 - [ ] (A y B, 2026-11-10) el lock se renueva con latidos y borradores, pero `asignacion.vence_en` en MongoDB queda fijo en 120 s. Si alguien trabaja más de 120 s guardando borradores, el registro puede ofrecer la tarea a otro mientras el lock sigue tomado. Decidir si el gateway renueva también el plazo en el registro o si se documenta como limitación.

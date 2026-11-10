@@ -6,6 +6,7 @@ import json
 import os
 import sqlite3
 import time
+from contextlib import contextmanager
 from pathlib import Path
 from uuid import UUID
 
@@ -21,15 +22,29 @@ _aviso = None
 _trabajador = None
 
 
+@contextmanager
 def _conexion():
+    """Conexión a SQLite que confirma al salir (o deshace si hubo error) y siempre se cierra.
+
+    Antes la conexión quedaba abierta hasta que Python la recolectara. Con varias peticiones
+    escribiendo a la vez aparecían esperas de 10 s y «database is locked»
+    (evidence/A6.2_simulador_gateway_20261110-1721.txt).
+    """
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
     conexion = sqlite3.connect(str(DB_PATH), timeout=10)
-    conexion.execute("PRAGMA synchronous=FULL")
-    return conexion
+    try:
+        conexion.execute("PRAGMA synchronous=FULL")
+        with conexion:
+            yield conexion
+    finally:
+        conexion.close()
 
 
 def _inicializar():
     with _conexion() as db:
+        # WAL: leer no bloquea a quien escribe y cada commit hace un solo fsync
+        # (unos 10 ms en el volumen de Docker frente a ~22 ms con el journal por defecto).
+        db.execute("PRAGMA journal_mode=WAL")
         db.execute("""
             CREATE TABLE IF NOT EXISTS pendientes (
                 event_id TEXT PRIMARY KEY,
@@ -80,25 +95,25 @@ def _pendientes():
         ).fetchall()
 
 
-def _confirmar(identificador):
+def _cerrar_pasada(entregados, fallidos):
+    """Borra los entregados y reprograma los fallidos en una sola transacción."""
+    ahora = time.time()
+
     with _conexion() as db:
-        db.execute(
+        db.executemany(
             "DELETE FROM pendientes WHERE event_id = ?",
-            (identificador,),
+            [(identificador,) for identificador in entregados],
         )
-
-
-def _reprogramar(identificador, intentos):
-    demora = min(60, 2 ** min(intentos + 1, 6))
-
-    with _conexion() as db:
-        db.execute(
+        db.executemany(
             """
             UPDATE pendientes
             SET intentos = ?, siguiente = ?
             WHERE event_id = ?
             """,
-            (intentos + 1, time.time() + demora, identificador),
+            [
+                (intentos + 1, ahora + min(60, 2 ** min(intentos + 1, 6)), identificador)
+                for identificador, intentos in fallidos
+            ],
         )
 
 
@@ -128,6 +143,7 @@ async def publicar_evento(evento: dict) -> dict:
 async def despachar_pendientes():
     """Intenta enviar los eventos vencidos, conservando los fallidos."""
     filas = await asyncio.to_thread(_pendientes)
+    entregados, fallidos = [], []
 
     for identificador, contenido, intentos in filas:
         try:
@@ -144,7 +160,7 @@ async def despachar_pendientes():
                     f"Respuesta inesperada: {respuesta.status_code}",
                 )
 
-            await asyncio.to_thread(_confirmar, identificador)
+            entregados.append(identificador)
 
             log.info(
                 "evento_entregado",
@@ -153,9 +169,7 @@ async def despachar_pendientes():
 
         except Exception as exc:
             # El evento permanece en SQLite para el siguiente intento.
-            await asyncio.to_thread(
-                _reprogramar, identificador, intentos
-            )
+            fallidos.append((identificador, intentos))
 
             log.warning(
                 "evento_pendiente",
@@ -164,6 +178,11 @@ async def despachar_pendientes():
                     "causa": type(exc).__name__,
                 }},
             )
+
+    # Un solo commit por pasada en lugar de uno por evento. Si el gateway se cae
+    # antes, los entregados se vuelven a mandar y historial los descarta por event_id.
+    if entregados or fallidos:
+        await asyncio.to_thread(_cerrar_pasada, entregados, fallidos)
 
 
 async def _procesar_cola():

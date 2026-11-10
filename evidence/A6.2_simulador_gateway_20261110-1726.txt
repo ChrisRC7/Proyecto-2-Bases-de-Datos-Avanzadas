@@ -1,0 +1,17 @@
+A6.2 — simulador contra el gateway corregido, con SQLite en WAL (mismo comando que A6.2_simulador_gateway_20261110-1501). 2026-11-10 17:26:33 CST · dataset recién cargado y llaves de sesión de Valkey borradas
+http://gateway:8000 · 9 anotadores + 1 revisores · 5 s de calentamiento + 30 s medidos
+endpoint                            n      p50      p95      p99    2xx   4xx  5xx/0
+POST /tareas/siguiente            179     64.4    192.2    314.5    179     0      0
+POST /tareas/{id}/enviar          186    123.6    340.8    441.0    186     0      0
+POST /tareas/{id}/revision         91     44.3    134.2    197.0     91     0      0
+envíos confirmados: 186 en 30 s = 372.0 envíos/min
+
+== Llamadas a sesion en esos minutos (log de sesion, sin /salud ni /estado-capas)
+    208 "metodo": "DELETE", "ruta": "/borradores/{id}", "status": 409
+    624 "metodo": "POST", "ruta": "/locks/{id}", "status": 200
+    416 "metodo": "POST", "ruta": "/sesiones/{id}", "status": 200
+== Gateway: mensajes del log (sin peticion)
+    516 "msg": "evento_entregado"
+    208 "msg": "limpieza_descartada"
+    416 "msg": "limpieza_finalizada"
+== database is locked: 0

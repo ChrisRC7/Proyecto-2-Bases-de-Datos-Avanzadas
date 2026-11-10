@@ -1,0 +1,16 @@
+A2.9 — latido del registro en sesion:/estado-capas (B2.7). 2026-11-10 14:47:29 CST
+Dos lecturas de GET sesion:/estado-capas separadas por 6 s (solo la capa registro):
+  leido 2026-11-10T20:47:30+00:00 -> {"estado": "operativo", "detalle": {"mongodb": {"estado": "operativo", "primario": "mongo1:27017", "secundarios": 2}}, "ts": "2026-11-10T20:47:28.184272+00:00"}
+  leido 2026-11-10T20:47:36+00:00 -> {"estado": "operativo", "detalle": {"mongodb": {"estado": "operativo", "primario": "mongo1:27017", "secundarios": 2}}, "ts": "2026-11-10T20:47:33.191993+00:00"}
+
+Con mongo1, mongo2 y mongo3 detenidos (sin primario), 12 s después:
+  leido 2026-11-10T20:47:50+00:00 -> {"estado": "caido", "detalle": {"mongodb": {"estado": "caido", "primario": null, "secundarios": 0}}, "ts": "2026-11-10T20:47:48.300012+00:00"}
+  gateway /salud: operativo · registro: operativo
+  (se volvieron a encender los tres nodos)
+
+Corrección: el /salud del registro decía "estado": "operativo" aunque MongoDB no tuviera primario, y el gateway
+lee ese campo. Ahora "estado" es el de MongoDB. Misma prueba después de reconstruir el registro (14:48:38):
+  con los tres nodos arriba -> gateway /salud: operativo · registro: operativo
+  sin primario, 12 s después -> gateway /salud: degradado · registro: caido · mongodb: {'estado': 'caido', 'primario': None, 'secundarios': 0}
+  sesion:/estado-capas registro -> caido
+  nodos encendidos de nuevo, 15 s después -> gateway /salud: operativo · registro: operativo

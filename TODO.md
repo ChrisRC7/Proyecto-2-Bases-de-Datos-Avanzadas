@@ -9,12 +9,12 @@
 
 | Persona | Rol principal | Hechas / Total | Notas |
 |---|---|---|---|
-| A | Registro (MongoDB) + dataset operacional + simulador + carga | 24 / 34 | 24 hechas, 5 a medias (falta repetir pruebas vía gateway), 1 bloqueada (PRs de B), P6 y 3 del informe pendientes |
+| A | Registro (MongoDB) + dataset operacional + simulador + carga | 25 / 34 | 25 hechas, 4 a medias (falta repetir pruebas vía gateway), 1 bloqueada (PRs de B), P6 y 3 del informe pendientes |
 | B | Sesión (Valkey) + Gateway + salud | 17 / 29 | B1.1, B1.2, B2.1–B2.8 y B3.1–B3.8 completadas  con excepcion de B3.6; publicación durable de eventos verificada. |
 | C | Historial (Parquet) + Analítica (Spark) + dataset histórico | 23 / 31 | 23 hechas, 2 a medias (falta el gateway y /estado-capas de B), 1 bloqueada por B, 5 del informe y README al final |
 | Todos | Integración, informe, defensa | 0 / 12 | |
 
-_Última actualización: 2026-11-10 — A completó las rutas del gateway A4.1 y A4.2, probadas de punta a punta (24/34). B: B1.1, B1.2, B2.1–B2.8 y B3.1–B3.8 con excepcion de B3.6 (17/29)._
+_Última actualización: 2026-11-10 — A completó las rutas del gateway A4.1 y A4.2, probadas de punta a punta, y A2.9 (25/34). B: B1.1, B1.2, B2.1–B2.8 y B3.1–B3.8 con excepcion de B3.6 (17/29)._
 ---
 
 ## Cómo está dividido el trabajo
@@ -79,8 +79,8 @@ dataset · **S3–S4** integración y pruebas · **S5** informe, README final, e
 - [x] A2.7 Cada transición devuelve los datos necesarios para que el gateway arme el evento (`event_id`, estado del lago — `rechazada` en rechazo —, `tomada_ts`, `sla_horas`, `equipo_id`...) y guarda `ultimo_evento_id`.
 - [x] A2.8 `GET /proyectos/{id}/exportar?pagina=&tamano=` paginado por `_id` (cursor/keyset, no `skip` grande).
       Nota: se usa ?cursor=&limite= como en endpoints/gateway.md y registro.md.
-- [~] A2.9 `GET /salud` (incluye si hay PRIMARY) + latido cada 5 s a `POST sesion:/estado-capas` (D4); nunca escribe directo en Valkey.
-      Nota: salud y latido listos; falta verlo llegar al /estado-capas real de sesion (B2.7).
+- [x] A2.9 `GET /salud` (incluye si hay PRIMARY) + latido cada 5 s a `POST sesion:/estado-capas` (D4); nunca escribe directo en Valkey.
+      Nota: el latido llega al /estado-capas real de sesion cada 5 s y pasa a `caido` sin primario. El /salud del registro decía `estado: operativo` aunque MongoDB estuviera caído y el gateway lee ese campo; ahora `estado` es el de MongoDB (evidence/A2.9_latido_registro_20261110-1447.txt).
 - [x] A2.10 Timeouts cortos a Mongo (`serverSelectionTimeoutMS`) para que el gateway pueda devolver 503 rápido.
 
 ### A3. Índices
@@ -283,3 +283,4 @@ _(agregar aquí con persona sugerida y fecha)_
 - [x] (A, 2026-10-22) registro: si el primario se degradaba mientras esperaba la mayoría, `WriteConcernError` (11602 `InterruptedDueToReplStateChange`) salía como 500. Ahora responde 503 `mongodb_sin_mayoria`. Lo encontró P8 sin mayoría (`evidence/P8_mongo_sin-mayoria_20261022-2024.txt`).
 - [ ] (B, 2026-11-10) gateway: después de un envío el lock se suelta en segundo plano (cada 2 s). Si la tarea se rechaza y se pide otra vez antes, `/tareas/siguiente` responde 503 porque el lock viejo sigue en Valkey. Lo encontró la prueba de A4 (`pruebas/a4_rutas_gateway.py`).
 - [ ] (B, 2026-11-10) gateway `limpiezas.py`: con 404/409 la limpieza se reprograma para siempre, aunque el comentario dice que ya no se puede completar. Cada envío sin borrador deja un `eliminar_borrador` que se reintenta cada 60 s (en la prueba de A4 llegaron a 6 intentos). Va a pesar en P6.
+- [ ] (B, 2026-11-10) gateway `/salud`: con el registro caído (MongoDB sin primario) responde `degradado`; `endpoints/gateway.md` dice `caido` si registro/MongoDB o sesión/Valkey no están, y `degradado` solo si fallan historial, analítica o Spark (evidence/A2.9_latido_registro_20261110-1447.txt).

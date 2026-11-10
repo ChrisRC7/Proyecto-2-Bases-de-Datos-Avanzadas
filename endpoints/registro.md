@@ -52,7 +52,8 @@ basta el filtro por estado, porque solo una petición puede encontrar la tarea e
 | 503 | `mongodb_sin_mayoria` | `w: majority` no se confirmó en `wtimeout`; la escritura pudo quedar en el primario. |
 
 `GET /salud` responde siempre 200: `{"servicio", "estado", "mongodb": {"estado": "operativo|caido",
-"primario", "secundarios"}, "ts"}`. Cada 5 s el registro publica ese estado en `sesion:/estado-capas` (D4).
+"primario", "secundarios"}, "ts"}`; `estado` es el de MongoDB (`caido` si no hay primario, porque sin él
+no se puede asignar ni guardar). Cada 5 s el registro publica ese estado en `sesion:/estado-capas` (D4).
 
 ## Modelo (BD `plataforma`)
 

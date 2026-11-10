@@ -282,7 +282,9 @@ def exportar(proyecto_id: str, cursor: str | None = None, limite: int = Query(10
 
 @app.get("/salud")
 def salud():
-    return {"servicio": SERVICIO, "estado": "operativo", "mongodb": estado_mongo(), "ts": ahora_iso()}
+    # Sin primario el registro no puede asignar ni guardar: el gateway lo lee como "caido".
+    mongo = estado_mongo()
+    return {"servicio": SERVICIO, "estado": mongo["estado"], "mongodb": mongo, "ts": ahora_iso()}
 
 
 def _latido():

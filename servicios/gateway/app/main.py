@@ -9,9 +9,12 @@ from app import eventos
 
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app import asignacion
+
+from app.cliente_interno import solicitar
+
 
 app = crear_app(SERVICIO)
 
@@ -74,3 +77,40 @@ async def salud():
         "estado": "operativo",
         "ts": ahora_iso(),
     }
+
+
+
+class SolicitudBorrador(BaseModel):
+    token: UUID
+    contenido: dict = Field(...)
+
+
+@app.put("/tareas/{tarea_id}/borrador")
+async def guardar_borrador(
+    request: Request,
+    tarea_id: UUID,
+    cuerpo: SolicitudBorrador,
+    anotador_id: UUID = Header(alias="X-Anotador-Id"),
+):
+    respuesta = await solicitar(
+        "sesion",
+        "PUT",
+        f"/borradores/{tarea_id}",
+        json={
+            "anotador_id": str(anotador_id),
+            "token": str(cuerpo.token),
+            "contenido": cuerpo.contenido,
+        },
+        request_id=request.state.request_id,
+    )
+
+    datos = respuesta.json()
+
+    if respuesta.status_code != 200:
+        return error(
+            respuesta.status_code,
+            datos.get("error", "error_borrador"),
+            datos.get("detalle"),
+        )
+
+    return datos

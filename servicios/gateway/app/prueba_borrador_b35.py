@@ -1,0 +1,87 @@
+
+"""Pruebas B3.5: guardado de borradores desde gateway."""
+
+import asyncio
+from unittest.mock import AsyncMock, patch
+from uuid import uuid4
+
+import httpx
+
+from app import main
+from app.cliente_interno import permite_reintento
+
+
+def respuesta(codigo, datos):
+    return httpx.Response(
+        codigo,
+        json=datos,
+        request=httpx.Request("PUT", "http://sesion:8002/borradores/prueba"),
+    )
+
+
+async def pruebas():
+    tarea_id = uuid4()
+    anotador_id = uuid4()
+    token = uuid4()
+
+    cuerpo = main.SolicitudBorrador(
+        token=token,
+        contenido={"texto": "borrador de prueba"},
+    )
+
+    request = type("RequestPrueba", (), {})()
+    request.state = type("EstadoPrueba", (), {})()
+    request.state.request_id = "b35-request-id"
+
+    # 1. Guardado correcto.
+    solicitar = AsyncMock(return_value=respuesta(
+        200,
+        {"estado": "ok", "borrador": {"contenido": {"texto": "borrador de prueba"}}},
+    ))
+
+    with patch.object(main, "solicitar", solicitar):
+        resultado = await main.guardar_borrador(
+            request, tarea_id, cuerpo, anotador_id
+        )
+
+    assert resultado["estado"] == "ok"
+    assert solicitar.await_args.kwargs["json"]["token"] == str(token)
+    assert solicitar.await_args.kwargs["json"]["anotador_id"] == str(anotador_id)
+    assert solicitar.await_args.kwargs["request_id"] == "b35-request-id"
+    print("OK | Borrador enviado a Sesión con token y anotador")
+
+    # 2. Conflicto de lock.
+    solicitar = AsyncMock(return_value=respuesta(
+        409,
+        {"error": "conflicto_lock", "detalle": "Token incorrecto"},
+    ))
+
+    with patch.object(main, "solicitar", solicitar):
+        resultado = await main.guardar_borrador(
+            request, tarea_id, cuerpo, anotador_id
+        )
+
+    assert resultado.status_code == 409
+    print("OK | Token incorrecto: HTTP 409")
+
+    # 3. Reintentos seguros en la ruta interna.
+    assert permite_reintento("PUT", f"/borradores/{tarea_id}")
+    assert permite_reintento("PUT", f"/tareas/{tarea_id}/borrador")
+    assert not permite_reintento("POST", f"/tareas/{tarea_id}/enviar")
+    assert not permite_reintento("PUT", f"/locks/{tarea_id}")
+    print("OK | Reintentos permitidos solo para PUT borrador")
+
+    # 4. Ruta pública registrada.
+    rutas = {
+        ruta.path
+        for ruta in main.app.routes
+        if hasattr(ruta, "path")
+    }
+    assert "/tareas/{tarea_id}/borrador" in rutas
+    print("OK | Ruta pública de borradores registrada")
+
+    print("B3.5_BORRADORES_OK")
+
+
+if __name__ == "__main__":
+    asyncio.run(pruebas())

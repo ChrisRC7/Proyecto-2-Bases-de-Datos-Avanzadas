@@ -31,6 +31,7 @@ class ServicioNoDisponible(Exception):
         super().__init__(f"{servicio}: {detalle}")
 
 
+
 def permite_reintento(metodo: str, ruta: str) -> bool:
     metodo = metodo.upper()
 
@@ -38,9 +39,15 @@ def permite_reintento(metodo: str, ruta: str) -> bool:
         return True
 
     if metodo == "PUT":
-        return bool(re.fullmatch(r"/tareas/[^/]+/borrador/?", ruta))
+        return bool(
+            re.fullmatch(
+                r"/(?:tareas/[^/]+/borrador|borradores/[^/]+)/?",
+                ruta,
+            )
+        )
 
     return False
+
 
 
 async def solicitar(

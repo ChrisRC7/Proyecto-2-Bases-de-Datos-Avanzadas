@@ -1,0 +1,5 @@
+﻿OK | Borrador enviado a Sesi├│n con token y anotador
+OK | Token incorrecto: HTTP 409
+OK | Reintentos permitidos solo para PUT borrador
+OK | Ruta p├║blica de borradores registrada
+B3.5_BORRADORES_OK

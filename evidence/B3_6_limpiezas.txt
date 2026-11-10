@@ -1,0 +1,16 @@
+﻿{"ts": "2026-11-10T03:02:47.407903+00:00", "nivel": "WARNING", "servicio": "gateway", "msg": "limpieza_reprogramada", "tarea_id": "023946e3-e573-438a-9f2e-175008fdb327", "accion": "eliminar_borrador"}
+{"ts": "2026-11-10T03:02:47.413946+00:00", "nivel": "WARNING", "servicio": "gateway", "msg": "limpieza_reprogramada", "tarea_id": "023946e3-e573-438a-9f2e-175008fdb327", "accion": "soltar_lock"}
+{"ts": "2026-11-10T03:02:47.418206+00:00", "nivel": "WARNING", "servicio": "gateway", "msg": "limpieza_reprogramada", "tarea_id": "023946e3-e573-438a-9f2e-175008fdb327", "accion": "cerrar_sesion"}
+{"ts": "2026-11-10T03:02:47.426638+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "limpieza_finalizada", "tarea_id": "023946e3-e573-438a-9f2e-175008fdb327", "accion": "eliminar_borrador", "status": 200}
+{"ts": "2026-11-10T03:02:47.431372+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "limpieza_finalizada", "tarea_id": "023946e3-e573-438a-9f2e-175008fdb327", "accion": "soltar_lock", "status": 200}
+{"ts": "2026-11-10T03:02:47.436318+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "limpieza_finalizada", "tarea_id": "023946e3-e573-438a-9f2e-175008fdb327", "accion": "cerrar_sesion", "status": 200}
+{"ts": "2026-11-10T03:02:47.449103+00:00", "nivel": "WARNING", "servicio": "gateway", "msg": "limpieza_no_confirmada", "tarea_id": "023946e3-e573-438a-9f2e-175008fdb327", "accion": "eliminar_borrador", "status": 409}
+{"ts": "2026-11-10T03:02:47.453919+00:00", "nivel": "WARNING", "servicio": "gateway", "msg": "limpieza_no_confirmada", "tarea_id": "023946e3-e573-438a-9f2e-175008fdb327", "accion": "soltar_lock", "status": 409}
+{"ts": "2026-11-10T03:02:47.458787+00:00", "nivel": "WARNING", "servicio": "gateway", "msg": "limpieza_no_confirmada", "tarea_id": "023946e3-e573-438a-9f2e-175008fdb327", "accion": "cerrar_sesion", "status": 409}
+OK | Tres limpiezas guardadas en SQLite
+OK | Sesi├│n ca├¡da: limpiezas conservadas
+OK | Limpiezas recuperadas tras reinicializar
+OK | Recuperaci├│n: tres limpiezas ejecutadas
+OK | Registro idempotente de limpiezas
+OK | HTTP 409: limpiezas conservadas
+B3.6_LIMPIEZAS_OK

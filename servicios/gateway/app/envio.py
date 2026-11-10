@@ -4,7 +4,7 @@
 from app import eventos
 from app.cliente_interno import ServicioNoDisponible, solicitar
 from app.comun import log
-
+from app import limpiezas
 
 async def enviar(tarea_id, anotador_id, token, anotacion, request_id=None):
     tarea_id = str(tarea_id)
@@ -48,57 +48,14 @@ async def enviar(tarea_id, anotador_id, token, anotacion, request_id=None):
     # Si falla SQLite, no eliminamos el borrador.
     await eventos.publicar_evento(evento)
 
-    # 4. Mongo ya confirmó. La limpieza es posterior.
-    acciones = [
-        (
-            "eliminar_borrador",
-            "DELETE",
-            f"/borradores/{tarea_id}",
-            {"anotador_id": anotador_id, "token": token},
-        ),
-        (
-            "soltar_lock",
-            "POST",
-            f"/locks/{tarea_id}",
-            {"accion": "soltar", "token": token},
-        ),
-        (
-            "cerrar_sesion",
-            "POST",
-            f"/sesiones/{anotador_id}",
-            {"accion": "cerrar", "token": token},
-        ),
-    ]
 
-    for nombre, metodo, ruta, cuerpo in acciones:
-        try:
-            resultado = await solicitar(
-                "sesion",
-                metodo,
-                ruta,
-                json=cuerpo,
-                request_id=request_id,
-            )
-
-            if resultado.status_code != 200:
-                log.warning(
-                    "limpieza_envio_pendiente",
-                    extra={"datos": {
-                        "accion": nombre,
-                        "tarea_id": tarea_id,
-                        "status": resultado.status_code,
-                    }},
-                )
-
-        except ServicioNoDisponible:
-            log.warning(
-                "limpieza_envio_pendiente",
-                extra={"datos": {
-                    "accion": nombre,
-                    "tarea_id": tarea_id,
-                    "causa": "servicio_no_disponible",
-                }},
-            )
+    # 4. Mongo ya confirmó. Registrar las limpiezas
+    # para que sobrevivan a reinicios del gateway.
+    await limpiezas.registrar(
+        tarea_id,
+        anotador_id,
+        token,
+    )
 
     return 200, {
         "estado": datos["tarea"]["estado"],

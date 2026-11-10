@@ -17,6 +17,8 @@ from app.cliente_interno import solicitar
 
 from app import envio
 
+from app import limpiezas
+
 app = crear_app(SERVICIO)
 
 
@@ -49,14 +51,18 @@ async def tareas_siguiente(
     return datos
 
 
+
 @app.on_event("startup")
 async def startup():
     await eventos.iniciar_publicador()
+    await limpiezas.iniciar()
 
 
 @app.on_event("shutdown")
 async def shutdown():
+    await limpiezas.detener()
     await eventos.detener_publicador()
+
 
 
 @app.exception_handler(ServicioNoDisponible)

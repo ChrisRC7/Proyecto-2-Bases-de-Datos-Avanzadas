@@ -156,7 +156,9 @@ dataset · **S3–S4** integración y pruebas · **S5** informe, README final, e
 - [x] B3.3 Función común `publicar_evento()` → `POST historial:/eventos` (usada por A y C también). Si historial falla, no se pierde el 200 (encolar/reintentar en background y documentarlo).
 - [x] B3.4 `POST /tareas/siguiente`: abre/actualiza sesión → asigna en registro → toma lock con el token → si el lock falla o Mongo falla, revertir (liberar en registro / soltar lock) → 204 si no hay tareas; incluir borrador recuperable si existe → evento `abierta`.
 - [x] B3.5 `PUT /tareas/{id}/borrador`: guarda borrador + renueva lock (409 si el token no coincide).
-- [ ] B3.6 `POST /tareas/{id}/enviar`: verifica lock/token → transición en registro → 200 / 409 / 503 (sin reintento, borrador queda) → evento `anotada` solo tras 200 → borra borrador y suelta lock.
+- [~] B3.6 `POST /tareas/{id}/enviar`: verifica lock/token → transición en registro → 200 / 409 / 503 (sin reintento, borrador queda) → evento `anotada` solo tras 200 → borra borrador y suelta lock.
+Nota: implementación y 6 pruebas automatizadas aprobadas; validación HTTP 422 correcta. Pendiente recuperar eventos si SQLite falla después de confirmar MongoDB y reintentar limpiezas fallidas. Evidencia: evidence/B3_6_envio.txt.
+Nota: envío implementado y probado; limpiezas posteriores al HTTP 200 almacenadas en SQLite con reintentos automáticos. Se verificó la recuperación ante fallos de Sesión y la conservación de pendientes ante HTTP 409. Evidencias: evidence/B3_6_envio.txt y evidence/B3_6_limpiezas.txt. Pendiente recuperar eventos si MongoDB confirma pero falla SQLite.
 - [ ] B3.7 `POST /tareas/{id}/liberar` y `POST /sesiones/recuperar` (tarea + último borrador).
 - [ ] B3.8 `GET /salud`: consulta cada capa con timeout ~1 s en paralelo; `operativo` / `degradado` / `caído` + detalle por capa; nunca lanza excepción (el gateway sigue vivo aunque todo esté caído).
 

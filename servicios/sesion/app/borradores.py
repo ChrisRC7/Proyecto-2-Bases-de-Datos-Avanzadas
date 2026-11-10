@@ -62,3 +62,25 @@ def recuperar(tarea_id: str) -> dict | None:
         "token": datos["token"],
         "guardado_en": int(datos["guardado_en"]),
     }
+
+
+
+LUA_ELIMINAR = """
+if redis.call('HGET', KEYS[1], 'token') == ARGV[1]
+and redis.call('HGET', KEYS[1], 'anotador') == ARGV[2]
+then
+    return redis.call('DEL', KEYS[1])
+end
+return 0
+"""
+
+
+def eliminar(tarea_id: str, anotador_id: str, token: str) -> bool:
+    """Elimina el borrador solo si pertenece al anotador y token."""
+    return bool(cliente.eval(
+        LUA_ELIMINAR,
+        1,
+        f"borrador:{tarea_id}",
+        token,
+        anotador_id,
+    ))

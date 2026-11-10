@@ -15,6 +15,7 @@ from app import asignacion
 
 from app.cliente_interno import solicitar
 
+from app import envio
 
 app = crear_app(SERVICIO)
 
@@ -110,6 +111,37 @@ async def guardar_borrador(
         return error(
             respuesta.status_code,
             datos.get("error", "error_borrador"),
+            datos.get("detalle"),
+        )
+
+    return datos
+
+
+
+class SolicitudEnviar(BaseModel):
+    token: UUID
+    anotacion: dict
+
+
+@app.post("/tareas/{tarea_id}/enviar")
+async def enviar_anotacion(
+    request: Request,
+    tarea_id: UUID,
+    cuerpo: SolicitudEnviar,
+    anotador_id: UUID = Header(alias="X-Anotador-Id"),
+):
+    codigo, datos = await envio.enviar(
+        tarea_id=tarea_id,
+        anotador_id=anotador_id,
+        token=cuerpo.token,
+        anotacion=cuerpo.anotacion,
+        request_id=request.state.request_id,
+    )
+
+    if codigo != 200:
+        return error(
+            codigo,
+            datos.get("error", "error_envio"),
             datos.get("detalle"),
         )
 

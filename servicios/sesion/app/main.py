@@ -43,6 +43,9 @@ class EstadoCapa(BaseModel):
     estado: str
     detalle: dict | str | None = None
 
+class SolicitudEliminarBorrador(BaseModel):
+    anotador_id: str
+    token: str
 
 def pendiente(actividad: str):
     return error(
@@ -319,3 +322,31 @@ def salud():
             },
             "ts": ahora_iso(),
         }
+
+
+@app.delete("/borradores/{tarea_id}")
+def eliminar_borrador(
+    tarea_id: str,
+    cuerpo: SolicitudEliminarBorrador,
+):
+    try:
+        eliminado = borradores.eliminar(
+            tarea_id,
+            cuerpo.anotador_id,
+            cuerpo.token,
+        )
+    except valkey.ValkeyError:
+        return error(
+            503,
+            "valkey_no_disponible",
+            "No se pudo eliminar el borrador",
+        )
+
+    if not eliminado:
+        return error(
+            409,
+            "borrador_no_coincide",
+            "El borrador no existe o pertenece a otro token",
+        )
+
+    return {"estado": "ok", "eliminado": True}

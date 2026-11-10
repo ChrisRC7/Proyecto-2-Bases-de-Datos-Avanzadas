@@ -9,12 +9,12 @@
 
 | Persona | Rol principal | Hechas / Total | Notas |
 |---|---|---|---|
-| A | Registro (MongoDB) + dataset operacional + simulador + carga | 25 / 34 | 25 hechas, 4 a medias (falta repetir pruebas vía gateway), 1 bloqueada (PRs de B), P6 y 3 del informe pendientes |
+| A | Registro (MongoDB) + dataset operacional + simulador + carga | 26 / 34 | 26 hechas, 3 a medias (P8 vía gateway, simulador y README), 1 bloqueada (PRs de B), P6 y 3 del informe pendientes |
 | B | Sesión (Valkey) + Gateway + salud | 17 / 29 | B1.1, B1.2, B2.1–B2.8 y B3.1–B3.8 completadas  con excepcion de B3.6; publicación durable de eventos verificada. |
 | C | Historial (Parquet) + Analítica (Spark) + dataset histórico | 23 / 31 | 23 hechas, 2 a medias (falta el gateway y /estado-capas de B), 1 bloqueada por B, 5 del informe y README al final |
 | Todos | Integración, informe, defensa | 0 / 12 | |
 
-_Última actualización: 2026-11-10 — A completó las rutas del gateway A4.1 y A4.2, probadas de punta a punta, y A2.9 (25/34). B: B1.1, B1.2, B2.1–B2.8 y B3.1–B3.8 con excepcion de B3.6 (17/29)._
+_Última actualización: 2026-11-10 — A completó las rutas del gateway A4.1 y A4.2, probadas de punta a punta, A2.9 y P2 vía gateway (26/34). B: B1.1, B1.2, B2.1–B2.8 y B3.1–B3.8 con excepcion de B3.6 (17/29)._
 ---
 
 ## Cómo está dividido el trabajo
@@ -111,8 +111,8 @@ dataset · **S3–S4** integración y pruebas · **S5** informe, README final, e
       Nota: CSV con ts, fase (calentamiento/medicion), usuario, rol, endpoint, status y ms; resumen p50/p95/p99 por endpoint y envíos/min.
 
 ### A7. Pruebas
-- [~] A7.1 **P2**: estado del replica set + script con `ProcessPoolExecutor`: preparar exactamente 10 tareas libres, 50 solicitudes simultáneas → verificar 10 asignaciones, 40 sin tarea (204), ninguna tarea con 2 anotadores (consulta de verificación vía gateway/export), segundo envío → 409. Evidencia.
-      Nota: corrida preliminar contra el registro, sin gateway: 10/40, cero dobles, 409 en el reenvío (evidence/P2_concurrencia_registro_20261022-2007.md). Falta repetirla vía gateway (B3.4, B3.6).
+- [x] A7.1 **P2**: estado del replica set + script con `ProcessPoolExecutor`: preparar exactamente 10 tareas libres, 50 solicitudes simultáneas → verificar 10 asignaciones, 40 sin tarea (204), ninguna tarea con 2 anotadores (consulta de verificación vía gateway/export), segundo envío → 409. Evidencia.
+      Nota: vía gateway, desde el contenedor simulador (red borde): 10/40, cero dobles, 409 con token ajeno y en el reenvío, 10 aprobadas exportadas con su anotador (evidence/P2_concurrencia_gateway_20261110-1450.md). La preliminar contra el registro queda como respaldo (evidence/P2_concurrencia_registro_20261022-2007.md).
 - [ ] A7.2 **P6**: 10, 40, 100 usuarios virtuales; 30 s calentamiento + 3 corridas de 90 s por nivel; p50/p95/p99 por endpoint, envíos/min, errores, `docker stats` muestreado. Características de la máquina.
       Nota: ya no está bloqueada: el gateway tiene las rutas de B (B3.4-B3.7) y la revisión (A4.2). El simulador (A6) ya está listo.
 - [~] A7.3 **P8 (Mongo)**: detener secundario (sigue escribiendo), detener primario (elección; lo que dio 200 sigue una sola vez), detener dos nodos (sin mayoría no escribe → 503). Medir RTO/RPO. Restaurar estado conocido y registrar acciones.
@@ -284,3 +284,4 @@ _(agregar aquí con persona sugerida y fecha)_
 - [ ] (B, 2026-11-10) gateway: después de un envío el lock se suelta en segundo plano (cada 2 s). Si la tarea se rechaza y se pide otra vez antes, `/tareas/siguiente` responde 503 porque el lock viejo sigue en Valkey. Lo encontró la prueba de A4 (`pruebas/a4_rutas_gateway.py`).
 - [ ] (B, 2026-11-10) gateway `limpiezas.py`: con 404/409 la limpieza se reprograma para siempre, aunque el comentario dice que ya no se puede completar. Cada envío sin borrador deja un `eliminar_borrador` que se reintenta cada 60 s (en la prueba de A4 llegaron a 6 intentos). Va a pesar en P6.
 - [ ] (B, 2026-11-10) gateway `/salud`: con el registro caído (MongoDB sin primario) responde `degradado`; `endpoints/gateway.md` dice `caido` si registro/MongoDB o sesión/Valkey no están, y `degradado` solo si fallan historial, analítica o Spark (evidence/A2.9_latido_registro_20261110-1447.txt).
+- [ ] (B, 2026-11-10) gateway `cliente_interno.py`: crea un `httpx.AsyncClient` nuevo en cada llamada y crear uno cuesta unos 35 ms de CPU que bloquean al gateway. En P2 vía gateway el registro respondió con p50 52 ms, pero el cliente vio p50 3,4 s (evidence/P2_concurrencia_gateway_20261110-1450.md). Reusar un solo cliente creado al arrancar. Conviene corregirlo antes de P6.

@@ -1,0 +1,44 @@
+== A4.1 proyectos y lotes
+OK    POST /proyectos cliente inexistente          esperado 404 obtenido 404  {"error": "cliente_no_existe", "detalle": "956d713f-f0ce-445f-8739-e43ca8748655"}
+OK    POST /proyectos sin taxonomía                esperado 422 obtenido 422  {"error": "validacion", "detalle": [{"type": "too_short", "loc": ["body", "taxonomia"], "msg": "List should have at least 1 item after validation, not
+OK    POST /proyectos                              esperado 201 obtenido 201  {"proyecto_id": "0a9f44ad-c65f-4dd9-8bdb-0ca81109bc0e"}
+OK    POST /proyectos/{id}/lotes mime de imagen    esperado 422 obtenido 422  {"error": "lote_invalido", "detalle": [{"tarea": 0, "error": "mime 'image/png' no corresponde a 'lidar'"}]}
+OK    POST /proyectos/{id}/lotes proyecto inexistente esperado 404 obtenido 404  {"error": "proyecto_no_existe", "detalle": "82094e66-5f80-4c31-90fc-e63bf3da49ec"}
+OK    POST /proyectos/{id}/lotes                   esperado 201 obtenido 201  {"batch_id": "328e46f5-227e-45b1-8511-c5337bb47294", "tareas": 2}
+== A4.2 revisión: aprobar
+OK    POST /tareas/siguiente                       esperado 200 obtenido 200  {"tarea": {"tarea_id": "280173a5-e7bd-4d21-bcc8-20202ff8ab57", "proyecto_id": "0a9f44ad-c65f-4dd9-8bdb-0ca81109bc0e", "modalidad": "lidar", "tipo_tare
+OK    POST /tareas/{id}/enviar                     esperado 200 obtenido 200  {"estado": "anotada", "version": 2, "event_id": "8ac22408-e1ca-4927-b7fa-521fc6c7a321"}
+OK    revision aprobar sin empezar                 esperado 409 obtenido 409  {"error": "transicion_invalida", "detalle": {"accion": "aprobar", "estado": "anotada", "version": 2}}
+OK    revision empezar por un anotador             esperado 422 obtenido 422  {"error": "actor_no_es_revisor", "detalle": "adbafed0-b600-460c-bbdc-fd55304374b3"}
+OK    revision empezar                             esperado 200 obtenido 200  {"estado": "en_revision", "version": 3, "event_id": "fb29bd0f-4a07-4f56-8c3e-abf16f34a943"}
+OK    revision empezar otra vez                    esperado 409 obtenido 409  {"error": "transicion_invalida", "detalle": {"accion": "empezar_revision", "estado": "en_revision", "version": 3}}
+OK    revision aprobar                             esperado 200 obtenido 200  {"estado": "aprobada", "version": 4, "event_id": "6ad6d4f4-eb1b-4d76-82c5-4a05120c8157"}
+== A4.2 revisión: rechazar
+OK    POST /tareas/siguiente                       esperado 200 obtenido 200  {"tarea": {"tarea_id": "69bf0cd8-1e2b-42fa-ab85-d82ae2449e62", "proyecto_id": "0a9f44ad-c65f-4dd9-8bdb-0ca81109bc0e", "modalidad": "lidar", "tipo_tare
+OK    POST /tareas/{id}/enviar                     esperado 200 obtenido 200  {"estado": "anotada", "version": 2, "event_id": "a6b16010-59c1-4713-bcdc-d08f364802bf"}
+OK    revision empezar                             esperado 200 obtenido 200  {"estado": "en_revision", "version": 3, "event_id": "ffb3a15b-206c-4018-af26-a6b006ded24b"}
+OK    revision rechazar sin motivo                 esperado 422 obtenido 422  {"error": "validacion", "detalle": [{"type": "value_error", "loc": ["body"], "msg": "Value error, 'rechazar' requiere un motivo", "input": {"accion": 
+OK    revision rechazar motivo inventado           esperado 422 obtenido 422  {"error": "validacion", "detalle": [{"type": "literal_error", "loc": ["body", "motivo"], "msg": "Input should be 'ETIQUETA_INCORRECTA', 'GEOMETRIA_IMP
+OK    revision rechazar                            esperado 200 obtenido 200  {"estado": "disponible", "version": 4, "event_id": "e4e71ee4-919e-4b26-a3f9-4f920014ea75"}
+OK    revision rechazar otra vez                   esperado 409 obtenido 409  {"error": "transicion_invalida", "detalle": {"accion": "rechazar", "estado": "disponible", "version": 4}}
+OK    revision tarea inexistente                   esperado 404 obtenido 404  {"error": "tarea_no_existe", "detalle": "95d46dd4-51b3-4a60-930c-ae35de713550"}
+OK    la rechazada se vuelve a ofrecer             esperado 200 obtenido 200  {"tarea": {"tarea_id": "69bf0cd8-1e2b-42fa-ab85-d82ae2449e62", "proyecto_id": "0a9f44ad-c65f-4dd9-8bdb-0ca81109bc0e", "modalidad": "lidar", "tipo_tare
+OK    POST /tareas/{id}/liberar                    esperado 200 obtenido 200  {"estado": "disponible"}
+== A4.1 exportar
+OK    GET /proyectos/{id}/exportar                 esperado 200 obtenido 200  {"tareas": [{"tarea_id": "280173a5-e7bd-4d21-bcc8-20202ff8ab57", "batch_id": "328e46f5-227e-45b1-8511-c5337bb47294", "modalidad": "lidar", "tipo_tarea
+      exportadas ['280173a5-e7bd-4d21-bcc8-20202ff8ab57'] (se esperaba solo 280173a5-e7bd-4d21-bcc8-20202ff8ab57), siguiente_cursor None
+OK    GET /proyectos/{id}/exportar inexistente     esperado 404 obtenido 404  {"error": "proyecto_no_existe", "detalle": "409b2081-658c-4bc6-a8d0-91f67692e6b0"}
+
+proyecto 0a9f44ad-c65f-4dd9-8bdb-0ca81109bc0e · aprobada 280173a5-e7bd-4d21-bcc8-20202ff8ab57 · rechazada 69bf0cd8-1e2b-42fa-ab85-d82ae2449e62
+FALLAS: 0
+
+== Comprobación aparte (docker compose exec), después de POST historial:/flush
+lago, tarea rechazada:
+   {'version': 1, 'estado': 'abierta', 'event_id': '8032b83d-b6f5-46fe-93e3-ca45910f8bf6'} 
+   {'version': 2, 'estado': 'anotada', 'event_id': 'a6b16010-59c1-4713-bcdc-d08f364802bf'} 
+   {'version': 3, 'estado': 'en_revision', 'event_id': 'ffb3a15b-206c-4018-af26-a6b006ded24b'} 
+   {'version': 4, 'estado': 'rechazada', 'event_id': 'e4e71ee4-919e-4b26-a3f9-4f920014ea75'} motivo=ETIQUETA_INCORRECTA
+   {'version': 5, 'estado': 'abierta', 'event_id': '348095f0-d5a2-4c01-b5ad-923e230c5750'} 
+   {'version': 6, 'estado': 'liberada', 'event_id': 'f0a94570-04d7-441e-8a1b-0d2bb6b924d0'} 
+mongo, misma tarea: {"estado":"disponible","version":6,"ultima_revision":"rechazada","motivo":"ETIQUETA_INCORRECTA"}
+eventos pendientes en el gateway: 0

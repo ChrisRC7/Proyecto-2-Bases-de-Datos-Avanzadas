@@ -25,6 +25,13 @@ from datetime import datetime, timezone
 
 from app import salud as salud_capas
 
+from typing import Literal
+
+from fastapi.responses import JSONResponse
+from pydantic import model_validator
+
+from app import revision
+
 app = crear_app(SERVICIO)
 
 
@@ -227,3 +234,92 @@ async def recuperar_sesion(
             else None
         ),
     }
+
+
+# --- A4.1: rutas de proyectos, lotes y exportación (pasan directo a registro) ---
+
+def _reenviar(respuesta):
+    """Devuelve el código y el cuerpo de registro tal cual (sus errores ya usan el formato común)."""
+    return JSONResponse(status_code=respuesta.status_code, content=respuesta.json())
+
+
+@app.post("/proyectos", status_code=201)
+async def crear_proyecto(request: Request, cuerpo: dict):
+    # La validación completa (cliente, taxonomía, sla_horas) la hace registro.
+    respuesta = await solicitar(
+        "registro", "POST", "/proyectos",
+        json=cuerpo, request_id=request.state.request_id,
+    )
+    return _reenviar(respuesta)
+
+
+@app.post("/proyectos/{proyecto_id}/lotes", status_code=201)
+async def crear_lote(request: Request, proyecto_id: UUID, cuerpo: dict):
+    respuesta = await solicitar(
+        "registro", "POST", f"/proyectos/{proyecto_id}/lotes",
+        json=cuerpo, request_id=request.state.request_id,
+    )
+    return _reenviar(respuesta)
+
+
+@app.get("/proyectos/{proyecto_id}/exportar")
+async def exportar(
+    request: Request,
+    proyecto_id: UUID,
+    cursor: UUID | None = None,
+    limite: int = 100,
+):
+    params = {"limite": limite}
+    if cursor is not None:
+        params["cursor"] = str(cursor)
+
+    # GET: el cliente interno lo reintenta una vez si registro no responde.
+    respuesta = await solicitar(
+        "registro", "GET", f"/proyectos/{proyecto_id}/exportar",
+        params=params, request_id=request.state.request_id,
+    )
+    return _reenviar(respuesta)
+
+
+# --- A4.2: revisión (empezar, aprobar, rechazar) ---
+
+MOTIVOS = Literal[
+    "ETIQUETA_INCORRECTA", "GEOMETRIA_IMPRECISA", "OBJETO_OMITIDO",
+    "INSTRUCCION_NO_SEGUIDA", "OTRO",
+]
+
+
+class SolicitudRevision(BaseModel):
+    accion: Literal["empezar", "aprobar", "rechazar"]
+    motivo: MOTIVOS | None = None
+
+    @model_validator(mode="after")
+    def motivo_en_rechazo(self):
+        if self.accion == "rechazar" and self.motivo is None:
+            raise ValueError("'rechazar' requiere un motivo")
+        return self
+
+
+@app.post("/tareas/{tarea_id}/revision")
+async def revisar_tarea(
+    request: Request,
+    tarea_id: UUID,
+    cuerpo: SolicitudRevision,
+    revisor_id: UUID = Header(alias="X-Anotador-Id"),
+):
+    codigo, datos = await revision.revisar(
+        tarea_id=tarea_id,
+        revisor_id=revisor_id,
+        accion=cuerpo.accion,
+        motivo=cuerpo.motivo,
+        request_id=request.state.request_id,
+    )
+
+    if codigo != 200:
+        return error(
+            codigo,
+            datos.get("error", "error_revision"),
+            datos.get("detalle"),
+        )
+
+    return datos

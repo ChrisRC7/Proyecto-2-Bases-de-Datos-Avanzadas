@@ -9,12 +9,12 @@
 
 | Persona | Rol principal | Hechas / Total | Notas |
 |---|---|---|---|
-| A | Registro (MongoDB) + dataset operacional + simulador + carga | 22 / 34 | 22 hechas, 5 a medias (falta el gateway), 4 bloqueadas por B, 3 del informe al final |
+| A | Registro (MongoDB) + dataset operacional + simulador + carga | 24 / 34 | 24 hechas, 5 a medias (falta repetir pruebas vía gateway), 1 bloqueada (PRs de B), P6 y 3 del informe pendientes |
 | B | Sesión (Valkey) + Gateway + salud | 17 / 29 | B1.1, B1.2, B2.1–B2.8 y B3.1–B3.8 completadas  con excepcion de B3.6; publicación durable de eventos verificada. |
 | C | Historial (Parquet) + Analítica (Spark) + dataset histórico | 23 / 31 | 23 hechas, 2 a medias (falta el gateway y /estado-capas de B), 1 bloqueada por B, 5 del informe y README al final |
 | Todos | Integración, informe, defensa | 0 / 12 | |
 
-_Última actualización: 2026-11-09 — B completó B1.1, B1.2, B2.1–B2.8 y B3.1–B3.8 con excepcion de B3.6 (17/29). Gateway conectado con Sesión para guardar borradores; pendiente validación integral._
+_Última actualización: 2026-11-10 — A completó las rutas del gateway A4.1 y A4.2, probadas de punta a punta (24/34). B: B1.1, B1.2, B2.1–B2.8 y B3.1–B3.8 con excepcion de B3.6 (17/29)._
 ---
 
 ## Cómo está dividido el trabajo
@@ -90,10 +90,10 @@ dataset · **S3–S4** integración y pruebas · **S5** informe, README final, e
       Nota: extra tareas {estado:1, prioridad:-1} para la asignación sin proyecto (60 000 → 1 documento examinado); la exportación no lleva índice propio. Ver evidence/A3_explain_registro_20261022-2003.md.
 
 ### A4. Rutas del gateway (sobre el núcleo de B)
-- [!] A4.1 `POST /proyectos`, `POST /proyectos/{id}/lotes`, `GET /proyectos/{id}/exportar` → registro.
-      Nota: bloqueada: van sobre el núcleo del gateway (B3.1 middleware, B3.2 cliente interno). El registro ya responde estas rutas.
-- [!] A4.2 `POST /tareas/{id}/revision`: empezar revisión / aprobar / rechazar → registro; si 200, publicar evento a historial (función de B).
-      Nota: bloqueada: necesita publicar_evento() de B (B3.3). El registro ya devuelve el evento listo en cada transición.
+- [x] A4.1 `POST /proyectos`, `POST /proyectos/{id}/lotes`, `GET /proyectos/{id}/exportar` → registro.
+      Nota: pasan directo a registro con el cliente interno de B; los errores de registro (404, 422) llegan tal cual. Ver evidence/A4_rutas_gateway_20261110-1446.txt.
+- [x] A4.2 `POST /tareas/{id}/revision`: empezar revisión / aprobar / rechazar → registro; si 200, publicar evento a historial (función de B).
+      Nota: `servicios/gateway/app/revision.py`. 422 sin motivo o con motivo fuera de la lista, 409 en estado inválido, 422 si no es revisor. En el rechazo Mongo queda `disponible` y el lago `rechazada` con su motivo (evidence/A4_rutas_gateway_20261110-1446.txt).
 
 ### A5. Dataset operacional (`dataset/`)
 - [x] A5.1 Generador reproducible (semilla fija) de 60 clientes, 120 proyectos activos, 600 batches, 60 000 tareas (30/30/20/20 % texto/imagen/video/LiDAR con geometría correcta), 300 anotadores en 30 equipos (10 % revisores). Incluir el proyecto LiDAR de ejemplo con su taxonomía.
@@ -113,8 +113,8 @@ dataset · **S3–S4** integración y pruebas · **S5** informe, README final, e
 ### A7. Pruebas
 - [~] A7.1 **P2**: estado del replica set + script con `ProcessPoolExecutor`: preparar exactamente 10 tareas libres, 50 solicitudes simultáneas → verificar 10 asignaciones, 40 sin tarea (204), ninguna tarea con 2 anotadores (consulta de verificación vía gateway/export), segundo envío → 409. Evidencia.
       Nota: corrida preliminar contra el registro, sin gateway: 10/40, cero dobles, 409 en el reenvío (evidence/P2_concurrencia_registro_20261022-2007.md). Falta repetirla vía gateway (B3.4, B3.6).
-- [!] A7.2 **P6**: 10, 40, 100 usuarios virtuales; 30 s calentamiento + 3 corridas de 90 s por nivel; p50/p95/p99 por endpoint, envíos/min, errores, `docker stats` muestreado. Características de la máquina.
-      Nota: bloqueada: P6 corre el simulador contra el gateway (B3.4-B3.7). El simulador (A6) ya está listo.
+- [ ] A7.2 **P6**: 10, 40, 100 usuarios virtuales; 30 s calentamiento + 3 corridas de 90 s por nivel; p50/p95/p99 por endpoint, envíos/min, errores, `docker stats` muestreado. Características de la máquina.
+      Nota: ya no está bloqueada: el gateway tiene las rutas de B (B3.4-B3.7) y la revisión (A4.2). El simulador (A6) ya está listo.
 - [~] A7.3 **P8 (Mongo)**: detener secundario (sigue escribiendo), detener primario (elección; lo que dio 200 sigue una sola vez), detener dos nodos (sin mayoría no escribe → 503). Medir RTO/RPO. Restaurar estado conocido y registrar acciones.
       Nota: corrida contra el registro, sin gateway: secundario sin errores; primario RTO 10,36 s; sin mayoría 503 y 2 errores que sí se escribieron; RPO 0 en los tres (evidence/P8_mongo_20261022-2028.md). Falta repetirla vía gateway (I.5).
 - [x] A7.4 Medición `w:"majority"` vs `w:1` (misma carga, mismo dataset) con la advertencia de que docker local no representa un clúster real.
@@ -281,3 +281,5 @@ Nota: envío implementado y probado; limpiezas posteriores al HTTP 200 almacenad
 _(agregar aquí con persona sugerida y fecha)_
 - [x] (A, 2026-10-22) `comun.py`: el 422 de un validador propio terminaba en 500 (la excepción en `ctx` no se podía serializar). Corregido y copiado a los 5 servicios.
 - [x] (A, 2026-10-22) registro: si el primario se degradaba mientras esperaba la mayoría, `WriteConcernError` (11602 `InterruptedDueToReplStateChange`) salía como 500. Ahora responde 503 `mongodb_sin_mayoria`. Lo encontró P8 sin mayoría (`evidence/P8_mongo_sin-mayoria_20261022-2024.txt`).
+- [ ] (B, 2026-11-10) gateway: después de un envío el lock se suelta en segundo plano (cada 2 s). Si la tarea se rechaza y se pide otra vez antes, `/tareas/siguiente` responde 503 porque el lock viejo sigue en Valkey. Lo encontró la prueba de A4 (`pruebas/a4_rutas_gateway.py`).
+- [ ] (B, 2026-11-10) gateway `limpiezas.py`: con 404/409 la limpieza se reprograma para siempre, aunque el comentario dice que ya no se puede completar. Cada envío sin borrador deja un `eliminar_borrador` que se reintenta cada 60 s (en la prueba de A4 llegaron a 6 intentos). Va a pesar en P6.

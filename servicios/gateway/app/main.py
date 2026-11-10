@@ -23,6 +23,8 @@ from app import liberacion
 
 from datetime import datetime, timezone
 
+from app import salud as salud_capas
+
 app = crear_app(SERVICIO)
 
 
@@ -83,11 +85,7 @@ async def servicio_no_disponible(_request: Request, exc: ServicioNoDisponible):
 
 @app.get("/salud")
 async def salud():
-    return {
-        "servicio": SERVICIO,
-        "estado": "operativo",
-        "ts": ahora_iso(),
-    }
+    return await salud_capas.consultar_salud()
 
 
 

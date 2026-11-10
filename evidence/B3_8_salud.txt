@@ -1,0 +1,9 @@
+﻿{"ts": "2026-11-10T03:31:39.828759+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "3482cae9-7fba-49db-bd37-4c640bfd6c53", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 203.37}
+{"ts": "2026-11-10T03:31:40.035794+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "ca1617d7-d57f-4e22-bf11-0b5ffad93f6c", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 204.78}
+{"ts": "2026-11-10T03:31:40.240864+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "152aa79c-2621-4a2c-a266-5236cbd76dc3", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 202.46}
+OK | Cuatro servicios operativos
+OK | Fallo parcial: gateway degradado
+OK | Todos caidos: gateway responde HTTP 200
+OK | Consultas paralelas verificadas
+Duracion: 0.204 s
+B3.8_SALUD_OK

@@ -9,12 +9,12 @@
 
 | Persona | Rol principal | Hechas / Total | Notas |
 |---|---|---|---|
-| A | Registro (MongoDB) + dataset operacional + simulador + carga | 27 / 34 | 27 hechas, 2 a medias (simulador y README), 1 bloqueada (PRs de B), P6 y 3 del informe pendientes |
+| A | Registro (MongoDB) + dataset operacional + simulador + carga | 28 / 34 | 28 hechas, 1 a medias (README), 1 bloqueada (PRs de B), P6 y 3 del informe pendientes |
 | B | Sesión (Valkey) + Gateway + salud | 17 / 29 | B1.1, B1.2, B2.1–B2.8 y B3.1–B3.8 completadas  con excepcion de B3.6; publicación durable de eventos verificada. |
 | C | Historial (Parquet) + Analítica (Spark) + dataset histórico | 23 / 31 | 23 hechas, 2 a medias (falta el gateway y /estado-capas de B), 1 bloqueada por B, 5 del informe y README al final |
 | Todos | Integración, informe, defensa | 0 / 12 | |
 
-_Última actualización: 2026-11-10 — A completó las rutas del gateway A4.1 y A4.2, probadas de punta a punta, A2.9, P2 y P8 vía gateway (27/34). B: B1.1, B1.2, B2.1–B2.8 y B3.1–B3.8 con excepcion de B3.6 (17/29)._
+_Última actualización: 2026-11-10 — A completó las rutas del gateway A4.1 y A4.2, probadas de punta a punta, A2.9, P2 y P8 vía gateway y el simulador contra el gateway real (28/34). B: B1.1, B1.2, B2.1–B2.8 y B3.1–B3.8 con excepcion de B3.6 (17/29)._
 ---
 
 ## Cómo está dividido el trabajo
@@ -105,8 +105,8 @@ dataset · **S3–S4** integración y pruebas · **S5** informe, README final, e
 
 ### A6. Simulador (`simulador/`) — solo HTTP al gateway
 - [x] A6.1 Cliente HTTP base (`httpx`), configuración por CLI (URL, número de usuarios, duración).
-- [~] A6.2 Flujo anotador: siguiente → (borradores, de B) → enviar; flujo revisor: revisión → aprobar/rechazar con motivo aleatorio.
-      Nota: anotador y revisor listos y probados con un gateway de prueba que reenvía al registro real (10 usuarios, 113 envíos en 15 s, sin errores). Falta correrlo contra el gateway de B (B3.4-B3.7); los borradores cada 2 s se enganchan en anotar() (B4.2).
+- [x] A6.2 Flujo anotador: siguiente → (borradores, de B) → enviar; flujo revisor: revisión → aprobar/rechazar con motivo aleatorio.
+      Nota: corrido contra el gateway real (10 usuarios, 30 s): 69 envíos y 55 revisiones sin error, pero 79 de 139 `/tareas/siguiente` dieron 503 por tareas rechazadas con el lock viejo todavía en Valkey (diagnóstico en evidence/A6.2_simulador_gateway_20261110-1501.txt). Los borradores cada 2 s se enganchan en anotar() (B4.2).
 - [x] A6.3 Registro de latencias por endpoint (CSV crudo) para P6.
       Nota: CSV con ts, fase (calentamiento/medicion), usuario, rol, endpoint, status y ms; resumen p50/p95/p99 por endpoint y envíos/min.
 
@@ -285,3 +285,4 @@ _(agregar aquí con persona sugerida y fecha)_
 - [ ] (B, 2026-11-10) gateway `limpiezas.py`: con 404/409 la limpieza se reprograma para siempre, aunque el comentario dice que ya no se puede completar. Cada envío sin borrador deja un `eliminar_borrador` que se reintenta cada 60 s (en la prueba de A4 llegaron a 6 intentos). Va a pesar en P6.
 - [ ] (B, 2026-11-10) gateway `/salud`: con el registro caído (MongoDB sin primario) responde `degradado`; `endpoints/gateway.md` dice `caido` si registro/MongoDB o sesión/Valkey no están, y `degradado` solo si fallan historial, analítica o Spark (evidence/A2.9_latido_registro_20261110-1447.txt).
 - [ ] (B, 2026-11-10) gateway `cliente_interno.py`: crea un `httpx.AsyncClient` nuevo en cada llamada y crear uno cuesta unos 35 ms de CPU que bloquean al gateway. En P2 vía gateway el registro respondió con p50 52 ms, pero el cliente vio p50 3,4 s (evidence/P2_concurrencia_gateway_20261110-1450.md). Reusar un solo cliente creado al arrancar. Conviene corregirlo antes de P6.
+- [ ] (B, 2026-11-10) gateway: una tarea rechazada con el lock viejo todavía en Valkey bloquea la cola. Cada `/tareas/siguiente` la toma (prioridad alta), falla el lock, la devuelve con liberar y responde 503; con 10 usuarios, 5 tareas así causaron 79 de 139 errores (evidence/A6.2_simulador_gateway_20261110-1501.txt). Sale de soltar el lock en segundo plano después del envío, atrasado por las limpiezas que se reintentan para siempre. Bloquea P6 (A7.2).

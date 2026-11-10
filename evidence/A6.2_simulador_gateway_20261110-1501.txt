@@ -1,0 +1,25 @@
+A6.2 — simulador contra el gateway real (B3.4-B3.7 y A4.2). 2026-11-10 15:01:18 CST · commit e45abcb · dataset recién cargado
+http://gateway:8000 · 9 anotadores + 1 revisores · 5 s de calentamiento + 30 s medidos
+endpoint                            n      p50      p95      p99    2xx   4xx  5xx/0
+POST /tareas/siguiente            139    583.4   1136.4   1359.6     60     0     79
+POST /tareas/{id}/enviar           69    425.4    897.9   1166.6     69     0      0
+POST /tareas/{id}/revision         55    241.1    519.3    563.6     55     0      0
+envíos confirmados: 69 en 30 s = 138.0 envíos/min
+
+== Diagnóstico de los 79 errores 5xx de POST /tareas/siguiente (logs del gateway, sesion y registro, y MongoDB)
+Todos son 503 servicio_no_disponible(asignacion), registrados como asignacion_fallida en el gateway, y salen
+de solo 5 tareas:
+     46 2eeb522e-15ec-4efd-80f3-5e046aa9c597
+     20 04ce5d39-2157-4a90-abe6-d909615cbbfa
+      9 2addfc9e-d3fd-4ad1-b957-7d690d9f9e3a
+      3 083c6c60-4542-4610-a369-2541f06188d9
+      1 4e34db19-2498-44dc-9daa-ffe313ff0439
+En MongoDB las 5 están disponible con ultima_revision.resultado = rechazada.
+Qué pasa: después de un envío con 200 el gateway no suelta el lock en el momento; lo deja a limpiezas.py,
+que corre cada 2 s. Ese trabajo va atrasado porque las limpiezas que reciben 404/409 se reprograman para
+siempre (en los mismos minutos sesion respondió 1220 DELETE /borradores/{id} 409 y 1129 POST /sesiones/{id} 409).
+Si el revisor rechaza la tarea antes de que se suelte el lock, la tarea vuelve a disponible en MongoDB con el
+lock viejo todavía en Valkey. Como tiene la prioridad más alta, cada /tareas/siguiente la toma, el lock falla
+(sesion: 158 POST /locks/{id} 409), el gateway la devuelve con liberar y responde 503; la siguiente petición
+vuelve a tomar la misma. Una sola tarea produjo 46 errores. Se corta cuando la limpieza por fin suelta el lock
+o cuando el lock vence (120 s).

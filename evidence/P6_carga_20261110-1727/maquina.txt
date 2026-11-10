@@ -1,0 +1,2 @@
+P6 · niveles: 10 40 100 · 2026-11-10 17:27:46 CST · commit 54d494e
+Máquina: AMD Ryzen 7 5700U with Radeon Graphics · 4 CPU y 9 GiB visibles en WSL 2

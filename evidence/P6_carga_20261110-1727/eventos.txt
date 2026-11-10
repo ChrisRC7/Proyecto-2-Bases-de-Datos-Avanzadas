@@ -1,0 +1,12 @@
+Eventos generados y entregados al historial en la ventana medida (sin los 20 s de cada borde).
+Generados = respuestas 200 del simulador (cada una es una transición con su evento).
+Entregados = POST /eventos en el log del historial (el gateway mandaba un evento por POST).
+  10u_c1: 51 s · generados 767 (15.0/s) · entregados 760 (14.8/s)
+  10u_c2: 52 s · generados 745 (14.4/s) · entregados 753 (14.6/s)
+  10u_c3: 51 s · generados 746 (14.5/s) · entregados 744 (14.5/s)
+  40u_c1: 53 s · generados 1504 (28.6/s) · entregados 1508 (28.7/s)
+  40u_c2: 54 s · generados 1471 (27.5/s) · entregados 1520 (28.4/s)
+  40u_c3: 53 s · generados 1602 (30.3/s) · entregados 1060 (20.1/s)
+  100u_c1: 56 s · generados 1538 (27.3/s) · entregados 462 (8.2/s)
+  100u_c2: 55 s · generados 1571 (28.8/s) · entregados 602 (11.0/s)
+  100u_c3: 55 s · generados 1547 (28.2/s) · entregados 501 (9.1/s)

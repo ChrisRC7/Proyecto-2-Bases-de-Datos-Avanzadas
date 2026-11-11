@@ -1,0 +1,3 @@
+P6 · niveles: 40 100 · 2026-11-10 18:20:47 CST · commit e444a0c
+Gateway: sh -c uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 2 
+Máquina: AMD Ryzen 7 5700U with Radeon Graphics · 4 CPU y 9 GiB visibles en WSL 2

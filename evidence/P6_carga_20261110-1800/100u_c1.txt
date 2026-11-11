@@ -1,0 +1,6 @@
+http://gateway:8000 · 90 anotadores + 10 revisores · 30 s de calentamiento + 90 s medidos
+endpoint                            n      p50      p95      p99    2xx   4xx  5xx/0
+POST /tareas/siguiente            858   2817.4   5999.9   9083.1    854     0      4
+POST /tareas/{id}/enviar          908   5113.3   9308.8  10011.5    880     0     28
+POST /tareas/{id}/revision        869    678.1   1367.4   2008.9    869     0      0
+envíos confirmados: 880 en 90 s = 586.7 envíos/min

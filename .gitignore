@@ -19,3 +19,8 @@ metastore_db/
 .vscode/
 .idea/
 .DS_Store
+
+# Informe (se compila con LaTeX en informe/)
+informe/*.aux
+informe/*.log
+informe/*.out

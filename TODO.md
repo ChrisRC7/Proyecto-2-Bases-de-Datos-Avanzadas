@@ -9,12 +9,12 @@
 
 | Persona | Rol principal | Hechas / Total | Notas |
 |---|---|---|---|
-| A | Registro (MongoDB) + dataset operacional + simulador + carga | 29 / 34 | 29 hechas, 1 a medias (README), 1 bloqueada (PRs de B), 3 del informe pendientes |
+| A | Registro (MongoDB) + dataset operacional + simulador + carga | 32 / 34 | 32 hechas, 1 a medias (README), 1 bloqueada (PRs de B) |
 | B | Sesión (Valkey) + Gateway + salud | 17 / 29 | B1.1, B1.2, B2.1–B2.8 y B3.1–B3.8 completadas  con excepcion de B3.6; publicación durable de eventos verificada. A corrigió seis errores del gateway en `integracion-a-b-c` (ver «Tareas nuevas descubiertas»). |
 | C | Historial (Parquet) + Analítica (Spark) + dataset histórico | 23 / 31 | 23 hechas, 2 a medias (falta el gateway y /estado-capas de B), 1 bloqueada por B, 5 del informe y README al final |
 | Todos | Integración, informe, defensa | 0 / 12 | |
 
-_Última actualización: 2026-11-10 — En `integracion-a-b-c` (A, B y C juntos) A corrigió errores del gateway de B (cliente HTTP por llamada, limpiezas en segundo plano y para siempre, regla de `/salud`, bloqueos de SQLite, publicador de eventos atrasado), con las pruebas de B ajustadas y pasando, y repitió P2, P8 y el simulador; P6 hecha con el gateway final (29/34). B: B1.1, B1.2, B2.1–B2.8 y B3.1–B3.8 con excepcion de B3.6 (17/29)._
+_Última actualización: 2026-11-10 — En la rama `documentacion` (sobre `integracion-a-b-c`) A empezó el informe en `informe/` con sus secciones §2, §6 y §7.1 (32/34). En `integracion-a-b-c` A corrigió errores del gateway de B y repitió P2, P8, el simulador y P6. B: B1.1, B1.2, B2.1–B2.8 y B3.1–B3.8 con excepcion de B3.6 (17/29)._
 ---
 
 ## Cómo está dividido el trabajo
@@ -123,12 +123,12 @@ dataset · **S3–S4** integración y pruebas · **S5** informe, README final, e
       Nota: medido directo contra el registro (misma carga y dataset): +3 ms por escritura con majority sin cola; con 20 hilos manda la cola del registro. Ver evidence/A7.4_write_concern_20261022-2011.md.
 
 ### A8. Informe y README
-- [ ] A8.1 Informe §2: modelo de registro, índices, explain, prueba de no doble adquisición.
-      Nota: pendiente: se escribe con la P2 final vía gateway; ya hay explain (A3) y la P2 preliminar.
-- [ ] A8.2 Informe §6: resultados de carga y cuellos de botella.
-      Nota: pendiente: depende de P6 (A7.2).
-- [ ] A8.3 Informe §7 (parte Mongo): fallas, RTO, RPO, enlaces a evidence.
-      Nota: pendiente: se escribe con la P8 final; ya está la corrida contra el registro (A7.3).
+- [x] A8.1 Informe §2: modelo de registro, índices, explain, prueba de no doble adquisición.
+      Nota: `informe/informe.tex` §2: modelo y transiciones, datos, índices con explain, P2 vía gateway, `w: majority` frente a `w: 1` y límites.
+- [x] A8.2 Informe §6: resultados de carga y cuellos de botella.
+      Nota: §6 con la P6 final, los cuellos de botella corregidos antes de medir, el publicador de eventos y el experimento con 2 procesos.
+- [x] A8.3 Informe §7 (parte Mongo): fallas, RTO, RPO, enlaces a evidence.
+      Nota: §7.1 con la P8 vía gateway corregido; el Apéndice A lista la evidencia de A.
 - [~] A8.4 README: sección de carga de datos y simulador.
       Nota: carga documentada en datos/README.md; falta pasarla al README general (B6.4) y agregar el simulador.
 - [!] A8.5 Revisar PRs de **B** y preparar 5 preguntas/respuestas sobre sesión y gateway para la defensa.
@@ -261,7 +261,8 @@ Nota: envío implementado y probado; limpiezas posteriores al HTTP 200 almacenad
 - [ ] I.5 (S4) Correr TODAS las pruebas en orden desde un entorno limpio (`docker compose down -v`) siguiendo solo el README.
 - [ ] I.6 (S4) Sesión de explicación cruzada (cada persona explica su carril a las otras dos, 30 min c/u).
 - [ ] I.7 (S4) Preguntar al profesor por la prueba **P7** que falta en el enunciado.
-- [ ] I.8 (S5) Ensamblar informe PDF con apéndices y enlace al repo; verificar que cada cifra apunta a un archivo de `evidence/`.
+- [~] I.8 (S5) Ensamblar informe PDF con apéndices y enlace al repo; verificar que cada cifra apunta a un archivo de `evidence/`.
+      Nota: base en `informe/informe.tex` (LaTeX como los labs; el enunciado solo pide PDF con apéndices y el enlace al repo). Las secciones de B y C están marcadas con `\falta{}` y salen en rojo en `informe/informe.pdf`.
 - [ ] I.9 (S5) README final revisado por alguien que no lo escribió.
 - [ ] I.10 (S5) Ensayo de defensa de 15 min con preguntas cruzadas (usar las de A8.5, B6.6, C6.5).
 - [ ] I.11 (S5) Entrega en TEC Digital.

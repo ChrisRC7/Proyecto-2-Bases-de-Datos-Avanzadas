@@ -18,6 +18,8 @@ DB_PATH = Path(os.getenv(
     "/srv/pendientes/eventos.sqlite3",
 ))
 
+LOTE = 50  # eventos por pasada (y por POST a historial)
+
 _aviso = None
 _trabajador = None
 
@@ -89,9 +91,9 @@ def _pendientes():
             FROM pendientes
             WHERE siguiente <= ?
             ORDER BY siguiente, rowid
-            LIMIT 50
+            LIMIT ?
             """,
-            (time.time(),),
+            (time.time(), LOTE),
         ).fetchall()
 
 
@@ -140,57 +142,81 @@ async def publicar_evento(evento: dict) -> dict:
     }
 
 
+async def _enviar(eventos_json):
+    """POST a historial. 5xx o sin respuesta: ServicioNoDisponible (lo lanza solicitar)."""
+    respuesta = await solicitar("historial", "POST", "/eventos", json=eventos_json)
+    return respuesta.status_code
+
+
 async def despachar_pendientes():
-    """Intenta enviar los eventos vencidos, conservando los fallidos."""
+    """Intenta enviar los eventos vencidos, conservando los fallidos.
+
+    Historial acepta una lista: los eventos de la pasada van en un solo POST.
+    Antes iba uno por POST y, con 100 usuarios, el publicador quedaba miles de
+    eventos atrás (evidence/P6_carga_20261110-1727.md). Si historial rechaza la
+    lista (4xx), se prueban de a uno para que un evento malo no frene a los demás.
+    Devuelve cuántos eventos tomó la pasada.
+    """
     filas = await asyncio.to_thread(_pendientes)
+
+    if not filas:
+        return 0
+
     entregados, fallidos = [], []
 
-    for identificador, contenido, intentos in filas:
-        try:
-            respuesta = await solicitar(
-                "historial",
-                "POST",
-                "/eventos",
-                json=json.loads(contenido),
-            )
+    try:
+        status = await _enviar([json.loads(contenido) for _, contenido, _ in filas])
+    except ServicioNoDisponible as exc:
+        # Historial caído o con error: toda la pasada queda para después.
+        status = None
+        fallidos = [(identificador, intentos) for identificador, _, intentos in filas]
+        log.warning(
+            "eventos_pendientes",
+            extra={"datos": {"cantidad": len(filas), "causa": exc.detalle}},
+        )
 
-            if respuesta.status_code != 202:
-                raise ServicioNoDisponible(
-                    "historial",
-                    f"Respuesta inesperada: {respuesta.status_code}",
+    if status == 202:
+        entregados = [identificador for identificador, _, _ in filas]
+
+    elif status is not None:
+        for identificador, contenido, intentos in filas:
+            try:
+                if await _enviar(json.loads(contenido)) != 202:
+                    raise ValueError("historial no aceptó el evento")
+                entregados.append(identificador)
+            except Exception as exc:
+                # El evento permanece en SQLite para el siguiente intento.
+                fallidos.append((identificador, intentos))
+                log.warning(
+                    "evento_pendiente",
+                    extra={"datos": {
+                        "event_id": identificador,
+                        "causa": type(exc).__name__,
+                    }},
                 )
 
-            entregados.append(identificador)
+    if entregados:
+        log.info(
+            "eventos_entregados",
+            extra={"datos": {"cantidad": len(entregados)}},
+        )
 
-            log.info(
-                "evento_entregado",
-                extra={"datos": {"event_id": identificador}},
-            )
-
-        except Exception as exc:
-            # El evento permanece en SQLite para el siguiente intento.
-            fallidos.append((identificador, intentos))
-
-            log.warning(
-                "evento_pendiente",
-                extra={"datos": {
-                    "event_id": identificador,
-                    "causa": type(exc).__name__,
-                }},
-            )
-
-    # Un solo commit por pasada en lugar de uno por evento. Si el gateway se cae
-    # antes, los entregados se vuelven a mandar y historial los descarta por event_id.
-    if entregados or fallidos:
-        await asyncio.to_thread(_cerrar_pasada, entregados, fallidos)
+    # Un solo commit por pasada. Si el gateway se cae antes, los entregados se
+    # vuelven a mandar y historial los descarta por event_id.
+    await asyncio.to_thread(_cerrar_pasada, entregados, fallidos)
+    return len(filas)
 
 
 async def _procesar_cola():
     while True:
         try:
-            await despachar_pendientes()
+            tomados = await despachar_pendientes()
         except Exception:
+            tomados = 0
             log.exception("error_procesando_eventos")
+
+        if tomados >= LOTE:
+            continue  # quedan más pendientes: otra pasada sin esperar
 
         try:
             await asyncio.wait_for(_aviso.wait(), timeout=2)

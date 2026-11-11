@@ -59,7 +59,7 @@ async def pruebas():
             llamadas = []
 
             async def historial_caido(*args, **kwargs):
-                llamadas.append(kwargs["json"]["event_id"])
+                llamadas.extend(e["event_id"] for e in kwargs["json"])
                 raise ServicioNoDisponible("historial", "Sin conexión")
 
             with patch.object(
@@ -97,12 +97,50 @@ async def pruebas():
                 await eventos.despachar_pendientes()
 
             assert await eventos.contar_pendientes() == 0
-            assert enviados[0]["event_id"] == evento["event_id"]
+            assert enviados[0] == [evento]
             print("OK | Historial recuperado: evento entregado")
 
             # 6. Verificar que se conservó el contenido original.
-            assert enviados[0] == evento
+            assert enviados[0][0] == evento
             print("OK | Contenido y event_id preservados")
+
+            # 7. Varios pendientes van en un solo POST.
+            otros = [evento_ejemplo() for _ in range(3)]
+            for e in otros:
+                await eventos.publicar_evento(e)
+            enviados.clear()
+
+            with patch.object(
+                eventos, "solicitar", side_effect=historial_recuperado
+            ):
+                await eventos.despachar_pendientes()
+
+            assert enviados == [otros]
+            assert await eventos.contar_pendientes() == 0
+            print("OK | Tres eventos en un solo POST")
+
+            # 8. Si historial rechaza la lista (422), se prueban de a uno:
+            # el evento malo queda pendiente y los buenos se entregan.
+            malo, bueno = evento_ejemplo(), evento_ejemplo()
+            await eventos.publicar_evento(malo)
+            await eventos.publicar_evento(bueno)
+
+            async def historial_valida(*args, **kwargs):
+                cuerpo = kwargs["json"]
+                if isinstance(cuerpo, list) or cuerpo["event_id"] == malo["event_id"]:
+                    return httpx.Response(422, json={"error": "validacion"})
+                return httpx.Response(202, json={"aceptados": 1, "duplicados": 0})
+
+            with patch.object(
+                eventos, "solicitar", side_effect=historial_valida
+            ):
+                await eventos.despachar_pendientes()
+
+            with eventos._conexion() as db:
+                quedan = [f[0] for f in db.execute("SELECT event_id FROM pendientes")]
+
+            assert quedan == [malo["event_id"]]
+            print("OK | Lista rechazada: de a uno, el malo queda pendiente")
 
     print("B3.3_EVENTOS_OK")
 

@@ -10,11 +10,11 @@
 | Persona | Rol principal | Hechas / Total | Notas |
 |---|---|---|---|
 | A | Registro (MongoDB) + dataset operacional + simulador + carga | 22 / 34 | 22 hechas, 5 a medias (falta el gateway), 4 bloqueadas por B, 3 del informe al final |
-| B | Sesión (Valkey) + Gateway + salud | 17 / 29 | B1.1, B1.2, B2.1–B2.8 y B3.1–B3.8 completadas  con excepcion de B3.6; publicación durable de eventos verificada. |
+| B | Sesión (Valkey) + Gateway + salud | 18 / 29 | B1.1, B1.2, B2.1–B2.8 y B3.1–B3.8 completadas  con excepcion de B3.6. Completado tambien B4.1; publicación durable de eventos verificada. |
 | C | Historial (Parquet) + Analítica (Spark) + dataset histórico | 23 / 31 | 23 hechas, 2 a medias (falta el gateway y /estado-capas de B), 1 bloqueada por B, 5 del informe y README al final |
 | Todos | Integración, informe, defensa | 0 / 12 | |
 
-_Última actualización: 2026-11-09 — B completó B1.1, B1.2, B2.1–B2.8 y B3.1–B3.8 con excepcion de B3.6 (17/29). Gateway conectado con Sesión para guardar borradores; pendiente validación integral._
+_Última actualización: 2026-11-09 — B completó B1.1, B1.2, B2.1–B2.8, B3.1–B3.8 con excepcion de B3.6. Completado tambien B4.1 (18/29). Gateway conectado con Sesión para guardar borradores; pendiente validación integral._
 ---
 
 ## Cómo está dividido el trabajo
@@ -164,7 +164,8 @@ Nota: envío implementado y probado; limpiezas posteriores al HTTP 200 almacenad
 - [x] B3.8 `GET /salud`: consulta cada capa con timeout ~1 s en paralelo; `operativo` / `degradado` / `caído` + detalle por capa; nunca lanza excepción (el gateway sigue vivo aunque todo esté caído).
 
 ### B4. Dataset y simulador (parte de sesión)
-- [ ] B4.1 Casos controlados: script que deja N tareas libres conocidas y limpia llaves de Valkey (`reset_entorno.py`), usado por P2/P3/P8.
+- [x] B4.1 Casos controlados: script que deja N tareas libres conocidas y limpia llaves de Valkey (`reset_entorno.py`), usado por P2/P3/P8.
+      Nota: creado proyecto aislado con 10 tareas disponibles y manifiesto local. Limpieza de Valkey implementada mediante limpiar_b41.py y validada: elimina la llave autorizada y conserva llaves ajenas. Uso restringido a entorno de pruebas sin concurrencia. Evidencia: evidence/B4_1_limpieza.txt.
 - [ ] B4.2 Simulador: hilo de borradores cada 2 s + latidos; modo "interrupción" (matar al usuario a mitad) y "recuperación" (`/sesiones/recuperar`).
 
 ### B5. Pruebas

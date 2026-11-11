@@ -9,12 +9,12 @@
 
 | Persona | Rol principal | Hechas / Total | Notas |
 |---|---|---|---|
-| A | Registro (MongoDB) + dataset operacional + simulador + carga | 32 / 34 | 32 hechas, 1 a medias (README), 1 bloqueada (PRs de B) |
+| A | Registro (MongoDB) + dataset operacional + simulador + carga | 33 / 34 | 33 hechas, 1 bloqueada (PRs de B) |
 | B | Sesión (Valkey) + Gateway + salud | 17 / 29 | B1.1, B1.2, B2.1–B2.8 y B3.1–B3.8 completadas  con excepcion de B3.6; publicación durable de eventos verificada. A corrigió seis errores del gateway en `integracion-a-b-c` (ver «Tareas nuevas descubiertas»). |
 | C | Historial (Parquet) + Analítica (Spark) + dataset histórico | 23 / 31 | 23 hechas, 2 a medias (falta el gateway y /estado-capas de B), 1 bloqueada por B, 5 del informe y README al final |
 | Todos | Integración, informe, defensa | 0 / 12 | |
 
-_Última actualización: 2026-11-10 — En la rama `documentacion` (sobre `integracion-a-b-c`) A empezó el informe en `informe/` con sus secciones §2, §6 y §7.1 (32/34). En `integracion-a-b-c` A corrigió errores del gateway de B y repitió P2, P8, el simulador y P6. B: B1.1, B1.2, B2.1–B2.8 y B3.1–B3.8 con excepcion de B3.6 (17/29)._
+_Última actualización: 2026-11-10 — En la rama `documentacion` (sobre `integracion-a-b-c`) A empezó el informe en `informe/` con sus secciones §2, §6 y §7.1 y el `README.md` con carga, simulador y sus pruebas (33/34). En `integracion-a-b-c` A corrigió errores del gateway de B y repitió P2, P8, el simulador y P6. B: B1.1, B1.2, B2.1–B2.8 y B3.1–B3.8 con excepcion de B3.6 (17/29)._
 ---
 
 ## Cómo está dividido el trabajo
@@ -129,8 +129,8 @@ dataset · **S3–S4** integración y pruebas · **S5** informe, README final, e
       Nota: §6 con la P6 final, los cuellos de botella corregidos antes de medir, el publicador de eventos y el experimento con 2 procesos.
 - [x] A8.3 Informe §7 (parte Mongo): fallas, RTO, RPO, enlaces a evidence.
       Nota: §7.1 con la P8 vía gateway corregido; el Apéndice A lista la evidencia de A.
-- [~] A8.4 README: sección de carga de datos y simulador.
-      Nota: carga documentada en datos/README.md; falta pasarla al README general (B6.4) y agregar el simulador.
+- [x] A8.4 README: sección de carga de datos y simulador.
+      Nota: `README.md` con la estructura que pide el enunciado: carga de datos, simulador y las pruebas de A (A4, P2, P6, P8 de MongoDB). Requisitos, inicio y detención, y solución de problemas quedan marcados como pendientes de B6.4; consultas y regenerar el histórico, de C6.4.
 - [!] A8.5 Revisar PRs de **B** y preparar 5 preguntas/respuestas sobre sesión y gateway para la defensa.
       Nota: bloqueada: todavía no hay PRs de B.
 

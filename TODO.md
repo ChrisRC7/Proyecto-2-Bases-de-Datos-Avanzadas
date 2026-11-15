@@ -10,11 +10,11 @@
 | Persona | Rol principal | Hechas / Total | Notas |
 |---|---|---|---|
 | A | Registro (MongoDB) + dataset operacional + simulador + carga | 34 / 34 | Todas hechas; quedan las tareas de «Todos» (integración, ensamblar el informe, defensa) |
-| B | Sesión (Valkey) + Gateway + salud | 17 / 29 | B1.1, B1.2, B2.1–B2.8 y B3.1–B3.8 completadas  con excepcion de B3.6; publicación durable de eventos verificada. A corrigió seis errores del gateway en `integracion-a-b-c` (ver «Tareas nuevas descubiertas»). |
+| B | Sesión (Valkey) + Gateway + salud | 19 / 29 | B1.1, B1.2, B2.1–B2.8, B3.1–B3.5, B3.7, B3.8, B4.1 y B4.2 completadas. B3.6 sigue parcialmente completada por la garantía de publicación durable de eventos. A corrigió seis errores del gateway en `integracion-a-b-c` (ver «Tareas nuevas descubiertas»). |
 | C | Historial (Parquet) + Analítica (Spark) + dataset histórico | 23 / 31 | 23 hechas, 2 a medias (falta el gateway y /estado-capas de B), 1 bloqueada por B, 5 del informe y README al final |
 | Todos | Integración, informe, defensa | 0 / 12 | |
 
-_Última actualización: 2026-11-10 — En la rama `documentacion` (sobre `integracion-a-b-c`) A empezó el informe en `informe/` con sus secciones §2, §6 y §7.1 el `README.md` con carga, simulador y sus pruebas, y las 5 preguntas de defensa sobre sesión y gateway (34/34). En `integracion-a-b-c` A corrigió errores del gateway de B y repitió P2, P8, el simulador y P6. B: B1.1, B1.2, B2.1–B2.8 y B3.1–B3.8 con excepcion de B3.6 (17/29)._
+_Última actualización: 2026-11-14 — B4.1 y B4.2 de B (borradores y latidos cada 2 s desde el simulador, interrupción y recuperación) integradas en `integracion-a-b-c` y traídas a `documentacion`; el simulador con borradores corre sin errores y la revisión da 200. En `documentacion` están el informe (`informe/`), el `README.md` y las preguntas de defensa de A, con lo de B y C marcado como pendiente. A: 34/34. B: 19/29._
 ---
 
 ## Cómo está dividido el trabajo
@@ -106,7 +106,7 @@ dataset · **S3–S4** integración y pruebas · **S5** informe, README final, e
 ### A6. Simulador (`simulador/`) — solo HTTP al gateway
 - [x] A6.1 Cliente HTTP base (`httpx`), configuración por CLI (URL, número de usuarios, duración).
 - [x] A6.2 Flujo anotador: siguiente → (borradores, de B) → enviar; flujo revisor: revisión → aprobar/rechazar con motivo aleatorio.
-      Nota: corrido contra el gateway real (10 usuarios, 30 s). Antes de corregir el gateway: 79 de 139 `/tareas/siguiente` con 503 por locks viejos (evidence/A6.2_simulador_gateway_20261110-1501.txt). Con las correcciones aparecieron esperas de 10 s por «database is locked» en el SQLite del gateway (evidence/A6.2_simulador_gateway_20261110-1721.txt); con SQLite en WAL: 0 errores, 179 asignaciones, 186 envíos (372 por minuto) y 91 revisiones (evidence/A6.2_simulador_gateway_20261110-1726.txt). Los borradores cada 2 s se enganchan en anotar() (B4.2).
+      Nota: corrido contra el gateway real (10 usuarios, 30 s). Antes de corregir el gateway: 79 de 139 `/tareas/siguiente` con 503 por locks viejos (evidence/A6.2_simulador_gateway_20261110-1501.txt). Con las correcciones aparecieron esperas de 10 s por «database is locked» en el SQLite del gateway (evidence/A6.2_simulador_gateway_20261110-1721.txt); con SQLite en WAL: 0 errores, 179 asignaciones, 186 envíos (372 por minuto) y 91 revisiones (evidence/A6.2_simulador_gateway_20261110-1726.txt). Con B4.2 integrado (`--borradores`, pensar de 3 a 6 s): 113 borradores, 113 latidos, 70 envíos y 99 revisiones, todo con 200 (evidence/A6.2_simulador_borradores_20261114-2318.txt).
 - [x] A6.3 Registro de latencias por endpoint (CSV crudo) para P6.
       Nota: CSV con ts, fase (calentamiento/medicion), usuario, rol, endpoint, status y ms; resumen p50/p95/p99 por endpoint y envíos/min.
 
@@ -166,8 +166,10 @@ Nota: envío implementado y probado; limpiezas posteriores al HTTP 200 almacenad
 - [x] B3.8 `GET /salud`: consulta cada capa con timeout ~1 s en paralelo; `operativo` / `degradado` / `caído` + detalle por capa; nunca lanza excepción (el gateway sigue vivo aunque todo esté caído).
 
 ### B4. Dataset y simulador (parte de sesión)
-- [ ] B4.1 Casos controlados: script que deja N tareas libres conocidas y limpia llaves de Valkey (`reset_entorno.py`), usado por P2/P3/P8.
-- [ ] B4.2 Simulador: hilo de borradores cada 2 s + latidos; modo "interrupción" (matar al usuario a mitad) y "recuperación" (`/sesiones/recuperar`).
+- [x] B4.1 Casos controlados: script que deja N tareas libres conocidas y limpia llaves de Valkey (`reset_entorno.py`), usado por P2/P3/P8.
+      Nota: creado proyecto aislado con 10 tareas disponibles y manifiesto local. Limpieza de Valkey implementada mediante limpiar_b41.py y validada: elimina la llave autorizada y conserva llaves ajenas. Uso restringido a entorno de pruebas sin concurrencia. Evidencia: evidence/B4_1_limpieza.txt.
+- [x] B4.2 Simulador: hilo de borradores cada 2 s + latidos; modo "interrupción" (matar al usuario a mitad) y "recuperación" (`/sesiones/recuperar`).
+Nota (2026-11-14): integración opcional mediante --borradores en simulador/simular.py. Prueba real: 6 borradores HTTP 200, 6 latidos HTTP 200 y 3 envíos HTTP 200. Interrupción real mediante docker kill y recuperación de la misma tarea, token y borrador. Liberación y limpieza posteriores verificadas. Evidencias: evidence/B4_2_borradores.txt, evidence/B4_2_integracion.txt, evidence/B4_2_interrupcion_real.txt y evidence/B4_2_simulador.csv. La interrupción se ejecuta desde un script independiente; no es una opción del CLI principal.
 
 ### B5. Pruebas
 - [ ] B5.1 **P1**: probar todas las rutas (casos felices y de error) + `/salud` en normal, degradado (parar historial o analítica) y caído (parar mongo/valkey). `docker compose ps` / `ss -tlnp` mostrando que solo 8000 está expuesto. Evidencia.

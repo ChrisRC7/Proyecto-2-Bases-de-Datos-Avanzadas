@@ -68,9 +68,57 @@ def geometria(rng: random.Random, tipo: str) -> dict:
             "dimensiones": [round(rng.uniform(0.3, 5), 2) for _ in range(3)], "yaw": round(rng.uniform(-3.14, 3.14), 2)}
 
 
-def anotar(cliente: httpx.Client, reg: Registro, usuario: str, tarea: dict, token: str, segundos: float):
-    """Tiempo de anotación. Aquí se engancha el envío de borradores cada 2 s (B4.2)."""
+
+def anotar(cliente, reg, usuario, tarea, token, contenido, segundos, borradores=False):
+    """Simula la anotacion y, opcionalmente, guarda borradores en otro hilo."""
+
+    if not borradores:
+        time.sleep(segundos)
+        return True
+
+    from simulador.b42 import guardar_periodicamente
+
+    resultado = {}
+
+    def enviar(metodo, ruta, endpoint, cuerpo):
+        return peticion(
+            cliente, reg, usuario, "anotador",
+            metodo, ruta, endpoint, cuerpo
+        )
+
+    def trabajo_borradores():
+        resultado.update(
+            guardar_periodicamente(
+                cliente=cliente,
+                tarea_id=tarea["tarea_id"],
+                anotador_id=usuario,
+                token=token,
+                contenido=contenido,
+                duracion=segundos,
+                intervalo=2.0,
+                enviar=enviar,
+            )
+        )
+
+    hilo = threading.Thread(
+        target=trabajo_borradores,
+        name=f"b42-{usuario[:8]}",
+        daemon=True,
+    )
+
+    hilo.start()
     time.sleep(segundos)
+    hilo.join()
+
+    if resultado.get("estado") != "completado":
+        print(
+            f"B4.2 | No se enviara tarea {tarea['tarea_id']}: {resultado}",
+            flush=True,
+        )
+        return False
+
+    return True
+
 
 
 def anotador(args, url: str, usuario: str, reg: Registro, fin: float, enviadas: queue.Queue, semilla: int):
@@ -82,12 +130,38 @@ def anotador(args, url: str, usuario: str, reg: Registro, fin: float, enviadas: 
             if r is None or r.status_code != 200:
                 time.sleep(1)  # 204 sin tareas, 503 o sin respuesta: espera y vuelve a pedir
                 continue
+
             datos = r.json()
             tarea, token = datos["tarea"], datos["token"]
-            anotar(cliente, reg, usuario, tarea, token, rng.uniform(args.pensar_min, args.pensar_max))
-            etiquetas = [e["etiqueta"] for e in tarea.get("taxonomia", [])] or ["sin_etiqueta"]
-            cuerpo = {"token": token, "anotacion": {"etiquetas": [rng.choice(etiquetas)],
-                                                     "geometria": geometria(rng, tarea["tipo_tarea"])}}
+
+            etiquetas = [
+                e["etiqueta"] for e in tarea.get("taxonomia", [])
+            ] or ["sin_etiqueta"]
+
+            anotacion = {
+                "etiquetas": [rng.choice(etiquetas)],
+                "geometria": geometria(rng, tarea["tipo_tarea"]),
+            }
+
+            completada = anotar(
+                cliente,
+                reg,
+                usuario,
+                tarea,
+                token,
+                anotacion,
+                rng.uniform(args.pensar_min, args.pensar_max),
+                borradores=args.borradores,
+            )
+
+            if not completada:
+                continue
+
+            cuerpo = {
+                "token": token,
+                "anotacion": anotacion,
+            }
+
             r = peticion(cliente, reg, usuario, "anotador", "POST", f"/tareas/{tarea['tarea_id']}/enviar",
                          "POST /tareas/{id}/enviar", cuerpo)
             if r is not None and r.status_code == 200:
@@ -151,6 +225,7 @@ def main() -> None:
     ap.add_argument("--rechazo", type=float, default=0.2, help="probabilidad de rechazar en la revisión")
     ap.add_argument("--proyecto", default=None, help="proyecto_id fijo (por defecto la cola global)")
     ap.add_argument("--timeout", type=float, default=10)
+    ap.add_argument("--borradores", action="store_true", help="Activa el hilo de borradores y latidos cada 2 segundos")
     ap.add_argument("--semilla", type=int, default=2026)
     ap.add_argument("--csv", help="archivo con una fila por petición")
     args = ap.parse_args()

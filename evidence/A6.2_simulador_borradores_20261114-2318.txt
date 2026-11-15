@@ -1,0 +1,32 @@
+A6.2 — simulador con borradores y latidos cada 2 s (opción --borradores de B4.2) contra integracion-a-b-c, después de integrar B4.1 y B4.2 de B (commit be2ed0f). 2026-11-14 23:18 CST · dataset sin recargar
+docker compose --profile carga run --rm -T simulador python -m simulador.simular --usuarios 10 --calentamiento 5 --duracion 30 --pensar-min 3 --pensar-max 6 --borradores --csv /srv/evidence/A6.2_simulador_borradores_20261114-2318.csv
+(pensar de 3 a 6 s para que cada tarea alcance a guardar uno o dos borradores; con los 0,5 a 2 s por defecto casi no habría borradores)
+
+http://gateway:8000 · 9 anotadores + 1 revisores · 5 s de calentamiento + 30 s medidos
+endpoint                            n      p50      p95      p99    2xx   4xx  5xx/0
+POST /sesiones/latido             113     11.5     23.1     32.1    113     0      0
+POST /tareas/siguiente             61     57.4    107.8    141.9     61     0      0
+POST /tareas/{id}/enviar           70    100.2    195.8    226.5     70     0      0
+POST /tareas/{id}/revision         99     40.1     89.0    157.6     99     0      0
+PUT /tareas/{id}/borrador         113     12.5     22.9     29.1    113     0      0
+envíos confirmados: 70 en 30 s = 140.0 envíos/min
+
+== Llamadas a sesion de 23:18:00 a 23:20:00 (log de sesion, sin /salud ni /estado-capas)
+     75 "metodo": "DELETE", "ruta": "/borradores/{id}", "status": 200
+    223 "metodo": "POST", "ruta": "/locks/{id}", "status": 200
+    280 "metodo": "POST", "ruta": "/sesiones/{id}", "status": 200
+      1 "metodo": "POST", "ruta": "/sesiones/{id}", "status": 404   (recuperar de un anotador sin sesión, justo antes de correr)
+    130 "metodo": "PUT", "ruta": "/borradores/{id}", "status": 200
+== Gateway: mensajes del log en la misma ventana (sin peticion)
+    233 "msg": "eventos_entregados"
+    225 "msg": "limpieza_finalizada"
+
+Interpretación: con la ruta de revisión de A4.2 en el gateway, las 99 revisiones dan 200 (en la rama de B daban 404
+porque la ruta no estaba). Borradores y latidos responden 200 sin errores, y al enviar ahora hay un borrador que
+borrar: los DELETE /borradores dan 200, no los 409 de A6.2_simulador_gateway_20261110-1726 (sin borradores). Hay menos
+envíos por minuto que en esa corrida (140 contra 372) porque cada anotador piensa de 3 a 6 s y no de 0,5 a 2 s.
+
+Antes de esta corrida, en la misma rama: las nueve pruebas de B del gateway (B3.1 a B3.8) dieron OK,
+pruebas/a4_rutas_gateway.py terminó con FALLAS: 0, pruebas/prueba_b42.py dio B4.2_BORRADORES_OK, y
+pruebas/prueba_b42_integracion.py dio B4.2_INTEGRACION_OK con un proyecto controlado nuevo creado con
+pruebas/reset_entorno.py por el gateway (el proyecto fijo del script de B solo existe en su base).

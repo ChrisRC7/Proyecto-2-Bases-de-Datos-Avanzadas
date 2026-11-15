@@ -1,0 +1,9 @@
+﻿B4.2 - Integracion real - 2026-11-14
+Anotador: adbafed0-b600-460c-bbdc-fd55304374b3
+Proyecto: d2347c44-16a6-43cf-ad47-1c1e435b4b09
+Tarea: 874edc90-2732-40b5-b14e-95e1198b14e0
+Resultado: interrumpido
+Borradores: 3
+Latidos: 3
+Recuperacion: misma tarea, mismo token y mismo contenido
+B4.2_INTEGRACION_OK

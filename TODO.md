@@ -10,12 +10,12 @@
 | Persona | Rol principal | Hechas / Total | Notas |
 |---|---|---|---|
 | A | Registro (MongoDB) + dataset operacional + simulador + carga | 29 / 34 | 29 hechas, 1 a medias (README), 1 bloqueada (PRs de B), 3 del informe pendientes |
-| B | Sesión (Valkey) + Gateway + salud | 27 / 29 | B1–B5 completadas, excepto B3.6 (durabilidad de eventos, parcial). B6.1–B6.5 completadas: arquitectura, sesiones, resultados de Valkey y README. Pendientes: B6.5, B6.6 y B3.6.
+| B | Sesión (Valkey) + Gateway + salud | 28 / 29 | B1–B5 completada. B6.1–B6.5 completadas: arquitectura, sesiones, resultados de Valkey y README. Pendientes: B6.6.
 | C | Historial (Parquet) + Analítica (Spark) + dataset histórico | 23 / 31 | 23 hechas, 2 a medias (falta el gateway y /estado-capas de B), 1 bloqueada por B, 5 del informe y README al final |
 | Todos | Integración, informe, defensa | 0 / 12 | |
 
 
-*_Última actualización: 2026-11-15 — Persona B: 26/29. Se completaron las pruebas P1, P3 y P8, con recuperación de borradores en 0.047 s, RTO observado de 1.016 s y persistencia AOF verificada. También se documentaron arquitectura (§1), sesiones (§3), resultados de Valkey (§7) y README. B3.6 permanece parcial por la garantía de publicación durable de eventos. Pendientes de integración: limpieza de sesiones vencidas, sincronización MongoDB/Valkey y corrección de borradores huérfanos implementada en `alisson-b5`. A: 29/34. B: 27/29. C: 23/31._*
+*_Última actualización: 2026-11-15 — Persona B: 28/29. Se completaron las pruebas P1, P3 y P8, con recuperación de borradores en 0.047 s, RTO observado de 1.016 s y persistencia AOF verificada. También se documentaron arquitectura (§1), sesiones (§3), resultados de Valkey (§7) y README. Pendientes de integración: limpieza de sesiones vencidas, sincronización MongoDB/Valkey y corrección de borradores huérfanos implementada en `alisson-b5`. A: 29/34. B: 28/29. C: 23/31._*
 
 ---
 
@@ -160,9 +160,8 @@ dataset · **S3–S4** integración y pruebas · **S5** informe, README final, e
 - [x] B3.3 Función común `publicar_evento()` → `POST historial:/eventos` (usada por A y C también). Si historial falla, no se pierde el 200 (encolar/reintentar en background y documentarlo).
 - [x] B3.4 `POST /tareas/siguiente`: abre/actualiza sesión → asigna en registro → toma lock con el token → si el lock falla o Mongo falla, revertir (liberar en registro / soltar lock) → 204 si no hay tareas; incluir borrador recuperable si existe → evento `abierta`.
 - [x] B3.5 `PUT /tareas/{id}/borrador`: guarda borrador + renueva lock (409 si el token no coincide).
-- [~] B3.6 `POST /tareas/{id}/enviar`: verifica lock/token → transición en registro → 200 / 409 / 503 (sin reintento, borrador queda) → evento `anotada` solo tras 200 → borra borrador y suelta lock.
-Nota: implementación y 6 pruebas automatizadas aprobadas; validación HTTP 422 correcta. Pendiente recuperar eventos si SQLite falla después de confirmar MongoDB y reintentar limpiezas fallidas. Evidencia: evidence/B3_6_envio.txt.
-Nota: envío implementado y probado; limpiezas posteriores al HTTP 200 almacenadas en SQLite con reintentos automáticos. Se verificó la recuperación ante fallos de Sesión y la conservación de pendientes ante HTTP 409. Evidencias: evidence/B3_6_envio.txt y evidence/B3_6_limpiezas.txt. Pendiente recuperar eventos si MongoDB confirma pero falla SQLite.
+- [x] B3.6 `POST /tareas/{id}/enviar`: verifica lock/token → transición en registro → 200 / 409 / 503 (sin reintento, borrador queda) → evento `anotada` solo tras 200 → borra borrador y suelta lock.
+Limitación conocida: la prueba confirma la recuperación de eventos una vez persistidos en SQLite. No garantiza atomicidad entre la transición en MongoDB y el guardado del evento en SQLite; existe una posible ventana de pérdida si Gateway falla entre ambas operaciones.
 - [x] B3.7 `POST /tareas/{id}/liberar` y `POST /sesiones/recuperar` (tarea + último borrador).
       Nota: rutas implementadas; liberación con evento y limpiezas persistentes, recuperación de sesión y borrador con fecha ISO 8601. Siete pruebas simuladas aprobadas (200, 404, 409, 503). Pendiente prueba de interrupción real en B5.2. Evidencia: evidence/B3_7_pruebas.txt.
 - [x] B3.8 `GET /salud`: consulta cada capa con timeout ~1 s en paralelo; `operativo` / `degradado` / `caído` + detalle por capa; nunca lanza excepción (el gateway sigue vivo aunque todo esté caído).

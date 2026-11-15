@@ -119,6 +119,12 @@ Renueva el lock y actualiza la actividad de la sesión en Valkey.
 ### GET /analitica/{q}?conjunto=principal|grande|prueba
 → `200 {"consulta": "q1", "conjunto": "principal", "filas": [...], "ms": 1234}`
 
+Pasa tal cual la respuesta de `analitica:/q/{n}` (también trae `parametros`, `primera_ejecucion` y
+`ejecutores`, ver `analitica.md`). Sin `conjunto` usa `principal`. `422 validacion` si `q` no es q1–q5 o el
+conjunto no existe en la lista; `404 conjunto_no_existe` si la carpeta no tiene Parquet; `503
+servicio_no_disponible` si la analítica o Spark no responden. Límite de 180 s y **sin reintento**: una
+consulta de Spark tarda segundos y repetirla después de un timeout la lanzaría dos veces.
+
 ### GET /proyectos/{id}/exportar?cursor=&limite=100
 → `200 {"tareas": [...], "siguiente_cursor": "uuid|null"}` (solo `aprobada`).
 

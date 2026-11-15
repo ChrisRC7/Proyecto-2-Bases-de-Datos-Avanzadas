@@ -58,4 +58,52 @@ Pendiente (B6.6).
 
 ## Registro, índices y fallas de MongoDB (código de A, preguntas de C)
 
-Pendiente (C6.5).
+**1. El enunciado pide cuatro índices. ¿Por qué hay un quinto, `tareas {estado: 1, prioridad: -1}`?**
+Porque `/tareas/siguiente` sin `proyecto_id` (la cola global, que es lo que usa el simulador) filtra por
+`estado` y ordena por `prioridad`, y ninguno de los obligatorios empieza por `estado`: el de
+`{proyecto_id, estado, prioridad}` no sirve si no viene el proyecto. El `explain("executionStats")` mostró
+`COLLSCAN` + `SORT` con 60 000 documentos examinados para devolver 1; con el índice nuevo, 1 clave y 1
+documento (`evidence/A3_explain_registro_20261022-2003.md`). Con proyecto basta el obligatorio: cada rama
+del `$or` (`disponible`, o `abierta` vencida) es un rango del índice y `SORT_MERGE` las une ya ordenadas.
+El costo de un índice más es que todas las transiciones cambian `estado`, así que cada una lo actualiza; por
+eso la exportación no lleva índice propio.
+
+**2. ¿Cómo pagina la exportación de aprobadas y por qué no usa `skip`?**
+Por llave: `GET /proyectos/{id}/exportar?cursor=&limite=` filtra `proyecto_id`, `estado: aprobada` y, si hay
+cursor, `_id > cursor`; ordena por `_id` y devuelve como `siguiente_cursor` el último `_id` de la página
+(o `null` si la página vino incompleta). Con `skip` MongoDB tiene que recorrer y descartar todo lo anterior en
+cada página, y si una tarea se aprueba entre dos páginas los desplazamientos cambian y se repiten o saltan
+filas. Con cursor por `_id` cada página empieza donde terminó la anterior. Límite conocido: el orden por
+`_id` se hace en memoria sobre las aprobadas del proyecto (a lo sumo 500 en el dataset; con miles convendría
+un índice `{proyecto_id, estado, _id}`).
+
+**3. Cae el primario de MongoDB a mitad de una transición. ¿Se puede aplicar dos veces o perder?**
+Ninguna de las dos para lo que respondió 200. El registro escribe con `w: "majority"`: el 200 sale cuando 2
+de 3 nodos tienen la escritura, así que la elección no la puede deshacer (no hay *rollback* de lo
+confirmado por mayoría). El driver tiene `retryWrites=True`: si el primario cae durante el
+`findOneAndUpdate`, lo reintenta una vez contra el nuevo primario con el mismo identificador de
+transacción y el servidor no lo aplica dos veces. Si no hay primario en 2 s (`serverSelectionTimeoutMS`) el
+registro responde 503 `mongodb_no_disponible`, y el gateway no reintenta los POST. En P8 cayendo el primario:
+RTO 10,45 s (lo manda el `electionTimeoutMillis` de 10 s) y RPO 0, 132 de 132 envíos confirmados una sola
+vez (`evidence/P8_mongo_gateway_20261110-1715.md`).
+
+**4. En P8 sin mayoría, 10 asignaciones que respondieron error sí quedaron escritas. ¿No es un error de
+consistencia?**
+No: «error» no significa «no escrito». El primario, antes de darse cuenta de que perdió la mayoría, aplica la
+asignación en su copia y espera a la mayoría hasta el `wtimeout` (5 s); el gateway corta a 1 s y responde
+503. Cuando la mayoría vuelve, ese nodo sigue de primario y conserva las escrituras. No hay doble dueño
+porque la tarea queda `abierta` con un token que nadie tiene; su plazo (`vence_en`, 120 s) vence y el
+filtro de la asignación la vuelve a ofrecer. Por eso el RPO se mide solo sobre lo que respondió 200. Con
+`w: 1` el riesgo sería el contrario: un 200 que solo estaba en el primario caído puede perderse en la
+elección.
+
+**5. En un rechazo MongoDB deja la tarea `disponible` y el lago guarda `rechazada`. ¿Cómo se relacionan y
+de dónde saca Q2 el equipo si la asignación se borró?**
+Son dos cosas distintas: MongoDB guarda el estado vigente (la tarea vuelve a la cola sin asignación) y el
+lago el hecho que pasó. La transición se hace con `find_one_and_update(..., ReturnDocument.BEFORE)`: el
+registro recibe el documento como estaba antes del cambio y arma el evento con la asignación vieja
+(anotador, equipo, `tomada_en`), aunque en MongoDB ya se haya borrado. Así la fila `rechazada` lleva el
+`equipo_id` que usa Q2 y el `tomada_ts` que usan Q3 y Q5. Las dos quedan unidas por el `event_id`: el mismo
+`findOneAndUpdate` guarda `ultimo_evento_id` en la tarea. Si el filtro no encuentra la tarea (otro ya la
+cambió), responde 409 y no hay evento, así que tampoco fila
+(`evidence/P4_historial_20261030-1431.md`, sección 2).

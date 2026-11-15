@@ -1,0 +1,91 @@
+{
+ "respuesta_gateway": {
+  "estado": "disponible",
+  "version": 4,
+  "event_id": "75dd8534-edfb-4219-81d1-1719947bc1e9"
+ },
+ "segundo_envio": [
+  409,
+  {
+   "error": "conflicto_lock",
+   "detalle": "El lock est\u00e1 ocupado, venci\u00f3 o el token no coincide"
+  }
+ ],
+ "filas_lago": [
+  {
+   "event_id": "af0ca25b-d9a7-4308-8ff0-c04ed4c32ce9",
+   "ts": "2026-11-15 17:05:05.753000+00:00",
+   "tarea_id": "ba0b2c68-68b7-4bbb-946c-d28a5a9aadef",
+   "estado": "abierta",
+   "version": 1,
+   "motivo_rechazo": null,
+   "anotador_id": "adbafed0-b600-460c-bbdc-fd55304374b3",
+   "revisor_id": null,
+   "micro_lote_id": "1794762305799-0_1794762305928-0",
+   "mes": "2026-11"
+  },
+  {
+   "event_id": "d861a1da-f03b-4c55-9524-93299b293515",
+   "ts": "2026-11-15 17:05:05.808000+00:00",
+   "tarea_id": "ba0b2c68-68b7-4bbb-946c-d28a5a9aadef",
+   "estado": "anotada",
+   "version": 2,
+   "motivo_rechazo": null,
+   "anotador_id": "adbafed0-b600-460c-bbdc-fd55304374b3",
+   "revisor_id": null,
+   "micro_lote_id": "1794762305799-0_1794762305928-0",
+   "mes": "2026-11"
+  },
+  {
+   "event_id": "40eb90de-2e02-406f-affc-4afd91f5125f",
+   "ts": "2026-11-15 17:05:05.870000+00:00",
+   "tarea_id": "ba0b2c68-68b7-4bbb-946c-d28a5a9aadef",
+   "estado": "en_revision",
+   "version": 3,
+   "motivo_rechazo": null,
+   "anotador_id": "adbafed0-b600-460c-bbdc-fd55304374b3",
+   "revisor_id": "a40eecb5-c134-479b-9e3b-7dd373aa881e",
+   "micro_lote_id": "1794762305799-0_1794762305928-0",
+   "mes": "2026-11"
+  },
+  {
+   "event_id": "75dd8534-edfb-4219-81d1-1719947bc1e9",
+   "ts": "2026-11-15 17:05:05.895000+00:00",
+   "tarea_id": "ba0b2c68-68b7-4bbb-946c-d28a5a9aadef",
+   "estado": "rechazada",
+   "version": 4,
+   "motivo_rechazo": "GEOMETRIA_IMPRECISA",
+   "anotador_id": "adbafed0-b600-460c-bbdc-fd55304374b3",
+   "revisor_id": "a40eecb5-c134-479b-9e3b-7dd373aa881e",
+   "micro_lote_id": "1794762305799-0_1794762305928-0",
+   "mes": "2026-11"
+  }
+ ],
+ "mongo": {
+  "_id": "ba0b2c68-68b7-4bbb-946c-d28a5a9aadef",
+  "estado": "disponible",
+  "version": 4,
+  "asignacion": null,
+  "ultima_revision": {
+   "revisor_id": "a40eecb5-c134-479b-9e3b-7dd373aa881e",
+   "resultado": "rechazada",
+   "motivo": "GEOMETRIA_IMPRECISA",
+   "en": "2026-11-15 17:05:05.895000+00:00"
+  },
+  "ultimo_evento_id": "75dd8534-edfb-4219-81d1-1719947bc1e9"
+ },
+ "q4_antes": {
+  "cliente_id": "f38b2ffc-80a4-4f5a-91c9-bc701e7ea419",
+  "proyecto_id": "18da990c-9704-464a-b54b-82d3b6e57418",
+  "rechazadas": 0,
+  "revisadas": 5,
+  "proporcion": 0.0
+ },
+ "q4_despues": {
+  "cliente_id": "f38b2ffc-80a4-4f5a-91c9-bc701e7ea419",
+  "proyecto_id": "18da990c-9704-464a-b54b-82d3b6e57418",
+  "rechazadas": 1,
+  "revisadas": 6,
+  "proporcion": 0.1667
+ }
+}

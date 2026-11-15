@@ -1,0 +1,21 @@
+ts,fase,usuario,rol,endpoint,status,ms
+1794680243.329,medicion,adbafed0-b600-460c-bbdc-fd55304374b3,anotador,POST /tareas/siguiente,200,58.04
+1794680245.362,medicion,adbafed0-b600-460c-bbdc-fd55304374b3,anotador,PUT /tareas/{id}/borrador,200,22.4
+1794680245.383,medicion,adbafed0-b600-460c-bbdc-fd55304374b3,anotador,POST /sesiones/latido,200,20.81
+1794680247.363,medicion,adbafed0-b600-460c-bbdc-fd55304374b3,anotador,PUT /tareas/{id}/borrador,200,23.17
+1794680247.389,medicion,adbafed0-b600-460c-bbdc-fd55304374b3,anotador,POST /sesiones/latido,200,25.12
+1794680248.454,medicion,adbafed0-b600-460c-bbdc-fd55304374b3,anotador,POST /tareas/{id}/enviar,200,113.33
+1794680248.476,medicion,a40eecb5-c134-479b-9e3b-7dd373aa881e,revisor,POST /tareas/{id}/revision,404,21.72
+1794680248.522,medicion,adbafed0-b600-460c-bbdc-fd55304374b3,anotador,POST /tareas/siguiente,200,67.7
+1794680250.543,medicion,adbafed0-b600-460c-bbdc-fd55304374b3,anotador,PUT /tareas/{id}/borrador,200,20.51
+1794680250.564,medicion,adbafed0-b600-460c-bbdc-fd55304374b3,anotador,POST /sesiones/latido,200,21.52
+1794680252.548,medicion,adbafed0-b600-460c-bbdc-fd55304374b3,anotador,PUT /tareas/{id}/borrador,200,26.03
+1794680252.569,medicion,adbafed0-b600-460c-bbdc-fd55304374b3,anotador,POST /sesiones/latido,200,20.49
+1794680253.569,medicion,adbafed0-b600-460c-bbdc-fd55304374b3,anotador,POST /tareas/{id}/enviar,200,47.27
+1794680253.579,medicion,a40eecb5-c134-479b-9e3b-7dd373aa881e,revisor,POST /tareas/{id}/revision,404,8.97
+1794680253.611,medicion,adbafed0-b600-460c-bbdc-fd55304374b3,anotador,POST /tareas/siguiente,200,41.75
+1794680255.633,medicion,adbafed0-b600-460c-bbdc-fd55304374b3,anotador,PUT /tareas/{id}/borrador,200,21.36
+1794680255.646,medicion,adbafed0-b600-460c-bbdc-fd55304374b3,anotador,POST /sesiones/latido,200,12.69
+1794680257.635,medicion,adbafed0-b600-460c-bbdc-fd55304374b3,anotador,PUT /tareas/{id}/borrador,200,22.86
+1794680257.647,medicion,adbafed0-b600-460c-bbdc-fd55304374b3,anotador,POST /sesiones/latido,200,12.53
+1794680258.673,medicion,adbafed0-b600-460c-bbdc-fd55304374b3,anotador,POST /tareas/{id}/enviar,200,60.65

@@ -1,0 +1,17 @@
+﻿{
+    "tarea":  {
+                  "tarea_id":  "874edc90-2732-40b5-b14e-95e1198b14e0",
+                  "proyecto_id":  "d2347c44-16a6-43cf-ad47-1c1e435b4b09",
+                  "etapa":  "anotando"
+              },
+    "token":  "664afe53-63c2-4b96-a053-1bac5b371e73",
+    "borrador":  {
+                     "contenido":  {
+                                       "etiquetas":  [
+                                                         "lidar#ciclista"
+                                                     ],
+                                       "origen":  "interrupcion_real_b42"
+                                   },
+                     "guardado_en":  "2026-11-14T18:00:17.801000+00:00"
+                 }
+}

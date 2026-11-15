@@ -227,3 +227,36 @@ async def recuperar_sesion(
             else None
         ),
     }
+
+
+class SolicitudLatido(BaseModel):
+    token: UUID
+
+
+@app.post("/sesiones/latido")
+async def latido_sesion(
+    request: Request,
+    cuerpo: SolicitudLatido,
+    anotador_id: UUID = Header(alias="X-Anotador-Id"),
+):
+    respuesta = await solicitar(
+        "sesion",
+        "POST",
+        f"/sesiones/{anotador_id}",
+        json={
+            "accion": "latido",
+            "token": str(cuerpo.token),
+        },
+        request_id=request.state.request_id,
+    )
+
+    datos = respuesta.json()
+
+    if respuesta.status_code != 200:
+        return error(
+            respuesta.status_code,
+            datos.get("error", "error_latido"),
+            datos.get("detalle"),
+        )
+
+    return datos

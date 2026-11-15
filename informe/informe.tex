@@ -246,13 +246,286 @@ sesión y qué pasa al reiniciar Valkey con AOF everysec (P3)}
 
 \section{Lago Parquet}
 
-\falta{C6.1 (Christopher): micro-lotes con \_tmp y rename, compactación, duplicados por event\_id, la
-fila \texttt{rechazada} en Parquet mientras MongoDB queda en \texttt{disponible}, frescura (P4)}
+Cada transición que MongoDB confirma deja una fila en el lago. El camino es: el gateway guarda el evento en
+su cola local (SQLite) antes de responder y lo manda en lotes a \texttt{POST historial:/eventos}; el
+historial lo pone en una cola durable y un consumidor lo escribe en Parquet; Spark lo lee. El historial es el
+único servicio con el lago en lectura y escritura; la analítica y los workers de Spark lo montan en solo
+lectura. Lo medido en esta sección es de la laptop Intel i7-6500U (sección~5.3).
+
+\subsection{Escritura: cola durable y micro-lotes atómicos}
+
+\textbf{Entrada.} \texttt{POST /eventos} valida el esquema y, en un solo script Lua, hace
+\texttt{SET visto:\{event\_id\} NX} y, solo si es nuevo, \texttt{XADD eventos:tareas}. La cola es una
+instancia Valkey propia (\texttt{cola-eventos}, AOF \texttt{everysec}), en una red que solo comparte con el
+historial: no es el Valkey de sesión. Responde 202 con cuántos aceptó y cuántos eran duplicados.
+
+\textbf{Micro-lotes.} Un consumidor del grupo lee el stream y junta 500 eventos o 5~s, lo que pase primero.
+El micro-lote se llama como su rango del stream (\texttt{<primer id>\_<último id>}), así que reprocesarlo
+produce el mismo nombre. Por cada mes que toca escribe
+\texttt{\_tmp/<nombre>.parquet} completo, hace \texttt{fsync} del archivo, lo publica con
+\texttt{os.replace} en \texttt{eventos/mes=AAAA-MM/part-<nombre>.parquet} y hace \texttt{fsync} de la
+carpeta; recién entonces \texttt{XACK}. El rename es atómico dentro del mismo sistema de archivos: un lector
+ve el archivo entero o no lo ve. La carpeta por mes es la partición que Spark usa para podar (sección~5.4).
+
+\textbf{Recuperación.} Al arrancar, el historial reclama con \texttt{XAUTOCLAIM} lo que quedó sin
+\texttt{XACK}, rehace con el mismo nombre los micro-lotes que empezó y no confirmó (los anota en
+\texttt{microlotes:abiertos} antes de escribir) y borra lo que quedó en \texttt{\_tmp/}.
+
+\subsection{Duplicados}
+
+Se evitan en dos lugares y se toleran en un tercero. En la entrada, un evento reenviado no vuelve a la cola:
+mandar otra vez el evento \texttt{rechazada} respondió \texttt{\{"aceptados": 0, "duplicados": 1\}} y quedó 1
+sola fila. En el lago, reprocesar un micro-lote de 500 eventos reescribió el mismo archivo con el mismo
+sha256: 166 archivos antes y después, 500 filas con esos \texttt{event\_id} antes y después
+(\ev{P4\_historial\_20261030-1431.md}). Lo que sí puede quedar repetido, como un micro-lote entregado dos veces
+desde fuera, lo quita Spark con \texttt{dropDuplicates(["event\_id"])}. El histórico trae 0,2\,\% de
+duplicados inyectados a propósito (1\,634 en \texttt{principal}) y Q1--Q5 los descartan (sección~5.2).
+
+\subsection{La fila rechazada}
+
+Recorrido completo por el gateway (\ev{P4\_gateway\_20261115-1102.txt}, sección 2): una tarea LiDAR se toma,
+se envía, entra a revisión y se rechaza con \texttt{GEOMETRIA\_IMPRECISA}.
+
+\begin{center}\footnotesize
+\begin{tabular}{@{}ll@{}}
+\toprule
+Dónde & Qué quedó \\
+\midrule
+Gateway & \texttt{200 \{"estado": "disponible", "version": 4, "event\_id": "75dd8534-..."\}} \\
+MongoDB & \texttt{estado: disponible}, \texttt{version: 4}, \texttt{asignacion: null},
+\texttt{ultima\_revision.resultado: rechazada} \\
+Lago (4 filas) & \texttt{abierta} v1, \texttt{anotada} v2, \texttt{en\_revision} v3, \texttt{rechazada} v4 con
+motivo y revisor \\
+Enlace & \texttt{ultimo\_evento\_id} de MongoDB = \texttt{event\_id} de la fila \texttt{rechazada} \\
+Segundo envío con el token viejo & 409 \texttt{conflicto\_lock}, sin fila nueva (siguen 4) \\
+Q4 del proyecto, por el gateway & rechazadas 0 $\rightarrow$ 1, revisadas 5 $\rightarrow$ 6 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+MongoDB guarda el estado vigente: la tarea vuelve a la cola sin asignación, para que otro la tome. El lago
+guarda el hecho, con el equipo y la toma de la asignación que se acaba de borrar (el registro arma el evento
+con el documento de antes del cambio). Por eso Q4 cuenta rechazos que MongoDB ya no muestra.
+
+\subsection{Frescura}
+
+Segundos entre el 200 del gateway (aprobar) y la primera Q1 que cuenta esa aprobación, pidiendo Q1 al
+gateway sin pausa (\ev{P4\_gateway\_20261115-1102.txt}, sección 1; el CSV \texttt{p4\_frescura.csv} en la
+carpeta del mismo nombre):
+
+\begin{center}\footnotesize
+\begin{tabular}{@{}lrrrrl@{}}
+\toprule
+Camino & n & mín & mediana & máx & Q1 hasta verlo \\
+\midrule
+Gateway $\rightarrow$ historial, esperando el cierre del micro-lote & 5 & 6,65~s & 7,44~s & 11,42~s & 3--6 \\
+Directo al historial, esperando el cierre del micro-lote & 5 & 6,55~s & 7,42~s & 11,25~s & 3--5 \\
+Directo al historial con \texttt{POST /flush} después del 200 & 5 & 1,22~s & 1,32~s & 1,54~s & 1 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Las dos últimas filas son de la corrida directa (\ev{P4\_historial\_20261030-1431.md}). El gateway no suma
+casi nada: su publicador manda el evento en cuanto lo guarda. La frescura la manda la ventana de 5~s del
+micro-lote más lo que tarda una Q1 (de 1,1 a 3,4~s de media); el máximo es siempre la primera repetición,
+con la Q1 todavía fría. Con \texttt{/flush} queda en el costo de una consulta.
+
+\subsection{Sin lecturas a medias y sin pérdidas por el flujo real}
+
+\textbf{Spark leyendo mientras se escribe.} Un lector con Spark local vuelve a listar y contar el lago sin
+pausa durante 120~s mientras el simulador (10 usuarios, 60~s) escribe por el gateway. Si Spark abriera un
+Parquet a medio escribir, la vuelta fallaría por un pie de archivo inválido. Resultado: 39 vueltas, 0
+errores, y la cuenta de filas subió de 810\,361 a 810\,882 sin bajar nunca. En la corrida directa, con 40
+micro-lotes de 500 eventos escritos en 10,5~s, también 39 vueltas sin error
+(\ev{P4\_gateway\_20261115-1102.md} y \ev{P4\_historial\_20261030-1431.md}).
+
+\textbf{Caída del historial.} Con el simulador corriendo, se mata el historial con \texttt{docker kill} y se
+vuelve a encender 15~s después:
+
+\begin{center}\footnotesize
+\begin{tabular}{@{}lr@{}}
+\toprule
+Resultado & Valor \\
+\midrule
+Eventos esperando en el SQLite del gateway tras 15~s con el historial caído & 149 \\
+\texttt{GET /salud} del gateway durante la caída & 200, \texttt{degradado} (historial \texttt{caido}) \\
+Errores que vio el simulador (45~s, 10 usuarios) & 0 \\
+Aceptados por el historial y sin \texttt{XACK} al morir, recuperados al volver & 67 \\
+Respuestas 200 del simulador / \texttt{event\_id} distintos en el lago & 560 / 560 \\
+Atraso al lago p50 / p95 / máx. & 4,4 / 33,0 / 34,3~s \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Una caída del historial no llega al usuario ni pierde eventos: los que no se entregaron esperan en el
+gateway, y los que el historial ya había aceptado siguen en el stream con AOF y se publican una sola vez al
+volver. Lo que cambia es el atraso: el p95 de 33~s es lo que esperaron esos eventos. En la corrida directa,
+matar el historial con 300 eventos en un micro-lote abierto dio 0 perdidos y 0 repetidos.
+
+En la fase con el lector, 31 peticiones respondieron 503 y 8 no respondieron en 10~s: son el límite de 1~s
+del gateway a sus servicios internos cuando el lector de Spark (2 hilos), el clúster de Spark y el simulador
+compiten por los 2 núcleos físicos; ningún servicio interno respondió 5xx. Las 518 respuestas 200 están en
+el lago, más 3 de las 8 sin respuesta que el gateway terminó después.
+
+\subsection{Compactación}
+
+Con micro-lotes de 5~s, cada mes en operación acumula muchos archivos pequeños: después de P4,
+\texttt{mes=2026-11} tenía 22 archivos con 1\,105 filas. Los archivos pequeños cuestan en Spark (listar y
+abrir cada uno, leer cada pie) más que su contenido. \texttt{python -m app.compactar --mes AAAA-MM} corre en
+el historial, el único con el lago en escritura:
+\begin{enumerate}\setlength{\itemsep}{0pt}
+\item lista y lee los archivos del mes (lo que se publique después no se toca);
+\item quita los \texttt{event\_id} repetidos, quedándose con la primera aparición;
+\item escribe \texttt{part-compacto-<fecha>.parquet} con el mismo procedimiento atómico (\texttt{\_tmp} +
+rename);
+\item recién entonces borra los archivos que leyó.
+\end{enumerate}
+Entre 3 y 4 hay un momento con filas en dos archivos, que Spark deduplica, así que Q1--Q5 no cambian. Una
+consulta que ya listó los archivos viejos y los abre después del paso 4 falla con \emph{file not found}: por
+eso es mantenimiento manual, sin consultas corriendo. Resultado sobre \texttt{mes=2026-11}: 22 archivos
+(0,21~MB) $\rightarrow$ 1 (0,08~MB), las mismas 1\,105 filas, en 0,55~s, y Q1--Q5 por el gateway iguales
+antes y después (\ev{C2.6\_compactacion\_20261115-1113.txt}).
+
+\subsection{Límites del lago}
+
+\begin{itemize}\setlength{\itemsep}{1pt}
+\item La frescura tiene un piso de $\sim$5~s (la ventana del micro-lote) más una consulta. Achicar la ventana
+genera más archivos pequeños.
+\item Spark relee y deduplica todo el conjunto en cada consulta: no hay tablas agregadas ni incrementales.
+\item La compactación es manual y por mes; no corre sola ni junto con consultas.
+\item Si el gateway muere entre el 200 de MongoDB y guardar el evento en SQLite, esa fila no llega al lago
+(sección~8).
+\item Una corrida por fase en una laptop de 2 núcleos; con más carga el atraso crece (P6 midió 2,6--3,8~s
+de p50 con 10 a 100 usuarios, sección~6.2).
+\end{itemize}
 
 \section{Analítica con Spark}
 
-\falta{C6.2 (Christopher): definición de Q1--Q5, resultados validados, planes de Q1 y Q3, primera
-ejecución contra las siguientes, uno y dos workers, principal y grande, limitaciones de Spark (P5)}
+La analítica es un servicio FastAPI con una sola \texttt{SparkSession} por proceso, conectada a un Spark
+standalone 3.5.1 (\texttt{spark-master} y un \texttt{spark-worker} de 2 núcleos y 2~GB; el perfil
+\texttt{spark2} agrega un segundo worker igual). La sesión se crea al arrancar, en un hilo aparte, para que
+\texttt{/salud} responda aunque Spark tarde o no esté. El lago está montado en solo lectura en la analítica y
+en los workers, en la misma ruta (\texttt{/datalake}); la analítica no tiene la dirección de MongoDB, de
+Valkey ni del historial, y solo ella está en la red \texttt{spark}. El gateway la expone como
+\texttt{GET /analitica/\{q1..q5\}?conjunto=principal|grande|prueba}, con un límite de 180~s y sin reintento,
+porque repetir una consulta después de un timeout volvería a lanzarla en Spark.
+
+\subsection{Definición de las consultas}
+
+Todas leen el conjunto, filtran los estados que usan y después quitan duplicados con
+\texttt{dropDuplicates(["event\_id"])}. Filtrar primero da el mismo resultado, porque las copias de un
+\texttt{event\_id} son la misma fila (misma transición, mismo estado y mismo \texttt{ts}), y el shuffle de
+la deduplicación mueve solo las filas que la consulta necesita. Las filas \texttt{liberada} no entran en
+ninguna. \emph{Revisadas} es \texttt{aprobada} + \texttt{rechazada}.
+
+\begin{center}\footnotesize
+\begin{tabular}{@{}l>{\raggedright\arraybackslash}p{0.78\textwidth}@{}}
+\toprule
+Q & Definición \\
+\midrule
+Q1 & Filas \texttt{aprobada} con \texttt{ts} en los 90 días anteriores al evento más reciente del conjunto,
+agrupadas por \texttt{to\_date(ts)} y modalidad. Se toma \texttt{max(ts)} y no la fecha de hoy porque el
+histórico es sintético y termina en 2026-09: con la fecha de hoy el resultado cambiaría según el día. \\
+Q2 & Por equipo del anotador y mes: aprobadas / revisadas. \\
+Q3 & Por cada fila \texttt{anotada}: \texttt{ts} $-$ \texttt{tomada\_ts} (la toma vigente). Media y p95
+(\texttt{percentile\_approx}) por modalidad y tipo de tarea, ordenado por media descendente. \\
+Q4 & Por cliente y proyecto: rechazadas / revisadas. Cuenta las filas \texttt{rechazada} del lago (en
+MongoDB esas tareas están \texttt{disponible}). \\
+Q5 & Por cada fila \texttt{aprobada}: horas desde \texttt{tomada\_ts}. Por cliente, p50, p95 y \% con más
+horas que el \texttt{sla\_horas} del proyecto. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Validación con casos conocidos}
+
+El conjunto \texttt{prueba} tiene 7 tareas y 42 eventos más una copia repetida, con el resultado de las cinco
+consultas calculado a mano en \texttt{dataset/historico/esperado\_prueba.json}. Cada caso prueba algo: la
+aprobada repetida en otro archivo cuenta una vez en Q1 (si no, daría 3 y no 2); una aprobada una hora antes del
+inicio de la ventana queda fuera; la liberada no entra en Q3; la duración usa la toma vigente y no la primera;
+el rechazo cuenta para el equipo del anotador que tenía la tarea. Las cinco dieron exactamente lo esperado,
+directo a la analítica (\ev{P5\_analitica\_20261030-1410.md}) y por el gateway
+(\ev{C4.9\_analitica\_gateway\_20261115-1057.txt}).
+
+\subsection{Tiempos}
+
+Medidos en otra máquina que el resto del informe: laptop Intel Core i7-6500U (2 núcleos físicos, 4 hilos),
+11~GiB de RAM, Ubuntu 24.04 nativo. Cada consulta corrió 6 veces seguidas; \texttt{ms} es lo que tarda dentro
+de la analítica. Conjunto \texttt{principal}: 808\,703 eventos, 115 archivos, 47~MB. \texttt{grande}:
+10\,107\,232 eventos, 271 archivos, 553~MB (\ev{P5\_analitica\_20261030-1410.md}):
+
+\begin{center}\footnotesize
+\begin{tabular}{@{}llrrrrr@{}}
+\toprule
+ & & \multicolumn{2}{c}{1 worker (ms)} & \multicolumn{2}{c}{2 workers (ms)} & \\
+\cmidrule(lr){3-4}\cmidrule(lr){5-6}
+Conjunto & Q & 1ª & mediana 2ª--6ª & 1ª & mediana 2ª--6ª & Filas \\
+\midrule
+principal & Q1 & 3\,218 & 1\,556 & 14\,405 & 3\,848 & 361 \\
+principal & Q2 & 2\,758 & 1\,766 & 4\,864 & 2\,752 & 360 \\
+principal & Q3 & 2\,953 & 1\,676 & 6\,904 & 2\,521 & 5 \\
+principal & Q4 & 1\,782 & 1\,602 & 2\,496 & 1\,650 & 60 \\
+principal & Q5 & 2\,232 & 1\,417 & 3\,478 & 1\,972 & 60 \\
+\midrule
+grande & Q1 & 3\,988 & 3\,103 & 4\,907 & 3\,247 & 362 \\
+grande & Q2 & 15\,614 & 8\,779 & 7\,596 & 9\,706 & 360 \\
+grande & Q3 & 10\,389 & 12\,828 & 15\,397 & 9\,490 & 5 \\
+grande & Q4 & 11\,330 & 14\,370 & 10\,488 & 8\,539 & 60 \\
+grande & Q5 & 12\,129 & 7\,522 & 7\,702 & 8\,204 & 60 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{itemize}\setlength{\itemsep}{1pt}
+\item \textbf{Primera ejecución contra las siguientes.} No se cachea ningún DataFrame, así que la diferencia
+no son datos en memoria sino arranque: JVM de los ejecutores, carga de clases, generación de código y listado
+de archivos. En \texttt{principal} la 1ª cuesta de 1,1 a 2,1 veces la mediana de las siguientes, y 3,7 veces
+cuando incluye arrancar los ejecutores (Q1 con 2 workers, que fue la primera consulta de ese proceso; con 1
+worker la primera fue la validación sobre \texttt{prueba}, que tardó 8\,750~ms con 42 filas). En
+\texttt{grande} la diferencia casi desaparece: manda el procesamiento, y la variación entre ejecuciones es
+mayor que el arranque.
+\item \textbf{Principal contra grande.} 12,5 veces más filas cuestan de 2 a 9 veces más tiempo. Q1 casi no
+crece (1,6 a 3,1~s) porque solo lee los meses de la ventana y \texttt{max(ts)} sale de las estadísticas de
+los pies de los archivos Parquet sin leer filas (\texttt{spark.sql.parquet.aggregatePushdown}). Las demás leen
+los 12 meses y deduplican de 1 a 2,3 millones de filas con un shuffle.
+\item \textbf{Uno contra dos workers.} En \texttt{principal}, dos workers es más lento (Q1 1,6 $\rightarrow$
+3,8~s): el trabajo cabe en 2 núcleos y el segundo ejecutor solo agrega coordinación y shuffle entre
+contenedores. En \texttt{grande} mejoran Q3 (12,8 $\rightarrow$ 9,5~s) y Q4 (14,4 $\rightarrow$ 8,5~s) y
+empeoran un poco Q2 y Q5. La máquina tiene 2 núcleos físicos: los dos workers de 2 núcleos le hacen creer a
+Spark que hay 4, pero comparten el mismo CPU con MongoDB y los demás servicios. No es una medición de
+escalabilidad horizontal; muestra que en una máquina agregar un worker no agrega CPU.
+\item \textbf{Por el gateway.} Pasar por \texttt{GET /analitica} suma una mediana de 148~ms (de 85 a 319,
+n = 20) a lo que tarda Spark en \texttt{principal} (\ev{C4.9\_analitica\_gateway\_20261115-1057.txt}).
+\end{itemize}
+
+\subsection{Planes de Q1 y Q3}
+
+\textbf{Q1} (\ev{P5\_analitica\_20261030-1410\_plan\_q1.txt}). El \texttt{Scan parquet} lleva
+\texttt{PartitionFilters: [isnotnull(mes), (mes >= 2026-07)]}: solo se listan y leen las carpetas de julio a
+septiembre, no las 12. \texttt{PushedFilters} baja \texttt{estado = aprobada} y \texttt{ts >= ...} al lector
+de Parquet, que se salta grupos de filas con las estadísticas de cada columna. Después vienen la
+deduplicación (\texttt{Exchange hashpartitioning(event\_id, 16)} y \texttt{SortAggregate}), la agregación por
+(día, modalidad) en dos pasos, parcial y final, con otro \texttt{Exchange}, y \texttt{rangepartitioning} +
+\texttt{Sort} para el \texttt{orderBy}. La partición por mes solo decide qué archivos se leen: la agrupación
+por día no la aprovecha más allá de eso.
+
+\textbf{Q3} (\ev{P5\_analitica\_20261030-1410\_plan\_q3.txt}). Sin \texttt{PartitionFilters}: lee los 12
+meses, con \texttt{PushedFilters: estado = anotada}. La misma deduplicación, un
+\texttt{ObjectHashAggregate} con \texttt{percentile\_approx(duracion\_s, 0.95, 10000)} parcial y final, y al
+final \texttt{Exchange rangepartitioning(media\_s DESC, 16)} + \texttt{Sort}. El ordenamiento es un shuffle
+por rangos más, pero sobre 5 filas ya agregadas, así que no pesa; lo caro es leer y deduplicar.
+
+\subsection{Límites de la analítica}
+
+\begin{itemize}\setlength{\itemsep}{1pt}
+\item Las consultas se atienden de a una (un candado en la analítica) para que los tiempos sean comparables;
+con varios usuarios pidiendo KPIs a la vez harían fila.
+\item \texttt{percentile\_approx} es aproximado (precisión 10\,000); con los casos de prueba coincide con el
+percentil exacto de rango.
+\item Una sola corrida de 6 ejecuciones por consulta y configuración; los tiempos de \texttt{grande} varían
+mucho entre ejecuciones (máximo de Q2 con 1 worker: 35\,308~ms, en el CSV).
+\item Todo en una laptop de 2 núcleos físicos: no se puede extrapolar a un clúster con nodos separados.
+\end{itemize}
 
 \section{Carga y cuellos de botella}
 
@@ -469,8 +742,62 @@ borradores con AOF everysec (P8 de Valkey)}
 
 \section{Limitaciones de la solución}
 
-\falta{C6.3 (Christopher): consolidar las limitaciones de todos. Las del registro, la carga y las
-fallas de MongoDB están al final de las secciones 2, 6 y 7.1}
+Cada sección cierra con los límites de su parte; aquí se juntan los que afectan a la solución completa,
+separando lo que el sistema no hace de lo que las mediciones no pueden decir.
+
+\subsection{Del diseño y la implementación}
+
+\begin{itemize}\setlength{\itemsep}{1pt}
+\item \textbf{El gateway es un solo proceso.} Es el cuello de botella de la carga: no pasa de $\sim$30
+peticiones por segundo (sección~6.3). Con dos procesos de uvicorn sale un 38--53\,\% más, pero no se dejó así
+porque cada proceso correría su propio publicador de eventos y sus limpiezas sobre el mismo SQLite.
+\item \textbf{Plazo de la asignación fijo.} El lock de Valkey se renueva con borradores y latidos, pero el
+\texttt{vence\_en} de MongoDB queda en 120~s desde la toma. Si alguien trabaja más, el registro puede ofrecer
+la tarea a otro mientras el lock sigue tomado: el gateway no consigue el lock, devuelve la tarea y responde
+503. No hay doble dueño, pero la tarea queda atascada hasta que el lock vence (sección~2.5).
+\item \textbf{Borrador de otro anotador.} Si una tarea vuelve a la cola con el borrador de otro todavía en
+Valkey, la sesión se niega a abrirla (409) y el gateway responde 503; como la tarea sigue primera en la cola,
+solo el anotador original la puede tomar. Se vio en el código y no tiene prueba.
+\item \textbf{\texttt{/salud} no usa los mensajes de Valkey.} Cada capa publica su estado cada 5~s en
+\texttt{sesion:/estado-capas} (llaves con TTL de 15~s; \ev{C2.7\_latidos\_estado\_capas\_20261115-1059.txt}),
+pero el gateway arma su respuesta consultando el \texttt{/salud} de cada servicio, no esos mensajes.
+\item \textbf{Ventana entre MongoDB y la cola del gateway.} El evento se guarda en SQLite después del 200 de
+MongoDB. Si el proceso del gateway muere justo entre las dos cosas, la transición queda hecha y su fila no
+llega al lago; si lo que falla es la escritura en SQLite, el usuario recibe error aunque MongoDB confirmó.
+Cerrarla pediría guardar el evento en el mismo documento de MongoDB (un \emph{outbox}) y que alguien lo
+publique desde ahí; el diseño deja al registro sin conexión con el historial y no se hizo.
+\item \textbf{Frescura acotada por el micro-lote.} Un evento se ve en Spark entre 6 y 12~s después del 200
+(sección~4.4). Bajar los 5~s del micro-lote la mejora a cambio de más archivos pequeños.
+\item \textbf{Compactación manual.} Una consulta que ya listó los archivos viejos y los lee después de que la
+compactación los borra falla con \emph{file not found}. Por eso es mantenimiento manual y fuera de las
+mediciones, no un proceso automático.
+\item \textbf{Analítica de a una consulta.} El candado que hace comparables los tiempos también hace que dos
+pedidos de KPIs a la vez esperen uno al otro.
+\item \textbf{Exportación ordenada en memoria}, adecuada para 500 aprobadas por proyecto, no para miles.
+\end{itemize}
+
+\subsection{De las mediciones}
+
+\begin{itemize}\setlength{\itemsep}{1pt}
+\item \textbf{Una máquina.} Los tres nodos de MongoDB, Valkey, Spark, los servicios y el simulador comparten la
+misma laptop y una red virtual. Las cifras comparan configuraciones y muestran cuellos de botella; no estiman
+un despliegue en varias máquinas. En particular, la diferencia entre \texttt{w: "majority"} y
+\texttt{w: 1} sería mayor con nodos en máquinas distintas, y la comparación de uno y dos workers de Spark no
+mide escalabilidad horizontal porque ambos usan los mismos 2 núcleos físicos.
+\item \textbf{Dos máquinas distintas.} Registro, carga y fallas de MongoDB se midieron en un Ryzen 7 5700U con
+WSL~2; lago y analítica en un Intel i7-6500U con Ubuntu nativo. Cada sección dice cuál; las cifras de una no se
+comparan con las de la otra.
+\item \textbf{Pocas repeticiones.} Tres corridas por nivel en P6, una en el experimento de dos procesos, cinco
+en la frescura del lago y seis por consulta en P5.
+\item \textbf{Fallas simuladas con \texttt{docker kill}.} No se probaron particiones de red, discos lentos ni
+relojes desfasados entre nodos.
+\item \textbf{P6 sin borradores.} La carga se midió antes de integrar los borradores cada 2~s; con ellos la
+sesión y el gateway tendrían más trabajo por usuario.
+\item \textbf{P7 no existe en el enunciado} (la numeración salta de P6 a P8). No se inventó una prueba para
+ese número.
+\item \textbf{Datos sintéticos.} El histórico y el dataset operacional salen de generadores con semilla fija:
+sirven para validar la lógica y medir volúmenes, no para sacar conclusiones sobre productividad real.
+\end{itemize}
 
 \appendix
 \section{Evidencia citada}
@@ -500,11 +827,17 @@ Archivo & Qué respalda \\
 \texttt{P6\_gateway\_2procesos\_20261110-1820/} & Experimento con el gateway en 2 procesos (6.3). \\
 \texttt{P8\_mongo\_gateway\_20261110-1715.md} y sus \texttt{.txt}/\texttt{.csv} por escenario & P8 de MongoDB: RTO y RPO de los tres escenarios (7.1). \\
 \texttt{P8\_mongo\_gateway\_20261110-1453.md}, \texttt{P8\_mongo\_20261022-2028.md} & P8 antes de corregir el gateway y directa al registro (7.1). \\
+\texttt{P4\_gateway\_20261115-1102.md} (\texttt{.txt} y su carpeta) & P4 por el gateway: frescura, fila rechazada y Q4, lector Spark en bucle, reprocesar, caída del historial (4.3--4.5). \\
+\texttt{P4\_historial\_20261030-1431.md} (\texttt{.txt}, \texttt{.csv}, \texttt{.json}) & P4 directa al historial: reenvío del mismo evento, reprocesar, frescura con \texttt{/flush}, caída con un micro-lote abierto (4.2, 4.4, 4.5). \\
+\texttt{C2.6\_compactacion\_20261115-1113.txt} & Compactación de un mes: archivos antes y después, Q1--Q5 iguales (4.6). \\
+\texttt{C2.7\_latidos\_estado\_capas\_20261115-1059.txt} & Latidos de historial y analítica en \texttt{sesion:/estado-capas} (8.1). \\
+\texttt{P5\_analitica\_20261030-1410.md} (\texttt{.txt}, \texttt{.csv}, planes de Q1 y Q3) & P5: validación contra \texttt{prueba}, tiempos, 1 y 2 workers, principal y grande, planes (5.2--5.4). \\
+\texttt{C4.9\_analitica\_gateway\_20261115-1057.txt} (\texttt{.csv}) & Q1--Q5 por el gateway: validación, costo del gateway y errores 422, 404 y 503 (5.2 y 5.3). \\
 \bottomrule
 \end{tabular}
 \end{center}
 
-\falta{B y C: agregar sus archivos (P1, P3, P8 de Valkey, P4, P5) a esta tabla}
+\falta{B: agregar sus archivos (P1, P3, P8 de Valkey) a esta tabla}
 
 
 \end{document}

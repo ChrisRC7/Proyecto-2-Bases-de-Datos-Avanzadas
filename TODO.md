@@ -11,10 +11,10 @@
 |---|---|---|---|
 | A | Registro (MongoDB) + dataset operacional + simulador + carga | 34 / 34 | Todas hechas; quedan las tareas de «Todos» (integración, ensamblar el informe, defensa) |
 | B | Sesión (Valkey) + Gateway + salud | 19 / 29 | B1.1, B1.2, B2.1–B2.8, B3.1–B3.5, B3.7, B3.8, B4.1 y B4.2 completadas. B3.6 sigue parcialmente completada por la garantía de publicación durable de eventos. A corrigió seis errores del gateway en `integracion-a-b-c` (ver «Tareas nuevas descubiertas»). |
-| C | Historial (Parquet) + Analítica (Spark) + dataset histórico | 23 / 31 | 23 hechas, 2 a medias (falta el gateway y /estado-capas de B), 1 bloqueada por B, 5 del informe y README al final |
-| Todos | Integración, informe, defensa | 0 / 12 | |
+| C | Historial (Parquet) + Analítica (Spark) + dataset histórico | 31 / 31 | Todas hechas: C4.9 (ruta del gateway), C2.7 y P4 verificados con el gateway real, §4, §5 y §8 del informe, README y preguntas de defensa |
+| Todos | Integración, informe, defensa | 1 / 12 | I.3 (rechazo completo) hecha dentro de P4 |
 
-_Última actualización: 2026-11-14 — B4.1 y B4.2 de B (borradores y latidos cada 2 s desde el simulador, interrupción y recuperación) integradas en `integracion-a-b-c` y traídas a `documentacion`; el simulador con borradores corre sin errores y la revisión da 200. En `documentacion` están el informe (`informe/`), el `README.md` y las preguntas de defensa de A, con lo de B y C marcado como pendiente. A: 34/34. B: 19/29._
+_Última actualización: 2026-11-15 — C completa: ruta `GET /analitica/{q1..q5}` en el gateway (C4.9), latidos verificados en sesion (C2.7), P4 repetida por el gateway con caída del historial (C5.1, I.3), compactación medida, §4, §5 y §8 del informe, README de analítica e histórico y preguntas de defensa sobre A. A: 34/34. B: 19/29. C: 31/31._
 ---
 
 ## Cómo está dividido el trabajo
@@ -245,9 +245,11 @@ Nota (2026-11-14): integración opcional mediante --borradores en simulador/simu
       Nota: las 5 iguales a lo calculado a mano; 6 ejecuciones por consulta, principal y grande, 1 y 2 workers (con 2 núcleos físicos, 2 workers no acelera principal). Directo contra la analítica, sin gateway (C4.9). Ver evidence/P5_analitica_20261030-1410.md.
 
 ### C6. Informe y README
-- [ ] C6.1 Informe §4: lago Parquet, compactación, duplicados, fila rechazada.
-- [ ] C6.2 Informe §5: definición de Q1–Q5, resultados, planes, comparación de tiempos, limitaciones de Spark en el entorno.
-- [ ] C6.3 Informe §8: limitaciones de la solución (consolidar las de todos).
+- [x] C6.1 Informe §4: lago Parquet, compactación, duplicados, fila rechazada.
+      Nota: con P4 por el gateway y la compactación medida (evidence/C2.6_compactacion_20261115-1113.txt: 22 archivos → 1, Q1–Q5 iguales).
+- [x] C6.2 Informe §5: definición de Q1–Q5, resultados, planes, comparación de tiempos, limitaciones de Spark en el entorno.
+- [x] C6.3 Informe §8: limitaciones de la solución (consolidar las de todos).
+      Nota: junta las de A, C y las tareas abiertas de B de este archivo; cuando B termine §3 y §7.2 conviene revisar si agrega alguna.
 - [x] C6.4 README: ejecución de consultas analíticas y regeneración del histórico.
       Nota: también la compactación y las filas de P4, P5, C4.9 y C2.6 en la tabla de pruebas.
 - [x] C6.5 Revisar PRs de **A** y preparar 5 preguntas/respuestas sobre registro, índices y fallas de Mongo para la defensa.
@@ -306,3 +308,4 @@ _(agregar aquí con persona sugerida y fecha)_
 - [ ] (B, 2026-11-10) sesion `abrir`: si una tarea vuelve a la cola con el borrador de otro anotador todavía en Valkey (lock y plazo vencidos sin enviar), `abrir` responde 409 `borrador_de_otro_anotador`, el gateway compensa y `/tareas/siguiente` da 503; como la tarea sigue primera en la cola, se repite y solo el anotador original la puede tomar (visto en el código, sin prueba todavía). Toca a P3 («dejar vencer el candado y comprobar que la tarea vuelve a ofrecerse»). No afecta P6 porque el simulador todavía no guarda borradores (B4.2).
 - [ ] (B, 2026-11-10) gateway `/salud` consulta el `/salud` de cada servicio y no lee los mensajes que las capas dejan en Valkey (`sesion:/estado-capas`); el enunciado pide usar Valkey para esos mensajes (§7, `GET /salud`).
 - [ ] (A y B, 2026-11-10) el lock se renueva con latidos y borradores, pero `asignacion.vence_en` en MongoDB queda fijo en 120 s. Si alguien trabaja más de 120 s guardando borradores, el registro puede ofrecer la tarea a otro mientras el lock sigue tomado. Decidir si el gateway renueva también el plazo en el registro o si se documenta como limitación.
+- [ ] (B, 2026-11-15) `pruebas/prueba_b42_integracion.py` usa un proyecto con id fijo (`d2347c44-…`) creado a mano con `reset_entorno.py`, cuyo manifiesto (`pruebas/casos_b41.json`) no está en el repo. Después de recargar el dataset responde 204 en `/tareas/siguiente` y la prueba falla. Conviene que cree su proyecto al empezar (como `pruebas/a4_rutas_gateway.py`) o lo lea del manifiesto.

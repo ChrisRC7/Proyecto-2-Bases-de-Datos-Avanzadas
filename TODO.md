@@ -208,8 +208,8 @@ Nota (2026-11-14): integración opcional mediante --borradores en simulador/simu
 - [x] C2.5 `POST /flush`, `POST /reprocesar/{micro_lote_id}` y `GET /micro-lotes` (para P4).
 - [x] C2.6 Compactación opcional de archivos pequeños por mes (documentar estrategia en el informe aunque sea manual).
       Nota: manual, `docker compose exec historial python -m app.compactar --mes AAAA-MM --ejecutar` (sin `--ejecutar` solo simula). Junta el mes en un `part-compacto-*.parquet` sin duplicados de event_id, lo publica con rename y después borra los viejos. Falta explicarla en el informe (C6.1).
-- [~] C2.7 `GET /salud` + latido cada 5 s a `POST sesion:/estado-capas` (D4).
-      Nota: salud y latido listos; falta verlo llegar al /estado-capas real de sesion (B2.7).
+- [x] C2.7 `GET /salud` + latido cada 5 s a `POST sesion:/estado-capas` (D4).
+      Nota: verificado contra el /estado-capas real de sesion: historial y analítica publican cada 5 s; con el historial detenido su llave `salud:historial` vence (TTL 15 s) y vuelve con el primer latido (evidence/C2.7_latidos_estado_capas_20261115-1059.txt).
 
 ### C3. Dataset histórico (`dataset/historico/`)
 - [x] C3.1 Generador de ~800 000 eventos / 12 meses / 100 000 tareas, coherentes con las transiciones (abierta → anotada → en_revision → aprobada | rechazada → abierta ...), usando IDs de `ids.json` de A (o IDs propios si A aún no termina: el generador acepta ambos). Incluye los 60 proyectos cerrados.
@@ -235,8 +235,8 @@ Nota (2026-11-14): integración opcional mediante --borradores en simulador/simu
 - [x] C4.7 Q5 toma→aprobación p50/p95 por cliente + % incumplimiento SLA.
 - [x] C4.8 `GET /plan/{n}` → `explain("formatted")`; guardar planes de Q1 (agrupación por mes) y Q3 (ordenamiento).
       Nota: evidence/P5_analitica_20261030-1410_plan_q1.txt (`PartitionFilters: mes >= 2026-07`) y _plan_q3.txt (`rangepartitioning(media_s DESC)` + Sort).
-- [!] C4.9 Ruta del gateway `GET /analitica/{q1..q5}?conjunto=` (sobre el núcleo de B).
-      Nota: bloqueada: va sobre el núcleo del gateway (B3.1 middleware, B3.2 cliente interno). La analítica ya responde `GET /q/{n}`.
+- [x] C4.9 Ruta del gateway `GET /analitica/{q1..q5}?conjunto=` (sobre el núcleo de B).
+      Nota: timeout de 180 s y sin reintento (nuevos parámetros `timeout` y `reintentar` de `solicitar`, por defecto igual que antes). Q1–Q5 de `prueba` por el gateway iguales a lo calculado a mano; el gateway suma ~150 ms de mediana; 422, 404 y 503 con la analítica detenida, y `/salud` sigue en 200 `degradado` (evidence/C4.9_analitica_gateway_20261115-1057.txt). Prueba con la analítica simulada: `docker compose exec -T gateway python -m app.prueba_analitica_c49`.
 
 ### C5. Pruebas
 - [~] C5.1 **P4**: escribir lago vía flujo real, reprocesar un micro-lote, deduplicar por `event_id`, mostrar que no hay lecturas a medias (Spark leyendo en bucle mientras se escribe), medir segundos entre HTTP 200 y evento visible en Spark. Mostrar la fila `rechazada` en Parquet vs `disponible` en Mongo.

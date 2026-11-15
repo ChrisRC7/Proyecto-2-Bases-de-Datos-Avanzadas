@@ -1,0 +1,37 @@
+# C4.9 analítica por el gateway · 2026-11-15T16:57:45Z · commit 1a1f6a3
+analítica operativa según GET /salud del gateway
+
+## 1 y 2. Validación (conjunto=prueba) y tiempos (principal, 4 ejecuciones) por el gateway
+analitica: {"master": "spark://spark-master:7077", "master_alcanzable": true, "sesion_spark": true, "arranque_ms": 13639.4, "error": null, "ejecutores": 1, "nucleos": 2}
+
+## Validación contra conjunto=prueba (esperado calculado a mano)
+q1: OK · status 200 · 4 filas · 2190.4 ms
+  obtenido: [{"dia": "2026-09-01", "modalidad": "texto", "aprobadas": 2}, {"dia": "2026-09-04", "modalidad": "texto", "aprobadas": 1}, {"dia": "2026-09-11", "modalidad": "lidar", "aprobadas": 1}, {"dia": "2026-09-30", "modalidad": "imagen", "aprobadas": 1}]
+q2: OK · status 200 · 4 filas · 823.7 ms
+  obtenido: [{"equipo_id": "e0000000-0000-4000-8000-000000000001", "mes": "2026-07", "aprobadas": 1, "revisadas": 2, "proporcion": 0.5}, {"equipo_id": "e0000000-0000-4000-8000-000000000001", "mes": "2026-09", "aprobadas": 3, "revisadas": 3, "proporcion": 1.0}, {"equipo_id": "e0000000-0000-4000-8000-000000000002", "mes": "2026-06", "aprobadas": 1, "revisadas": 2, "proporcion": 0.5}, {"equipo_id": "e0000000-0000-4000-8000-000000000002", "mes": "2026-09", "aprobadas": 2, "revisadas": 3, "proporcion": 0.6667}]
+q3: OK · status 200 · 3 filas · 825.8 ms
+  obtenido: [{"modalidad": "lidar", "tipo_tarea": "cuboide_3d", "anotadas": 1, "media_s": 3600.0, "p95_s": 3600.0}, {"modalidad": "imagen", "tipo_tarea": "bbox", "anotadas": 5, "media_s": 1404.0, "p95_s": 1800.0}, {"modalidad": "texto", "tipo_tarea": "span", "anotadas": 4, "media_s": 975.0, "p95_s": 1800.0}]
+q4: OK · status 200 · 3 filas · 709.0 ms
+  obtenido: [{"cliente_id": "c0000000-0000-4000-8000-000000000002", "proyecto_id": "90000000-0000-4000-8000-000000000003", "rechazadas": 2, "revisadas": 5, "proporcion": 0.4}, {"cliente_id": "c0000000-0000-4000-8000-000000000001", "proyecto_id": "90000000-0000-4000-8000-000000000001", "rechazadas": 1, "revisadas": 4, "proporcion": 0.25}, {"cliente_id": "c0000000-0000-4000-8000-000000000001", "proyecto_id": "90000000-0000-4000-8000-000000000002", "rechazadas": 0, "revisadas": 1, "proporcion": 0.0}]
+q5: OK · status 200 · 2 filas · 686.6 ms
+  obtenido: [{"cliente_id": "c0000000-0000-4000-8000-000000000001", "aprobadas": 4, "p50_h": 5.0, "p95_h": 28.0, "incumplen_sla": 1, "pct_incumple_sla": 25.0}, {"cliente_id": "c0000000-0000-4000-8000-000000000002", "aprobadas": 3, "p50_h": 3.0, "p95_h": 4.0, "incumplen_sla": 0, "pct_incumple_sla": 0.0}]
+
+## Tiempos · gateway · 4 ejecuciones por consulta (ms medidos por la analítica)
+| conjunto | consulta | 1ª ejecución | siguientes: mediana | mín | máx | filas |
+|---|---|---:|---:|---:|---:|---:|
+| principal | q1 | 3733 | 1809 | 1492 | 2141 | 361 |
+| principal | q2 | 3202 | 2251 | 2008 | 2611 | 360 |
+| principal | q3 | 3118 | 2094 | 1793 | 3184 | 5 |
+| principal | q4 | 2598 | 1884 | 1735 | 2197 | 60 |
+| principal | q5 | 2120 | 1944 | 1489 | 2243 | 60 |
+
+ms_cliente - ms (red + gateway + serialización): n=20 mediana 148 ms, mín 85, máx 319
+
+## 3. Errores
+GET /analitica/q9 → 422 0.001982s {"error":"validacion","detalle":[{"type":"literal_error","loc":["path","consulta"],"msg":"Input should be 'q1', 'q2', 'q3', 'q4' or 'q5'","input":"q9","ctx":{"e
+GET /analitica/q1?conjunto=otro → 422 0.002044s {"error":"validacion","detalle":[{"type":"literal_error","loc":["query","conjunto"],"msg":"Input should be 'principal', 'grande' or 'prueba'","input":"otro","ct
+conjunto=prueba sin Parquet (carpeta movida) → 404 0.006257s {"error":"conjunto_no_existe","detalle":"/datalake/eventos_prueba no tiene archivos Parquet"}
+conjunto=prueba restaurado → 200 0.425770s {"consulta":"q4","conjunto":"prueba","parametros":{},"filas":[{"cliente_id":"c0000000-0000-4000-8000-000000000002","proyecto_id":"90000000-0000-4000-8000-000000
+analítica detenida: GET /analitica/q1 → 503 0.011786s {"error":"servicio_no_disponible","detalle":{"servicio":"analitica","mensaje":"Error de comunicación: ConnectError"}}
+analítica detenida: GET /salud → 200 degradado {'registro': 'operativo', 'sesion': 'operativo', 'historial': 'operativo', 'analitica': 'caido'}
+analítica operativa otra vez: GET /analitica/q4?conjunto=prueba → 200 14.279802s {"consulta":"q4","conjunto":"prueba","parametros":{},"filas":[{"cliente_id":"c0000000-0000-4000-8000-000000000002","proyecto_id":"90000000-0000-4000-8000-000000

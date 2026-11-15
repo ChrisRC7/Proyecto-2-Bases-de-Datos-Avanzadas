@@ -1,0 +1,20 @@
+# C2.7 latidos de historial y analítica en sesion:/estado-capas · 2026-11-15T16:59:45Z · commit 1a1f6a3
+Lectura de GET sesion:/estado-capas desde dentro del contenedor del historial (red interna), 3 veces cada 6 s:
+{"capas": {"historial": {"estado": "operativo", "detalle": {"estado": "operativo", "cola": {"estado": "operativo", "eventos_en_stream": 0, "pendientes_sin_ack": 0, "micro_lotes_abiertos": 0}, "lago": {"escribible": true}, "consumidor": {"vivo": true, "error": null}}, "ts": "2026-11-15T16:59:44.671103+00:00"}, "registro": {"estado": "operativo", "detalle": {"mongodb": {"estado": "operativo", "primario": "mongo2:27017", "secundarios": 2}}, "ts": "2026-11-15T16:59:40.763218+00:00"}, "analitica": {"estado": "operativo", "detalle": {"master": "spark://spark-master:7077", "master_alcanzable": true, "sesion_spark": true, "arranque_ms": 6451.5, "error": null, "ejecutores": 1, "nucleos": 2}, "ts": "2026-11-15T16:59:43.979267+00:00"}}}
+{"capas": {"historial": {"estado": "operativo", "detalle": {"estado": "operativo", "cola": {"estado": "operativo", "eventos_en_stream": 0, "pendientes_sin_ack": 0, "micro_lotes_abiertos": 0}, "lago": {"escribible": true}, "consumidor": {"vivo": true, "error": null}}, "ts": "2026-11-15T16:59:49.676372+00:00"}, "registro": {"estado": "operativo", "detalle": {"mongodb": {"estado": "operativo", "primario": "mongo2:27017", "secundarios": 2}}, "ts": "2026-11-15T16:59:50.770691+00:00"}, "analitica": {"estado": "operativo", "detalle": {"master": "spark://spark-master:7077", "master_alcanzable": true, "sesion_spark": true, "arranque_ms": 6451.5, "error": null, "ejecutores": 1, "nucleos": 2}, "ts": "2026-11-15T16:59:48.991793+00:00"}}}
+{"capas": {"historial": {"estado": "operativo", "detalle": {"estado": "operativo", "cola": {"estado": "operativo", "eventos_en_stream": 0, "pendientes_sin_ack": 0, "micro_lotes_abiertos": 0}, "lago": {"escribible": true}, "consumidor": {"vivo": true, "error": null}}, "ts": "2026-11-15T16:59:54.682952+00:00"}, "registro": {"estado": "operativo", "detalle": {"mongodb": {"estado": "operativo", "primario": "mongo2:27017", "secundarios": 2}}, "ts": "2026-11-15T16:59:55.775790+00:00"}, "analitica": {"estado": "operativo", "detalle": {"master": "spark://spark-master:7077", "master_alcanzable": true, "sesion_spark": true, "arranque_ms": 6451.5, "error": null, "ejecutores": 1, "nucleos": 2}, "ts": "2026-11-15T16:59:54.005836+00:00"}}}
+
+TTL de las llaves salud:{servicio} en el Valkey de sesión (leído al final de la corrida):
+salud:historial ttl=13 s
+salud:analitica ttl=10 s
+salud:registro ttl=12 s
+
+docker compose stop historial; 20 s después (TTL 15 s) la capa ya no publica:
+{"capas": {"registro": {"estado": "operativo", "detalle": {"mongodb": {"estado": "operativo", "primario": "mongo2:27017", "secundarios": 2}}, "ts": "2026-11-15T17:00:30.804643+00:00"}, "analitica": {"estado": "operativo", "detalle": {"master": "spark://spark-master:7077", "master_alcanzable": true, "sesion_spark": true, "arranque_ms": 6451.5, "error": null, "ejecutores": 1, "nucleos": 2}, "ts": "2026-11-15T17:00:34.092355+00:00"}}}
+
+historial iniciado otra vez; 12 s después:
+{"capas": {"historial": {"estado": "operativo", "detalle": {"estado": "operativo", "cola": {"estado": "operativo", "eventos_en_stream": 0, "pendientes_sin_ack": 0, "micro_lotes_abiertos": 0}, "lago": {"escribible": true}, "consumidor": {"vivo": true, "error": null}}, "ts": "2026-11-15T17:00:46.809723+00:00"}, "registro": {"estado": "operativo", "detalle": {"mongodb": {"estado": "operativo", "primario": "mongo2:27017", "secundarios": 2}}, "ts": "2026-11-15T17:00:45.817065+00:00"}, "analitica": {"estado": "operativo", "detalle": {"master": "spark://spark-master:7077", "master_alcanzable": true, 
+
+
+## Interpretación
+Historial y analítica publican cada 5 s en sesion:/estado-capas (los ts avanzan ~5 s entre lecturas). Con el historial detenido su llave salud:historial vence (TTL 15 s) y desaparece de GET /estado-capas; al iniciarlo vuelve a aparecer en el primer latido. Ningún servicio de C escribe en el Valkey de sesión: solo llaman a la ruta HTTP.

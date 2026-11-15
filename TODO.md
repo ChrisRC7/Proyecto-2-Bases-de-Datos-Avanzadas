@@ -248,8 +248,10 @@ Nota (2026-11-14): integración opcional mediante --borradores en simulador/simu
 - [ ] C6.1 Informe §4: lago Parquet, compactación, duplicados, fila rechazada.
 - [ ] C6.2 Informe §5: definición de Q1–Q5, resultados, planes, comparación de tiempos, limitaciones de Spark en el entorno.
 - [ ] C6.3 Informe §8: limitaciones de la solución (consolidar las de todos).
-- [ ] C6.4 README: ejecución de consultas analíticas y regeneración del histórico.
-- [ ] C6.5 Revisar PRs de **A** y preparar 5 preguntas/respuestas sobre registro, índices y fallas de Mongo para la defensa.
+- [x] C6.4 README: ejecución de consultas analíticas y regeneración del histórico.
+      Nota: también la compactación y las filas de P4, P5, C4.9 y C2.6 en la tabla de pruebas.
+- [x] C6.5 Revisar PRs de **A** y preparar 5 preguntas/respuestas sobre registro, índices y fallas de Mongo para la defensa.
+      Nota: en defensa/preguntas.md (índice extra, paginación por cursor, caída del primario y retryWrites, error ≠ no escrito sin mayoría, fila rechazada y ReturnDocument.BEFORE).
 
 ---
 

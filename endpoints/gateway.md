@@ -16,7 +16,6 @@ Identidad del usuario simulado: header `X-Anotador-Id: <uuid>` (anotador o revis
 | `POST /tareas/{id}/revision` | registro → historial | 200, 409, 422 |
 | `POST /sesiones/recuperar` | sesion | 200, 404 |
 | `POST /sesiones/latido` | sesion | 200, 404, 409, 503 |
-| `GET /analitica/{q1..q5}?conjunto=` | analitica | 200, 404, 503 |
 | `GET /proyectos/{id}/exportar?cursor=&limite=` | registro | 200, 404 |
 | `GET /salud` | todas (timeout corto) | 200 siempre |
 
@@ -116,9 +115,6 @@ Renueva el lock y actualiza la actividad de la sesión en Valkey.
 - `409`: token incorrecto o lock vencido.
 - `503`: servicio Sesión no disponible.
 
-### GET /analitica/{q}?conjunto=principal|grande|prueba
-→ `200 {"consulta": "q1", "conjunto": "principal", "filas": [...], "ms": 1234}`
-
 ### GET /proyectos/{id}/exportar?cursor=&limite=100
 → `200 {"tareas": [...], "siguiente_cursor": "uuid|null"}` (solo `aprobada`).
 
@@ -166,3 +162,122 @@ Estados agregados:
 
 El Gateway conserva HTTP 200 para permitir consultar
 el diagnóstico incluso durante fallos.
+
+
+## Ejemplos de llamadas al Gateway desde PowerShell
+
+Los siguientes ejemplos utilizan `curl.exe`. Los identificadores deben sustituirse por valores reales antes de ejecutar las operaciones. Las operaciones que crean o modifican datos deben realizarse sobre proyectos de prueba.
+
+**Variables comunes**
+
+```powershell
+$base = "http://localhost:8000"
+$anotador = "UUID_ANOTADOR"
+$revisor = "UUID_REVISOR"
+$cliente = "UUID_CLIENTE"
+$proyecto = "UUID_PROYECTO"
+$tarea = "UUID_TAREA"
+$token = "UUID_TOKEN"
+```
+
+### 1. Crear proyecto — POST /proyectos
+
+```powershell
+$body = @{cliente_id=$cliente; nombre="LiDAR de prueba"; modalidad="lidar"; taxonomia=@(@{etiqueta="lidar#ciclista"; instruccion="Identificar ciclistas"}); sla_horas=48; prioridad=3} | ConvertTo-Json -Depth 8 -Compress
+curl.exe -i -X POST "$base/proyectos" -H "Content-Type: application/json" --data-raw $body
+```
+
+Respuesta habitual: HTTP 201. Errores: 404 y 422.
+
+### 2. Registrar lote — POST /proyectos/{id}/lotes
+
+```powershell
+$body = @{tareas=@(@{tipo_tarea="cuboide_3d"; prioridad=3; archivo=@{uri="s3://pruebas/escena.pcd"; sha256="f3d1d93aea8f4dd3ae59d438551e382ef3d1d93aea8f4dd3ae59d438551e382e"; bytes=1000; mime="application/x-pcd"; meta=@{min=0; max=100}}})} | ConvertTo-Json -Depth 8 -Compress
+curl.exe -i -X POST "$base/proyectos/$proyecto/lotes" -H "Content-Type: application/json" --data-raw $body
+```
+
+Respuesta habitual: HTTP 201. Errores: 404 y 422.
+
+### 3. Solicitar tarea — POST /tareas/siguiente
+
+```powershell
+$body = @{proyecto_id=$proyecto} | ConvertTo-Json -Compress
+curl.exe -i -X POST "$base/tareas/siguiente" -H "X-Anotador-Id: $anotador" -H "Content-Type: application/json" --data-raw $body
+```
+
+Respuestas: 200 si se asigna una tarea, 204 si no hay tareas y 503 ante una falla de dependencias. Puede responder 422 por validación.
+
+### 4. Guardar borrador — PUT /tareas/{id}/borrador
+
+```powershell
+$body = @{token=$token; contenido=@{etiquetas=@("lidar#ciclista")}} | ConvertTo-Json -Depth 8 -Compress
+curl.exe -i -X PUT "$base/tareas/$tarea/borrador" -H "X-Anotador-Id: $anotador" -H "Content-Type: application/json" --data-raw $body
+```
+
+Respuestas principales: 200, 409 y 422.
+
+### 5. Enviar anotación — POST /tareas/{id}/enviar
+
+```powershell
+$body = @{token=$token; anotacion=@{etiquetas=@("lidar#ciclista"); geometria=@{tipo="cuboide_3d"; centro=@(1.2,3.4,0.5); dimensiones=@(0.6,1.8,1.7); yaw=0.3}}} | ConvertTo-Json -Depth 8 -Compress
+curl.exe -i -X POST "$base/tareas/$tarea/enviar" -H "X-Anotador-Id: $anotador" -H "Content-Type: application/json" --data-raw $body
+```
+
+Respuestas principales: 200, 409, 422 y 503.
+
+### 6. Liberar tarea — POST /tareas/{id}/liberar
+
+```powershell
+$body = @{token=$token} | ConvertTo-Json -Compress
+curl.exe -i -X POST "$base/tareas/$tarea/liberar" -H "X-Anotador-Id: $anotador" -H "Content-Type: application/json" --data-raw $body
+```
+
+Respuestas principales: 200, 409 y 422.
+
+### 7. Revisar tarea — POST /tareas/{id}/revision
+
+```powershell
+$body = @{accion="empezar"} | ConvertTo-Json -Compress
+curl.exe -i -X POST "$base/tareas/$tarea/revision" -H "X-Anotador-Id: $revisor" -H "Content-Type: application/json" --data-raw $body
+```
+
+Para aprobar: `@{accion="aprobar"}`. Para rechazar: `@{accion="rechazar"; motivo="ETIQUETA_INCORRECTA"}`.
+
+Respuestas principales: 200, 409 y 422.
+
+### 8. Recuperar sesión — POST /sesiones/recuperar
+
+```powershell
+curl.exe -i -X POST "$base/sesiones/recuperar" -H "X-Anotador-Id: $anotador"
+```
+
+Respuestas principales: 200 y 404.
+
+### 9. Enviar latido — POST /sesiones/latido
+
+```powershell
+$body = @{token=$token} | ConvertTo-Json -Compress
+curl.exe -i -X POST "$base/sesiones/latido" -H "X-Anotador-Id: $anotador" -H "Content-Type: application/json" --data-raw $body
+```
+
+Respuestas principales: 200, 404, 409, 422 y 503.
+
+### 10. Exportar resultados — GET /proyectos/{id}/exportar
+
+```powershell
+curl.exe -i "$base/proyectos/$proyecto/exportar?limite=100"
+```
+
+Respuestas principales: 200 y 404.
+
+### 11. Consultar salud — GET /salud
+
+```powershell
+curl.exe -i "$base/salud"
+```
+
+Respuesta HTTP 200 con estado `operativo`, `degradado` o `caido`, según la disponibilidad de las capas.
+
+### Consideraciones
+
+Los ejemplos usan identificadores ilustrativos. Para operar sobre tareas se necesita una asignación vigente y el token correspondiente. Los códigos HTTP 422 representan problemas de validación, mientras que los conflictos de estado o token pueden responder HTTP 409. Los servicios internos pueden provocar errores 503 cuando no están disponibles.

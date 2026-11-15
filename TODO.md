@@ -10,12 +10,12 @@
 | Persona | Rol principal | Hechas / Total | Notas |
 |---|---|---|---|
 | A | Registro (MongoDB) + dataset operacional + simulador + carga | 29 / 34 | 29 hechas, 1 a medias (README), 1 bloqueada (PRs de B), 3 del informe pendientes |
-| B | Sesión (Valkey) + Gateway + salud | 26 / 29 | B1–B5 completadas, excepto B3.6 (durabilidad de eventos, parcial). B6.1–B6.4 completadas: arquitectura, sesiones, resultados de Valkey y README. Pendientes: B6.5, B6.6 y B3.6.
+| B | Sesión (Valkey) + Gateway + salud | 27 / 29 | B1–B5 completadas, excepto B3.6 (durabilidad de eventos, parcial). B6.1–B6.5 completadas: arquitectura, sesiones, resultados de Valkey y README. Pendientes: B6.5, B6.6 y B3.6.
 | C | Historial (Parquet) + Analítica (Spark) + dataset histórico | 23 / 31 | 23 hechas, 2 a medias (falta el gateway y /estado-capas de B), 1 bloqueada por B, 5 del informe y README al final |
 | Todos | Integración, informe, defensa | 0 / 12 | |
 
 
-*_Última actualización: 2026-11-15 — Persona B: 26/29. Se completaron las pruebas P1, P3 y P8, con recuperación de borradores en 0.047 s, RTO observado de 1.016 s y persistencia AOF verificada. También se documentaron arquitectura (§1), sesiones (§3), resultados de Valkey (§7) y README. B3.6 permanece parcial por la garantía de publicación durable de eventos. Pendientes de integración: limpieza de sesiones vencidas, sincronización MongoDB/Valkey y corrección de borradores huérfanos implementada en `alisson-b5`. A: 29/34. B: 26/29. C: 23/31._*
+*_Última actualización: 2026-11-15 — Persona B: 26/29. Se completaron las pruebas P1, P3 y P8, con recuperación de borradores en 0.047 s, RTO observado de 1.016 s y persistencia AOF verificada. También se documentaron arquitectura (§1), sesiones (§3), resultados de Valkey (§7) y README. B3.6 permanece parcial por la garantía de publicación durable de eventos. Pendientes de integración: limpieza de sesiones vencidas, sincronización MongoDB/Valkey y corrección de borradores huérfanos implementada en `alisson-b5`. A: 29/34. B: 27/29. C: 23/31._*
 
 ---
 
@@ -190,7 +190,7 @@ Observaciones pendientes: al vencer el lock puede persistir una sesión antigua 
 - [x] B6.2 Informe §3: sesión, recuperación de borrador, reinicio de Valkey.
 - [x] B6.3 Informe §7 (parte Valkey).
 - [x] B6.4 README: requisitos previos, `docker compose up/down`, perfiles, solución de problemas.
-- [ ] B6.5 `endpoints/gateway.md` completo (todas las rutas, ejemplos curl, códigos).
+- [x] B6.5 `endpoints/gateway.md` completo (todas las rutas, ejemplos curl, códigos).
 - [ ] B6.6 Revisar PRs de **C** y preparar 5 preguntas/respuestas sobre lago y Spark para la defensa.
 
 ---

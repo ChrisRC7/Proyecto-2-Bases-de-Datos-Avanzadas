@@ -326,6 +326,29 @@ async def revisar_tarea(
     return datos
 
 
+# --- C4.9: analítica (Q1–Q5 con Spark, solo sobre el lago Parquet) ---
+
+# La analítica espera hasta 60 s a que la SparkSession esté lista y una consulta sobre "grande"
+# tarda hasta ~35 s (evidence/P5_analitica_20261030-1410.md). Sin reintento: un timeout repetido
+# volvería a lanzar la misma consulta en Spark.
+TIMEOUT_ANALITICA = 180.0
+
+
+@app.get("/analitica/{consulta}")
+async def analitica(
+    request: Request,
+    consulta: Literal["q1", "q2", "q3", "q4", "q5"],
+    conjunto: Literal["principal", "grande", "prueba"] = "principal",
+):
+    respuesta = await solicitar(
+        "analitica", "GET", f"/q/{consulta[1]}",
+        params={"conjunto": conjunto}, request_id=request.state.request_id,
+        timeout=TIMEOUT_ANALITICA, reintentar=False,
+    )
+    # 200 con las filas, 404 conjunto_no_existe; los 503 de Spark salen por ServicioNoDisponible.
+    return _reenviar(respuesta)
+
+
 # --- B4.2: latido de sesión desde el simulador ---
 
 class SolicitudLatido(BaseModel):

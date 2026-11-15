@@ -86,6 +86,8 @@ async def solicitar(
     params=None,
     request_id=None,
     cliente: httpx.AsyncClient | None = None,
+    timeout: float = TIMEOUT_SEGUNDOS,
+    reintentar: bool = True,
 ) -> httpx.Response:
     """Solicita una operación interna con reintentos seguros.
 
@@ -94,6 +96,9 @@ async def solicitar(
 
     Los fallos de red y respuestas 5xx generan
     ServicioNoDisponible, que el gateway convierte en HTTP 503.
+
+    `timeout` y `reintentar` solo los cambia la analítica (C4.9): una consulta de Spark
+    tarda segundos y repetirla después de un timeout duplicaría el trabajo en el clúster.
     """
 
     if servicio not in SERVICIOS:
@@ -103,7 +108,7 @@ async def solicitar(
         raise ValueError("La ruta interna debe comenzar con una sola /")
 
     metodo = metodo.upper()
-    intentos = MAX_INTENTOS if permite_reintento(metodo, ruta) else 1
+    intentos = MAX_INTENTOS if reintentar and permite_reintento(metodo, ruta) else 1
 
     url = SERVICIOS[servicio].rstrip("/") + ruta
     headers = {}
@@ -120,7 +125,7 @@ async def solicitar(
                     json=json,
                     params=params,
                     headers=headers,
-                    timeout=TIMEOUT_SEGUNDOS,
+                    timeout=timeout,
                 )
 
                 if respuesta.status_code < 500:

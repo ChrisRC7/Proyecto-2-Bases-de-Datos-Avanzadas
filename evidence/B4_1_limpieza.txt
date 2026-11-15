@@ -1,0 +1,24 @@
+﻿ Container proyecto2-sesion-run-0d641ab72e52 Creating
+ Container proyecto2-sesion-run-0d641ab72e52 Created
+Proyecto: d2347c44-16a6-43cf-ad47-1c1e435b4b09
+Tareas autorizadas: 10
+Llaves existentes: 0
+SIMULACION: no se elimino ninguna llave
+B4.1 - Prueba de limpieza controlada
+Fecha: 2026-11-10
+
+Proyecto: d2347c44-16a6-43cf-ad47-1c1e435b4b09
+Tareas controladas: 10
+Tareas disponibles en MongoDB: 10
+
+Prueba:
+- Se creó una llave de lock perteneciente a una tarea B4.1.
+- Se creó una llave de control ajena.
+- Simulación: 1 llave autorizada detectada, 0 eliminadas.
+- Ejecución: 1 llave autorizada eliminada.
+- Verificación: lock de prueba = 0.
+- Verificación: control ajeno = conservar.
+- Limpieza final: llave de control eliminada = 1.
+
+Resultado: B4.1_LIMPIEZA_OK
+Limitación: ejecutar solo en entorno de pruebas sin usuarios concurrentes.

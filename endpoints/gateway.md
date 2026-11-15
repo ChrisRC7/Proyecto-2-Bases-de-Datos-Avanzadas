@@ -15,6 +15,7 @@ Identidad del usuario simulado: header `X-Anotador-Id: <uuid>` (anotador o revis
 | `POST /tareas/{id}/liberar` | registro → sesion → historial | 200, 409 |
 | `POST /tareas/{id}/revision` | registro → historial | 200, 409, 422 |
 | `POST /sesiones/recuperar` | sesion | 200, 404 |
+| `POST /sesiones/latido` | sesion | 200, 404, 409, 503 |
 | `GET /analitica/{q1..q5}?conjunto=` | analitica | 200, 404, 503 |
 | `GET /proyectos/{id}/exportar?cursor=&limite=` | registro | 200, 404 |
 | `GET /salud` | todas (timeout corto) | 200 siempre |
@@ -104,20 +105,64 @@ Códigos de motivo: `ETIQUETA_INCORRECTA`, `GEOMETRIA_IMPRECISA`, `OBJETO_OMITID
 ### POST /sesiones/recuperar
 Header `X-Anotador-Id` → `200 {"tarea": {...}, "token": "uuid", "borrador": {"contenido": {}, "guardado_en": "..."}}` · `404` sin sesión.
 
+### POST /sesiones/latido
+Header: `X-Anotador-Id` (UUID).
+Body: `{"token": "uuid"}`.
+
+Renueva el lock y actualiza la actividad de la sesión en Valkey.
+
+- `200`: latido confirmado.
+- `404`: sesión inexistente.
+- `409`: token incorrecto o lock vencido.
+- `503`: servicio Sesión no disponible.
+
 ### GET /analitica/{q}?conjunto=principal|grande|prueba
 → `200 {"consulta": "q1", "conjunto": "principal", "filas": [...], "ms": 1234}`
 
 ### GET /proyectos/{id}/exportar?cursor=&limite=100
 → `200 {"tareas": [...], "siguiente_cursor": "uuid|null"}` (solo `aprobada`).
 
+
 ### GET /salud
-Siempre 200 (el gateway no se cae aunque las capas sí).
+
+Siempre responde HTTP 200, incluso cuando las capas internas
+no están disponibles.
+
+Consulta Registro, Sesión, Historial y Analítica en paralelo,
+con timeout de aproximadamente 1 segundo por servicio.
+
+Ejemplo:
+
 ```json
-{ "estado": "operativo|degradado|caido",
-  "capas": { "gateway": "operativo", "registro": "operativo", "sesion": "operativo",
-             "historial": "caido", "analitica": "operativo", "mongodb": "operativo",
-             "valkey": "operativo", "spark": "operativo" },
-  "ts": "..." }
+{
+  "servicio": "gateway",
+  "estado": "degradado",
+  "capas": {
+    "registro": {
+      "estado": "operativo",
+      "detalle": {}
+    },
+    "sesion": {
+      "estado": "operativo",
+      "detalle": {}
+    },
+    "historial": {
+      "estado": "caido",
+      "detalle": "ConnectError"
+    },
+    "analitica": {
+      "estado": "operativo",
+      "detalle": {}
+    }
+  },
+  "ts": "2026-11-10T03:29:20+00:00"
+}
 ```
-Regla: `caido` si registro/MongoDB o sesión/Valkey no están disponibles (no se pueden asignar
-tareas); `degradado` si solo fallan historial, analítica o Spark; si no, `operativo`.
+
+Estados agregados:
+- `operativo`: las cuatro capas están operativas.
+- `degradado`: existe una combinación de estados.
+- `caido`: las cuatro capas están caídas.
+
+El Gateway conserva HTTP 200 para permitir consultar
+el diagnóstico incluso durante fallos.

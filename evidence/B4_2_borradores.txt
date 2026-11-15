@@ -1,0 +1,5 @@
+﻿OK | Tres latidos de sesion
+OK | Tres borradores periodicos
+OK | Interrupcion sin enviar anotacion
+OK | Recuperacion del ultimo borrador
+B4.2_BORRADORES_OK

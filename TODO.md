@@ -10,12 +10,12 @@
 | Persona | Rol principal | Hechas / Total | Notas |
 |---|---|---|---|
 | A | Registro (MongoDB) + dataset operacional + simulador + carga | 29 / 34 | 29 hechas, 1 a medias (README), 1 bloqueada (PRs de B), 3 del informe pendientes |
-| B | Sesión (Valkey) + Gateway + salud | 25 / 29 | B1.1, B1.2, B2.1–B2.8, B3.1–B3.5, B3.7, B3.8, B4.1, B4.2, B5.1–B5.3 y B6.1–B6.3 completadas. B5.1 validó las rutas del Gateway, errores, salud y exposición exclusiva del puerto 8000; B5.2 comprobó recuperación del borrador en 0.047 s, persistencia AOF y exclusividad tras el vencimiento del lock; B5.3 (P8) verificó el reinicio de Valkey durante actividad, respuestas HTTP 503/200, RTO observado de 1.016 s y recuperación sin pérdida del borrador confirmado. B6.1 documentó arquitectura y aislamiento modular; B6.2 documentó sesiones, locks y recuperación de borradores; B6.3 documentó los resultados de Valkey, RTO/RPO y limitaciones. B3.6 sigue parcialmente completada por la garantía de publicación durable de eventos. Pendientes de integración: limpieza automática de sesiones vencidas, sincronización de vencimientos MongoDB/Valkey y corrección de borradores huérfanos implementada en `alisson-b5`, aún sin integrar. |
+| B | Sesión (Valkey) + Gateway + salud | 26 / 29 | B1–B5 completadas, excepto B3.6 (durabilidad de eventos, parcial). B6.1–B6.4 completadas: arquitectura, sesiones, resultados de Valkey y README. Pendientes: B6.5, B6.6 y B3.6.
 | C | Historial (Parquet) + Analítica (Spark) + dataset histórico | 23 / 31 | 23 hechas, 2 a medias (falta el gateway y /estado-capas de B), 1 bloqueada por B, 5 del informe y README al final |
 | Todos | Integración, informe, defensa | 0 / 12 | |
 
 
-*_Última actualización: 2026-11-15 — B completó B5.1 (P1), B5.2 (P3), B5.3 (P8), B6.1 (Informe §1), B6.2 (Informe §3) y B6.3 (Informe §7, parte Valkey). B5.1 validó las 11 rutas del Gateway, casos exitosos y de error, estados de salud y exposición exclusiva del puerto 8000. B5.2 comprobó interrupción simulada y recuperación del borrador en 0.047 s, persistencia AOF tras reiniciar Valkey, reasignación tras el vencimiento de 120 s y rechazo HTTP 409 del token anterior. La sesión residual detectada se cerró mediante la API interna. B5.3 verificó el reinicio de Valkey durante actividad, con respuestas HTTP 503/200, RTO observado de 1.016 s y sin pérdida del borrador confirmado. B6.1 documentó la arquitectura, responsabilidades, diagrama lógico, recorrido LiDAR y aislamiento modular mediante Docker Compose. B6.2 documentó sesiones, locks, recuperación y persistencia de borradores y pruebas P3/P8. B6.3 documentó los resultados de Valkey, las métricas RTO/RPO y las limitaciones identificadas. Permanecen pendientes la limpieza automática de sesiones vencidas y la sincronización de vencimientos entre MongoDB y Valkey. La corrección de borradores huérfanos está implementada en `alisson-b5` (commit `753076b`), pendiente de integración. B3.6 continúa parcialmente completada por la garantía de publicación durable de eventos. A: 29/34. B: 25/29. C: 23/31._*
+*_Última actualización: 2026-11-15 — Persona B: 26/29. Se completaron las pruebas P1, P3 y P8, con recuperación de borradores en 0.047 s, RTO observado de 1.016 s y persistencia AOF verificada. También se documentaron arquitectura (§1), sesiones (§3), resultados de Valkey (§7) y README. B3.6 permanece parcial por la garantía de publicación durable de eventos. Pendientes de integración: limpieza de sesiones vencidas, sincronización MongoDB/Valkey y corrección de borradores huérfanos implementada en `alisson-b5`. A: 29/34. B: 26/29. C: 23/31._*
 
 ---
 
@@ -189,7 +189,7 @@ Observaciones pendientes: al vencer el lock puede persistir una sesión antigua 
 - [x] B6.1 Informe §1: arquitectura, límites de responsabilidad, diagrama, recorrido completo con ejemplo LiDAR, evidencia de aislamiento modular (p. ej. variables de entorno/redes: registro no tiene credenciales de Valkey, etc.).
 - [x] B6.2 Informe §3: sesión, recuperación de borrador, reinicio de Valkey.
 - [x] B6.3 Informe §7 (parte Valkey).
-- [ ] B6.4 README: requisitos previos, `docker compose up/down`, perfiles, solución de problemas.
+- [x] B6.4 README: requisitos previos, `docker compose up/down`, perfiles, solución de problemas.
 - [ ] B6.5 `endpoints/gateway.md` completo (todas las rutas, ejemplos curl, códigos).
 - [ ] B6.6 Revisar PRs de **C** y preparar 5 preguntas/respuestas sobre lago y Spark para la defensa.
 

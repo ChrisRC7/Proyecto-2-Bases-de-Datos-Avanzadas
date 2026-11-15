@@ -154,10 +154,22 @@ def sesiones(anotador_id: str, solicitud: SolicitudSesion):
                 return error(422, "validacion", "Etapa no valida")
 
 
-            borrador = borradores.recuperar(solicitud.tarea_id)
 
-            if borrador is not None and borrador["anotador_id"] != anotador_id:
-                return error(409, "borrador_de_otro_anotador")
+            estado_borrador, borrador = (
+                borradores.preparar_para_asignacion(
+                    solicitud.tarea_id,
+                    anotador_id,
+                    solicitud.token,
+                )
+            )
+
+            if estado_borrador == "conflicto":
+                return error(
+                    409,
+                    "conflicto_lock",
+                    "El token no posee el lock vigente",
+                )
+
 
             resultado = almacenamiento_sesiones.abrir(
                 anotador_id,
@@ -192,6 +204,7 @@ def sesiones(anotador_id: str, solicitud: SolicitudSesion):
             return {"estado": "ok", "accion": "cerrar"}
 
 
+
         if solicitud.accion == "recuperar":
             sesion_actual = almacenamiento_sesiones.consultar(
                 anotador_id
@@ -222,6 +235,7 @@ def sesiones(anotador_id: str, solicitud: SolicitudSesion):
                 "sesion": sesion_actual,
                 "borrador": borrador,
             }
+
 
 
 

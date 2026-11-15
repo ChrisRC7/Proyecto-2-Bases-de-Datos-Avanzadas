@@ -239,8 +239,8 @@ Nota (2026-11-14): integración opcional mediante --borradores en simulador/simu
       Nota: timeout de 180 s y sin reintento (nuevos parámetros `timeout` y `reintentar` de `solicitar`, por defecto igual que antes). Q1–Q5 de `prueba` por el gateway iguales a lo calculado a mano; el gateway suma ~150 ms de mediana; 422, 404 y 503 con la analítica detenida, y `/salud` sigue en 200 `degradado` (evidence/C4.9_analitica_gateway_20261115-1057.txt). Prueba con la analítica simulada: `docker compose exec -T gateway python -m app.prueba_analitica_c49`.
 
 ### C5. Pruebas
-- [~] C5.1 **P4**: escribir lago vía flujo real, reprocesar un micro-lote, deduplicar por `event_id`, mostrar que no hay lecturas a medias (Spark leyendo en bucle mientras se escribe), medir segundos entre HTTP 200 y evento visible en Spark. Mostrar la fila `rechazada` en Parquet vs `disponible` en Mongo.
-      Nota: corrida preliminar contra registro + historial, sin gateway: 39 vueltas de Spark sin error durante 40 micro-lotes; reprocesar deja el mismo archivo y sha256; reenvío → duplicados 1; frescura mediana 7,42 s (1,32 s con flush); rechazada en Parquet y disponible en Mongo; kill del historial con 300 pendientes → 0 perdidos, 0 repetidos (evidence/P4_historial_20261030-1431.md). Falta repetirla vía gateway (B3.3-B3.6, I.5).
+- [x] C5.1 **P4**: escribir lago vía flujo real, reprocesar un micro-lote, deduplicar por `event_id`, mostrar que no hay lecturas a medias (Spark leyendo en bucle mientras se escribe), medir segundos entre HTTP 200 y evento visible en Spark. Mostrar la fila `rechazada` en Parquet vs `disponible` en Mongo.
+      Nota: repetida por el gateway (`pruebas/p4_gateway.sh`): frescura mediana 7,44 s (igual que directo); rechazo con 409 en el segundo envío y Q4 0 → 1; 39 vueltas de Spark sin error mientras escribe el simulador; reprocesar deja el mismo sha256; historial matado 30 s durante la carga: 149 eventos esperan en el gateway, 0 errores al usuario y 560 de 560 respuestas 200 en el lago (evidence/P4_gateway_20261115-1102.md). La corrida directa (reenvío del mismo evento → duplicados 1) sigue en evidence/P4_historial_20261030-1431.md.
 - [x] C5.2 **P5**: Q1–Q5 validadas contra `conjunto=prueba`; tiempos 1ª ejecución vs siguientes (≥ 5 repeticiones); 1 vs 2 workers; principal vs grande.
       Nota: las 5 iguales a lo calculado a mano; 6 ejecuciones por consulta, principal y grande, 1 y 2 workers (con 2 núcleos físicos, 2 workers no acelera principal). Directo contra la analítica, sin gateway (C4.9). Ver evidence/P5_analitica_20261030-1410.md.
 
@@ -260,7 +260,8 @@ Nota (2026-11-14): integración opcional mediante --borradores en simulador/simu
 - [ ] I.0 (S1) Crear el repo `proyecto2` en GitHub, subir el commit inicial, proteger `main` (PR obligatorio), agregar a las 3 personas. Ramas por persona: `a/<tarea>`, `b/<tarea>`, `c/<tarea>`.
 - [ ] I.1 (S2) Integración con stubs: el gateway levanta y enruta a los 4 stubs con `docker compose up`.
 - [ ] I.2 (S3) Recorrido completo real de una tarea LiDAR (siguiente → borrador → enviar → revisión → aprobada → visible en Q1) — script `pruebas/recorrido_lidar.sh`.
-- [ ] I.3 (S3) Prueba de rechazo completa: Mongo `disponible`, Parquet `rechazada`, Q4 la cuenta.
+- [x] I.3 (S3) Prueba de rechazo completa: Mongo `disponible`, Parquet `rechazada`, Q4 la cuenta.
+      Nota: hecha por C dentro de P4 por el gateway (fase 2 de `pruebas/p4_gateway.sh`): Q4 del proyecto LiDAR 0 → 1 rechazadas (evidence/P4_gateway_20261115-1102.md).
 - [ ] I.4 (S3) Evidencia de aislamiento modular (grep de dependencias por servicio, variables de entorno, redes docker).
 - [ ] I.5 (S4) Correr TODAS las pruebas en orden desde un entorno limpio (`docker compose down -v`) siguiendo solo el README.
 - [ ] I.6 (S4) Sesión de explicación cruzada (cada persona explica su carril a las otras dos, 30 min c/u).

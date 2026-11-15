@@ -268,8 +268,9 @@ un hilo. El 90\,\% son anotadores: piden tarea de la cola global, tardan entre 0
 envían. El 10\,\% son revisores: toman una tarea enviada, empiezan la revisión y la aprueban, o la rechazan
 con un motivo al azar el 20\,\% de las veces. El cliente espera cada respuesta hasta 10~s. Cada petición
 queda en un CSV con su fase, endpoint, código y milisegundos. Los percentiles son por rango más cercano,
-juntando las tres corridas de cada nivel (solo la fase medida). El simulador todavía no guarda borradores
-cada 2~s (B4.2), así que esta carga no incluye \texttt{PUT /tareas/\{id\}/borrador}.
+juntando las tres corridas de cada nivel (solo la fase medida). P6 se corrió antes de integrar los
+borradores de B4.2 (opción \texttt{--borradores}), así que esta carga no incluye
+\texttt{PUT /tareas/\{id\}/borrador} ni los latidos.
 
 \subsection{Resultados}
 
@@ -382,7 +383,9 @@ SQLite, y eso solo se probó en este experimento.
 \item Todo corre en una laptop: el simulador compite por CPU con los servicios, y la red entre contenedores
 es virtual. Los números sirven para comparar niveles y encontrar el cuello de botella, no para estimar un
 despliegue en varias máquinas.
-\item Sin borradores cada 2~s (B4.2), la carga real de un anotador sería mayor en sesión y en el gateway.
+\item P6 no usa los borradores cada 2~s de B4.2; con ellos la carga de un anotador sería mayor en sesión y
+en el gateway. Una corrida corta con borradores (10 usuarios, 30~s) dio 113 borradores, 113 latidos y 99
+revisiones, todas con 200 (\ev{A6.2\_simulador\_borradores\_20261114-2318.txt}).
 \item Tres corridas de 90~s por nivel (los envíos por minuto varían menos de $\pm$4\,\% entre ellas) y una
 sola corrida en el experimento de 2 procesos.
 \item Con 10\,\% de revisores se revisa alrededor de la mitad de lo que se envía; las tareas no se agotaron en
@@ -491,6 +494,7 @@ Archivo & Qué respalda \\
 \texttt{A6.2\_simulador\_gateway\_20261110-1501.txt} (\texttt{.csv}) & 79 de 139 \texttt{/tareas/siguiente} con 503 por locks viejos (6.3). \\
 \texttt{A6.2\_simulador\_gateway\_20261110-1721.txt} (\texttt{.csv}) & Esperas de 10~s por \texttt{database is locked} en SQLite y la medición de WAL (6.3). \\
 \texttt{A6.2\_simulador\_gateway\_20261110-1726.txt} (\texttt{.csv}) & El mismo simulador sin errores después de las correcciones (6.3). \\
+\texttt{A6.2\_simulador\_borradores\_20261114-2318.txt} (\texttt{.csv}) & El simulador con los borradores y latidos de B4.2 ya integrados: revisión en 200 y sin errores (6.4). \\
 \texttt{P6\_carga\_20261110-1800.md} y su carpeta (\texttt{resumen.txt}, \texttt{desglose.txt}, \texttt{lago.txt}, CSV por corrida) & P6 final: latencias, envíos por minuto, \texttt{docker stats}, eventos en el lago y su atraso (6.2 y 6.3). \\
 \texttt{P6\_carga\_20261110-1727.md} y su carpeta (\texttt{eventos.txt}) & Primera P6: el publicador de eventos atrasado (6.3). \\
 \texttt{P6\_gateway\_2procesos\_20261110-1820/} & Experimento con el gateway en 2 procesos (6.3). \\

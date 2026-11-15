@@ -54,7 +54,9 @@ docker compose --profile carga run --rm simulador python -m simulador.simular \
 Opciones útiles: `--proyecto <uuid>` (por defecto la cola global), `--pensar-min/--pensar-max` (segundos
 que tarda en anotar), `--rechazo 0.2`, `--semilla`. Al final imprime p50/p95/p99 por endpoint y envíos por
 minuto; el CSV tiene una fila por petición (`ts`, `fase`, `usuario`, `rol`, `endpoint`, `status`, `ms`).
-Los borradores cada 2 s se agregan en `anotar()` (B4.2).
+`--borradores` activa el hilo de B4.2: mientras el anotador piensa, cada 2 s guarda un borrador
+(`PUT /tareas/{id}/borrador`) y manda un latido (`POST /sesiones/latido`). Conviene subir
+`--pensar-min/--pensar-max` (por ejemplo 3 y 6) para que cada tarea alcance a guardar borradores.
 
 ## Consultas analíticas
 

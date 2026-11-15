@@ -1,0 +1,13 @@
+NAME                       IMAGE                        COMMAND                  SERVICE        CREATED             STATUS                       PORTS
+proyecto2-analitica-1      proyecto2-analitica          "/opt/entrypoint.sh ÔÇª"   analitica      2 hours ago         Up 2 hours (healthy)
+proyecto2-cola-eventos-1   valkey/valkey:8.0            "tini -- docker-entrÔÇª"   cola-eventos   13 days ago         Up 2 hours (healthy)         6379/tcp
+proyecto2-gateway-1        proyecto2-gateway            "sh -c 'uvicorn app.ÔÇª"   gateway        2 hours ago         Up 2 hours (healthy)         0.0.0.0:8000->8000/tcp, [::]:8000->8000/tcp
+proyecto2-historial-1      proyecto2-historial          "sh -c 'uvicorn app.ÔÇª"   historial      2 hours ago         Up 2 hours (healthy)
+proyecto2-mongo1-1         mongo:7.0                    "docker-entrypoint.sÔÇª"   mongo1         13 days ago         Up 2 hours (healthy)         27017/tcp
+proyecto2-mongo2-1         mongo:7.0                    "docker-entrypoint.sÔÇª"   mongo2         13 days ago         Up 2 hours (healthy)         27017/tcp
+proyecto2-mongo3-1         mongo:7.0                    "docker-entrypoint.sÔÇª"   mongo3         13 days ago         Up 2 hours (healthy)         27017/tcp
+proyecto2-registro-1       proyecto2-registro           "sh -c 'uvicorn app.ÔÇª"   registro       2 hours ago         Up 2 hours (healthy)
+proyecto2-sesion-1         proyecto2-sesion             "sh -c 'uvicorn app.ÔÇª"   sesion         About an hour ago   Up About an hour (healthy)
+proyecto2-spark-master-1   apache/spark:3.5.1-python3   "/opt/entrypoint.sh ÔÇª"   spark-master   13 days ago         Up 2 hours (healthy)
+proyecto2-spark-worker-1   apache/spark:3.5.1-python3   "/opt/entrypoint.sh ÔÇª"   spark-worker   13 days ago         Up 2 hours
+proyecto2-valkey-1         valkey/valkey:8.0            "tini -- docker-entrÔÇª"   valkey         13 days ago         Up 2 hours (healthy)         6379/tcp

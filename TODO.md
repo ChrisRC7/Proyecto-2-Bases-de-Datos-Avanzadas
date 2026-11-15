@@ -10,11 +10,13 @@
 | Persona | Rol principal | Hechas / Total | Notas |
 |---|---|---|---|
 | A | Registro (MongoDB) + dataset operacional + simulador + carga | 29 / 34 | 29 hechas, 1 a medias (README), 1 bloqueada (PRs de B), 3 del informe pendientes |
-| B | Sesión (Valkey) + Gateway + salud | 19 / 29 | B1.1, B1.2, B2.1–B2.8, B3.1–B3.5, B3.7, B3.8, B4.1 y B4.2 completadas. B3.6 sigue parcialmente completada por la garantía de publicación durable de eventos. A corrigió seis errores del gateway en `integracion-a-b-c` (ver «Tareas nuevas descubiertas»). |
+| B | Sesión (Valkey) + Gateway + salud | 20 / 29 | B1.1, B1.2, B2.1–B2.8, B3.1–B3.5, B3.7, B3.8, B4.1, B4.2 y B5.1 completadas. B5.1 validó las 11 rutas del Gateway, casos de error, salud normal/degradada/caída y exposición exclusiva del puerto 8000. B3.6 sigue parcialmente completada por la garantía de publicación durable de eventos. Se corrigió el bloqueo por borradores huérfanos en `alisson-b5` (commit `753076b`), pendiente de integrar con el equipo. |
 | C | Historial (Parquet) + Analítica (Spark) + dataset histórico | 23 / 31 | 23 hechas, 2 a medias (falta el gateway y /estado-capas de B), 1 bloqueada por B, 5 del informe y README al final |
 | Todos | Integración, informe, defensa | 0 / 12 | |
 
-_Última actualización: 2026-11-14 — B4.1 y B4.2 de B (borradores y latidos cada 2 s desde el simulador, interrupción y recuperación) integradas en `integracion-a-b-c` junto con las correcciones del gateway, A4 (rutas de proyectos, lotes, exportar y revisión), P2, P6 y P8 de A. A: 29/34. B: 19/29._
+
+_Última actualización: 2026-11-15 — B completó B5.1 (P1): pruebas de las 11 rutas del Gateway, casos exitosos y de error, salud operativa, degradación sin Historial, caída sin Valkey, recuperación y evidencia de que solo el puerto 8000 está publicado. También corrigió y validó la reasignación de tareas con borradores huérfanos en `alisson-b5` (commit `753076b`), pendiente de integración. B3.6 continúa parcialmente completada. A: 29/34. B: 20/29. C: 23/31._
+
 ---
 
 ## Cómo está dividido el trabajo
@@ -172,7 +174,10 @@ Nota: envío implementado y probado; limpiezas posteriores al HTTP 200 almacenad
 Nota (2026-11-14): integración opcional mediante --borradores en simulador/simular.py. Prueba real: 6 borradores HTTP 200, 6 latidos HTTP 200 y 3 envíos HTTP 200. Interrupción real mediante docker kill y recuperación de la misma tarea, token y borrador. Liberación y limpieza posteriores verificadas. Evidencias: evidence/B4_2_borradores.txt, evidence/B4_2_integracion.txt, evidence/B4_2_interrupcion_real.txt y evidence/B4_2_simulador.csv. La interrupción se ejecuta desde un script independiente; no es una opción del CLI principal.
 
 ### B5. Pruebas
-- [ ] B5.1 **P1**: probar todas las rutas (casos felices y de error) + `/salud` en normal, degradado (parar historial o analítica) y caído (parar mongo/valkey). `docker compose ps` / `ss -tlnp` mostrando que solo 8000 está expuesto. Evidencia.
+- [x] B5.1 **P1**: probar todas las rutas (casos felices y de error) + `/salud` en normal, degradado (parar historial o analítica) y caído (parar mongo/valkey). `docker compose ps` / `ss -tlnp` mostrando que solo 8000 está expuesto. Evidencia.
+Nota (2026-11-15): validacion real de las 11 rutas del Gateway con casos exitosos y errores HTTP 404, 409 y 422. Prueba A4: FALLAS=0, EXIT_CODE=0. Borradores, latidos y recuperacion: B5_1_SESIONES_OK, EXIT_CODE=0; limpieza HTTP 200. /salud operativo con todas las capas; degradado al detener Historial; caido al detener Valkey; recuperacion posterior a operativo. docker compose ps confirma que solo Gateway publica el puerto 8000 al host. No se detuvo MongoDB: el escenario de caida critica se valido mediante Valkey.
+Evidencias: evidence/B5_1_A4_gateway.txt, evidence/B5_1_sesiones.txt, evidence/B5_1_salud_normal.json, evidence/B5_1_salud_sin_historial.txt, evidence/B5_1_salud_recuperada.json, evidence/B5_1_salud_sin_valkey.txt, evidence/B5_1_salud_post_valkey.json, evidence/B5_1_puertos.txt, evidence/B5_1_recuperar_sin_sesion.txt, evidence/B5_1_siguiente_sin_anotador.txt, evidence/B5_1_enviar_invalido.txt y evidence/B5_1_liberar_invalido.txt.
+
 - [ ] B5.2 **P3**: interrumpir usuario, recuperar borrador (antigüedad ≤ 5 s); `docker compose restart valkey` → borrador sigue; dejar vencer lock (120 s o PX reducido por variable para la prueba, documentarlo) → la tarea se vuelve a ofrecer; ninguna tarea con dos dueños.
 - [ ] B5.3 **P8 (Valkey + sesión)**: reiniciar Valkey durante carga, interrumpir sesión; RTO/RPO de borradores (AOF everysec → hasta ~1 s).
 

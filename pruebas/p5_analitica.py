@@ -8,6 +8,7 @@ entre 1 y 2 workers. Solo HTTP a la analítica desde la red interna:
 
 --validar  compara Q1–Q5 de conjunto=prueba con dataset/historico/esperado_prueba.json
 --planes   guarda explain("formatted") de Q1 y Q3 (conjunto principal) en <prefijo>_plan_q{1,3}.txt
+--gateway  pasa por GET gateway:/analitica/q{n} (C4.9) en vez de ir directo a analitica:/q/{n}
 Tiempos: por cada conjunto y consulta, --repeticiones ejecuciones seguidas (la 1ª es la primera
 del proceso para esa consulta y conjunto); una fila por ejecución en el CSV.
 """
@@ -21,6 +22,7 @@ import urllib.error
 import urllib.request
 
 URL = os.getenv("ANALITICA_URL", "http://analitica:8004")
+RUTA_Q = "/q/{n}?conjunto={conjunto}"
 ESPERADO = "/srv/dataset/historico/esperado_prueba.json"
 TOLERANCIA = 1e-3
 
@@ -45,7 +47,7 @@ def validar() -> bool:
     print("\n## Validación contra conjunto=prueba (esperado calculado a mano)")
     for n in range(1, 6):
         q = f"q{n}"
-        status, d = get(f"/q/{n}?conjunto=prueba")
+        status, d = get(RUTA_Q.format(n=n, conjunto="prueba"))
         filas, esp = d["filas"], esperado[q]["filas"]
         if q == "q3":  # el orden (media desc) es parte del resultado
             ok = len(filas) == len(esp) and all(
@@ -89,7 +91,7 @@ def tiempos(config: str, conjuntos: list[str], reps: int, ruta_csv: str) -> None
                 medidos = []
                 for rep in range(1, reps + 1):
                     t0 = time.perf_counter()
-                    status, d = get(f"/q/{n}?conjunto={conjunto}")
+                    status, d = get(RUTA_Q.format(n=n, conjunto=conjunto))
                     ms_cliente = round((time.perf_counter() - t0) * 1000, 1)
                     if status != 200:
                         print(f"| {conjunto} | q{n} | error {status}: {d} |")
@@ -109,17 +111,26 @@ def tiempos(config: str, conjuntos: list[str], reps: int, ruta_csv: str) -> None
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--config", required=True, help="etiqueta, p. ej. 1worker / 2workers")
-    ap.add_argument("--csv", required=True)
+    ap.add_argument("--csv", help="sin --csv solo valida (y guarda planes)")
     ap.add_argument("--repeticiones", type=int, default=6)
     ap.add_argument("--conjuntos", default="principal,grande")
     ap.add_argument("--validar", action="store_true")
     ap.add_argument("--planes", help="prefijo de los archivos de plan")
+    ap.add_argument("--gateway", action="store_true")
     args = ap.parse_args()
 
-    status, salud = get("/salud", timeout=10)
+    global URL, RUTA_Q
+    if args.gateway:
+        URL = os.getenv("GATEWAY_URL", "http://gateway:8000")
+        RUTA_Q = "/analitica/q{n}?conjunto={conjunto}"
+        status, salud = get("/salud", timeout=10)
+        salud = salud["capas"]["analitica"]["detalle"]
+    else:
+        status, salud = get("/salud", timeout=10)
     print(f"analitica: {json.dumps(salud['spark'], ensure_ascii=False)}")
     ok = validar() if args.validar else True
-    tiempos(args.config, args.conjuntos.split(","), args.repeticiones, args.csv)
+    if args.csv:
+        tiempos(args.config, args.conjuntos.split(","), args.repeticiones, args.csv)
     if args.planes:
         planes(args.planes)
     return 0 if ok else 1

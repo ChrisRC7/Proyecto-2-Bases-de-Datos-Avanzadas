@@ -109,11 +109,16 @@ Header `X-Anotador-Id` → `200 {"tarea": {...}, "token": "uuid", "borrador": {"
 Header: `X-Anotador-Id` (UUID).
 Body: `{"token": "uuid"}`.
 
-Renueva el lock y actualiza la actividad de la sesión en Valkey.
+Renueva el lock y actualiza la actividad de la sesión en Valkey, y corre también el plazo de la
+asignación en MongoDB (`registro:/tareas/{id}/transicion` con `accion: "renovar"`), para que el registro
+no ofrezca a otro una tarea cuyo lock sigue vivo. El registro solo escribe cuando queda menos de la mitad
+del plazo (60 s); la respuesta trae `sesion.registro_renovado` (`true` escribió, `false` no hacía falta,
+`null` el registro no respondió: el lock ya se renovó y el siguiente latido lo vuelve a intentar).
 
 - `200`: latido confirmado.
 - `404`: sesión inexistente.
-- `409`: token incorrecto o lock vencido.
+- `409`: token incorrecto o lock vencido (`conflicto_lock`), o la asignación ya venció en el registro
+  (`asignacion_vencida`).
 - `503`: servicio Sesión no disponible.
 
 ### GET /analitica/{q}?conjunto=principal|grande|prueba
@@ -134,8 +139,14 @@ consulta de Spark tarda segundos y repetirla después de un timeout la lanzaría
 Siempre responde HTTP 200, incluso cuando las capas internas
 no están disponibles.
 
-Consulta Registro, Sesión, Historial y Analítica en paralelo,
-con timeout de aproximadamente 1 segundo por servicio.
+Cada capa (registro, historial, analítica) publica cada 5 s su estado en Valkey por
+`sesion:/estado-capas` (llave `salud:{servicio}`, TTL 15 s). El gateway lee esos mensajes
+(`GET sesion:/estado-capas`) y, en paralelo, consulta el `/salud` de cada servicio con timeout de
+aproximadamente 1 segundo. Para cada capa gana el peor de los dos: el mensaje trae lo que la capa sabe de
+sí misma (primario de MongoDB, ejecutores de Spark, cola) y la consulta directa detecta en el momento una
+capa caída cuyo último mensaje todavía no venció. Una capa sin mensaje vigente en Valkey cuenta como
+`caido`. Cada capa trae `fuente` (`valkey+directa`, o `directa` para sesión y cuando Valkey no responde) y
+`mensaje_valkey`; la raíz trae `mensajes_valkey: true|false`.
 
 Ejemplo:
 
@@ -167,8 +178,8 @@ Ejemplo:
 
 Estados agregados:
 - `operativo`: las cuatro capas están operativas.
-- `degradado`: existe una combinación de estados.
-- `caido`: las cuatro capas están caídas.
+- `caido`: registro (MongoDB) o sesión (Valkey) está caído; sin ellos no se puede asignar ni enviar.
+- `degradado`: cualquier otra combinación (por ejemplo historial o analítica caídos).
 
 El Gateway conserva HTTP 200 para permitir consultar
 el diagnóstico incluso durante fallos.

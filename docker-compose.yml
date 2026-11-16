@@ -1,7 +1,10 @@
 # Plataforma distribuida de anotación de datos — Proyecto 2
 #
 # Redes:
-#   interna -> todos los servicios y motores de datos (sin puertos al host).
+#   interna -> gateway y los cuatro servicios (y la carga de datos), sin puertos al host.
+#   mongo   -> registro y el replica set (y la carga de datos): ningún otro servicio llega a MongoDB.
+#   valkey  -> sesion y su Valkey: ningún otro servicio llega al Valkey de sesión.
+#   cola    -> historial y cola-eventos.   spark -> analitica y el clúster de Spark.
 #   borde   -> solo gateway (y el simulador, que solo puede hablar con el gateway).
 # El gateway es el único componente publicado en el host (puerto 8000).
 #
@@ -52,10 +55,12 @@ services:
       MONGO_DB: plataforma
       MONGO_W: ${MONGO_W:-majority}
       SESION_URL: http://sesion:8002
+    networks: [interna, mongo]  # único servicio que ve a MongoDB
 
   sesion:
     <<: *servicio-python
     build: ./servicios/sesion
+    networks: [interna, valkey]  # único servicio que ve al Valkey de sesión
     environment:
       SERVICIO: sesion
       PUERTO: "8002"
@@ -109,7 +114,7 @@ services:
     hostname: mongo1
     command: ["mongod", "--replSet", "rs0", "--bind_ip_all", "--wiredTigerCacheSizeGB", "0.25"]
     restart: unless-stopped
-    networks: [interna]
+    networks: [mongo]
     volumes:
       - mongo1:/data/db
     healthcheck:
@@ -134,7 +139,7 @@ services:
   mongo-init:
     image: mongo:7.0
     restart: "no"
-    networks: [interna]
+    networks: [mongo]
     depends_on:
       mongo1:
         condition: service_healthy
@@ -175,7 +180,7 @@ services:
     restart: "no"
     # Con el usuario del host, para que dataset/salida y evidence/ no queden a nombre de root.
     user: "${UID:-1000}:${GID:-1000}"
-    networks: [interna]
+    networks: [interna, mongo]  # carga MongoDB; las pruebas que corren aquí también llaman al gateway
     environment:
       MONGO_URI: mongodb://mongo1:27017,mongo2:27017,mongo3:27017/?replicaSet=rs0
       MONGO_DB: plataforma
@@ -193,7 +198,7 @@ services:
       - "yes"
       - --appendfsync
       - everysec
-    networks: [interna]
+    networks: [valkey]
     volumes:
       - valkey_sesion:/data
     healthcheck:
@@ -291,6 +296,8 @@ services:
 networks:
   interna:
   borde:
+  mongo:  # registro <-> mongo1..3
+  valkey: # sesion <-> valkey
   cola:   # historial <-> cola-eventos
   spark:  # analitica <-> spark-master/workers
 

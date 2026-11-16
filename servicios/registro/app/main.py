@@ -209,8 +209,38 @@ def asignar(cuerpo: Asignar):
     }
 
 
+def renovar(tarea_id: str, token: str):
+    """Corre el plazo de la asignación otros LOCK_SEGUNDOS, igual que el latido renueva el lock.
+
+    Solo si la tarea sigue abierta con ese token y el plazo no ha vencido: una asignación vencida
+    ya pudo ofrecerse a otro y no se revive. Para no escribir en MongoDB en cada latido (cada 2 s
+    por anotador), solo escribe cuando queda menos de la mitad del plazo; si no, responde
+    `renovado: false`. No cambia la versión ni genera evento (no es una transición de estado).
+    """
+    t = ahora()
+    vence = t + timedelta(seconds=LOCK_SEGUNDOS)
+    propia = {"_id": tarea_id, "estado": "abierta", "asignacion.token": token}
+    resultado = bd.tareas.update_one(
+        {**propia, "asignacion.vence_en": {"$gte": t, "$lt": t + timedelta(seconds=LOCK_SEGUNDOS / 2)}},
+        {"$set": {"asignacion.vence_en": vence}},
+    )
+    if resultado.matched_count == 1:
+        return {"tarea_id": tarea_id, "renovado": True, "vence_en": iso(vence)}
+
+    vigente = bd.tareas.find_one({**propia, "asignacion.vence_en": {"$gte": t}}, {"asignacion.vence_en": 1})
+    if vigente is not None:
+        return {"tarea_id": tarea_id, "renovado": False, "vence_en": iso(vigente["asignacion"]["vence_en"])}
+
+    actual = bd.tareas.find_one({"_id": tarea_id}, {"estado": 1, "version": 1})
+    if actual is None:
+        return error(404, "tarea_no_existe", tarea_id)
+    return error(409, "asignacion_vencida", {"estado": actual["estado"], "version": actual["version"]})
+
+
 @app.post("/tareas/{tarea_id}/transicion")
 def transicion(tarea_id: str, cuerpo: Transicion):
+    if cuerpo.accion == "renovar":  # sin cambio de estado ni evento (la ruta 7 pasaría el límite de 6)
+        return renovar(tarea_id, cuerpo.token)
     requerido, nuevo, estado_evento = REGLAS[cuerpo.accion]
     t = ahora()
     event_id = str(uuid.uuid4())

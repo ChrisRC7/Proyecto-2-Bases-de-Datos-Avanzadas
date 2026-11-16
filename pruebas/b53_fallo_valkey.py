@@ -8,11 +8,11 @@ import time
 import urllib.error
 import urllib.request
 from datetime import datetime, timezone
+from proyecto_prueba import crear_proyecto
 
 GATEWAY = "http://localhost:8000"
 ANOTADOR = "adbafed0-b600-460c-bbdc-fd55304374b3"
-PROYECTO = "68ed85fa-f8ca-48ac-8e5a-88f0f3ac515b"
-TAREA = "58844be5-7e57-49a9-8cc2-ee202d109321"
+PROYECTO = crear_proyecto("b53")  # una sola tarea: la primera asignación es esa
 
 
 def pedir(metodo, ruta, cuerpo=None, timeout=3):
@@ -77,7 +77,6 @@ def main():
 
         tarea = datos["tarea"]["tarea_id"]
         token = datos["token"]
-        assert tarea == TAREA, f"Tarea inesperada: {tarea}"
         print("ASIGNACION_OK", flush=True)
 
         contenido = {

@@ -1,0 +1,43 @@
+# C2.6 compactación de mes=2026-11 (conjunto principal) · 2026-11-16T04:27:14Z · commit 2208c0e
+
+## Antes
+mes=2026-11: 24 archivos, 0.24 MB, 1265 filas, 1265 event_id distintos
+  part-1794802901449-0_1794802901654-0.parquet, part-1794802915098-0_1794802915390-0.parquet, part-1794802924727-0_1794802924840-0.parquet ...
+q1: 178 filas, 1263.1 ms
+q2: 361 filas, 2460.3 ms
+q3: 5 filas, 5598.6 ms
+q4: 62 filas, 1680.7 ms
+q5: 60 filas, 3621.4 ms
+
+## Simulación (sin --ejecutar)
+mes                    2026-11
+archivos               24
+filas                  1265
+filas_sin_duplicados   1265
+duplicados_quitados    0
+destino                eventos/mes=2026-11/part-compacto-20261116T042731.parquet
+accion                 simulacion (usar --ejecutar)
+
+## Compactación
+mes                    2026-11
+archivos               24
+filas                  1265
+filas_sin_duplicados   1265
+duplicados_quitados    0
+destino                eventos/mes=2026-11/part-compacto-20261116T042732.parquet
+accion                 compactado
+tiempo: 0.53 s
+
+## Después
+mes=2026-11: 1 archivos, 0.09 MB, 1265 filas, 1265 event_id distintos
+  part-compacto-20261116T042732.parquet
+q1: 178 filas, 1625.2 ms
+q2: 361 filas, 2026.3 ms
+q3: 5 filas, 2676.2 ms
+q4: 62 filas, 1414.3 ms
+q5: 60 filas, 2106.7 ms
+q1: igual antes y después
+q2: igual antes y después
+q3: igual antes y después
+q4: igual antes y después
+q5: igual antes y después

@@ -97,10 +97,12 @@ try:
     assert cuerpo["borrador"]["contenido"] == contenido
     print("OK | Recuperar devuelve borrador")
 
-    # 6. Otro anotador no puede leerlo.
+    # 6. Otro anotador sin el lock no puede abrir la tarea ni leer el borrador.
+    # (Con el lock vigente sí puede: el borrador anterior se archiva, ver prueba_borradores_huerfanos.)
     codigo, _ = sesion(
         otro_anotador,
         "abrir",
+        token_sesion="token-sin-lock",
         tarea_id=tarea,
         proyecto_id=proyecto,
         etapa="anotando",

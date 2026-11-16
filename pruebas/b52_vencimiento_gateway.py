@@ -6,10 +6,11 @@ import time
 import urllib.error
 import urllib.request
 from datetime import datetime, timezone
+from proyecto_prueba import crear_proyecto
 
 GATEWAY = "http://localhost:8000"
-PROYECTO = "68ed85fa-f8ca-48ac-8e5a-88f0f3ac515b"
-TAREA = "58844be5-7e57-49a9-8cc2-ee202d109321"
+PROYECTO = crear_proyecto("b52-vencimiento")  # una sola tarea: la primera asignación es esa
+TAREA = None  # la única tarea del proyecto, se conoce al asignarla a A
 
 A = "adbafed0-b600-460c-bbdc-fd55304374b3"
 B = "a5497863-210f-4de3-853d-82cbe0b89bcb"
@@ -66,7 +67,8 @@ def main():
         )
         assert estado == 200, f"No se asigno A: {estado} {datos}"
         token_a = datos["token"]
-        assert datos["tarea"]["tarea_id"] == TAREA
+        global TAREA
+        TAREA = datos["tarea"]["tarea_id"]
 
         print("A_ASIGNADO_OK", flush=True)
 
@@ -155,8 +157,9 @@ def main():
     finally:
         # Primero liberar al propietario nuevo; despues intentar
         # cerrar cualquier sesion residual del propietario anterior.
-        liberar(B, TAREA, token_b, "B")
-        liberar(A, TAREA, token_a, "A")
+        if TAREA:
+            liberar(B, TAREA, token_b, "B")
+            liberar(A, TAREA, token_a, "A")
 
 
 if __name__ == "__main__":

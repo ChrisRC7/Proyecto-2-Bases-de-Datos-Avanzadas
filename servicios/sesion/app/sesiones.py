@@ -142,3 +142,32 @@ def latido(anotador_id: str, token: str) -> dict | str:
         "actualizada_en": instante,
         "lock_renovado": True,
     }
+
+
+# Sesión cuyo lock ya no es suyo (venció o la tarea la tomó otro anotador): se borra para que
+# `recuperar` no devuelva una tarea ajena. Todo en Lua para no borrar una sesión que se acaba de
+# reabrir con otro token entre la lectura y el borrado.
+LUA_DESCARTAR_VENCIDA = """
+if redis.call('HGET', KEYS[1], 'token') ~= ARGV[1] then
+    return 0
+end
+if redis.call('GET', KEYS[2]) == ARGV[1] then
+    return 0
+end
+redis.call('DEL', KEYS[1])
+redis.call('ZREM', KEYS[3], ARGV[2])
+return 1
+"""
+
+
+def descartar_si_vencida(anotador_id: str, datos: dict) -> bool:
+    """True si la sesión se borró porque su token ya no tiene el lock de la tarea."""
+    return bool(cliente.eval(
+        LUA_DESCARTAR_VENCIDA,
+        3,
+        f"sesion:{anotador_id}",
+        f"lock:tarea:{datos['tarea']}",
+        f"editando:{datos['proyecto']}",
+        datos["token"],
+        anotador_id,
+    ))

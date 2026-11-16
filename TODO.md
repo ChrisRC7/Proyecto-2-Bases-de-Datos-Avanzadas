@@ -10,11 +10,11 @@
 | Persona | Rol principal | Hechas / Total | Notas |
 |---|---|---|---|
 | A | Registro (MongoDB) + dataset operacional + simulador + carga | 34 / 34 | Todas hechas; quedan las tareas de «Todos» (integración, ensamblar el informe, defensa) |
-| B | Sesión (Valkey) + Gateway + salud | 28 / 29 | B1–B5 completadas. B6.1–B6.5 completadas: arquitectura, sesiones, resultados de Valkey y README. Pendiente: B6.6. |
+| B | Sesión (Valkey) + Gateway + salud | 29 / 29 | Todas hechas. Las secciones §1, §3 y §7 de B están en Markdown y falta pasarlas a `informe.tex` (I.8). |
 | C | Historial (Parquet) + Analítica (Spark) + dataset histórico | 31 / 31 | Todas hechas: C4.9 (ruta del gateway), C2.7 y P4 verificados con el gateway real, §4, §5 y §8 del informe, README y preguntas de defensa |
-| Todos | Integración, informe, defensa | 1 / 12 | I.3 (rechazo completo) hecha dentro de P4 |
+| Todos | Integración, informe, defensa | 5 / 12 | I.1–I.5 hechas (I.0 a medias: falta confirmar la protección de `main`). Quedan el informe (I.8), la revisión del README (I.9) y las tareas de personas: explicación cruzada, P7 al profesor, ensayo y entrega |
 
-_Última actualización: 2026-11-15 — Fusión de `alisson-b5` con `ChrisDevelop`. B: P1, P3 y P8 de Valkey (borrador recuperado en 0,047 s, RTO 1,016 s, AOF verificado), §1, §3 y §7 en Markdown, README y `endpoints/gateway.md`; corrección de borradores huérfanos. C: completa. A: 34/34. B: 28/29. C: 31/31._
+_Última actualización: 2026-11-15 — Errores de integración corregidos: sesión vieja tras vencer el lock, `vence_en` renovado con latidos y borradores, `/salud` con los mensajes de Valkey, pruebas de B sin ids fijos, redes propias para MongoDB y Valkey (D15, D16). I.2 (recorrido LiDAR), I.4 (aislamiento) e I.5 (todo desde cero). B6.6 redactada. A: 34/34. B: 29/29. C: 31/31. Falta el informe._
 ---
 
 ## Cómo está dividido el trabajo
@@ -188,7 +188,8 @@ Observaciones pendientes: al vencer el lock puede persistir una sesión antigua 
 - [x] B6.3 Informe §7 (parte Valkey).
 - [x] B6.4 README: requisitos previos, `docker compose up/down`, perfiles, solución de problemas.
 - [x] B6.5 `endpoints/gateway.md` completo (todas las rutas, ejemplos curl, códigos).
-- [ ] B6.6 Revisar PRs de **C** y preparar 5 preguntas/respuestas sobre lago y Spark para la defensa.
+- [x] B6.6 Revisar PRs de **C** y preparar 5 preguntas/respuestas sobre lago y Spark para la defensa.
+      Nota: redactadas por C en `defensa/preguntas.md` (micro-lote atómico, duplicados, fila rechazada, 1ª ejecución y workers, plan de Q1); Alisson las repasa antes del ensayo (I.10).
 
 ---
 
@@ -265,13 +266,18 @@ Observaciones pendientes: al vencer el lock puede persistir una sesión antigua 
 
 ## Integración y cierre — Todos
 
-- [ ] I.0 (S1) Crear el repo `proyecto2` en GitHub, subir el commit inicial, proteger `main` (PR obligatorio), agregar a las 3 personas. Ramas por persona: `a/<tarea>`, `b/<tarea>`, `c/<tarea>`.
-- [ ] I.1 (S2) Integración con stubs: el gateway levanta y enruta a los 4 stubs con `docker compose up`.
-- [ ] I.2 (S3) Recorrido completo real de una tarea LiDAR (siguiente → borrador → enviar → revisión → aprobada → visible en Q1) — script `pruebas/recorrido_lidar.sh`.
+- [~] I.0 (S1) Crear el repo `proyecto2` en GitHub, subir el commit inicial, proteger `main` (PR obligatorio), agregar a las 3 personas. Ramas por persona: `a/<tarea>`, `b/<tarea>`, `c/<tarea>`.
+      Nota: el repo está en GitHub con una rama por persona (`fabricio`, `alisson`/`alisson-b5`, `ChrisDevelop`) e integración en `integracion-*`; falta confirmar desde GitHub que `main` pide PR.
+- [x] I.1 (S2) Integración con stubs: el gateway levanta y enruta a los 4 stubs con `docker compose up`.
+      Nota: superada; el gateway enruta a los cuatro servicios reales (`/salud` operativo en las cuatro capas).
+- [x] I.2 (S3) Recorrido completo real de una tarea LiDAR (siguiente → borrador → enviar → revisión → aprobada → visible en Q1) — script `pruebas/recorrido_lidar.sh`.
+      Nota: `pruebas/recorrido_lidar.sh` (proyecto con la taxonomía del enunciado; borrador peatón → ciclista, recuperar, enviar, segundo envío 409, aprobar, exportar). Visible en Q1 10,6 s después del 200 de aprobar (evidence/I2_recorrido_lidar_20261115-2217.txt).
 - [x] I.3 (S3) Prueba de rechazo completa: Mongo `disponible`, Parquet `rechazada`, Q4 la cuenta.
       Nota: hecha por C dentro de P4 por el gateway (fase 2 de `pruebas/p4_gateway.sh`): Q4 del proyecto LiDAR 0 → 1 rechazadas (evidence/P4_gateway_20261115-1102.md).
-- [ ] I.4 (S3) Evidencia de aislamiento modular (grep de dependencias por servicio, variables de entorno, redes docker).
-- [ ] I.5 (S4) Correr TODAS las pruebas en orden desde un entorno limpio (`docker compose down -v`) siguiendo solo el README.
+- [x] I.4 (S3) Evidencia de aislamiento modular (grep de dependencias por servicio, variables de entorno, redes docker).
+      Nota: `pruebas/i4_aislamiento.sh`: solo el gateway publica 8000; MongoDB solo resuelve desde registro y Valkey de sesión solo desde sesion (redes `mongo` y `valkey`, D15); bibliotecas de cliente por servicio; analítica y workers con el lago en solo lectura; el simulador solo ve al gateway (evidence/I4_aislamiento_20261115-2218.txt).
+- [x] I.5 (S4) Correr TODAS las pruebas en orden desde un entorno limpio (`docker compose down -v`) siguiendo solo el README.
+      Nota: `pruebas/i5_todas.sh` (down -v, up --build, carga de datos y las pruebas de la tabla del README en orden); corrida del 2026-11-15 en la laptop i7-6500U, 1 h: 27 pasos, todos con exit 0 salvo el comando de borradores huérfanos (faltaba `PYTHONPATH`; corregido y repetido OK) y el formateador de `/salud` en `p1_salud.sh` (repetido en evidence/P1_salud_20261115-2307.txt). Resumen en evidence/I5_entorno_limpio_20261115-2205.txt.
 - [ ] I.6 (S4) Sesión de explicación cruzada (cada persona explica su carril a las otras dos, 30 min c/u).
 - [ ] I.7 (S4) Preguntar al profesor por la prueba **P7** que falta en el enunciado.
 - [~] I.8 (S5) Ensamblar informe PDF con apéndices y enlace al repo; verificar que cada cifra apunta a un archivo de `evidence/`.
@@ -312,10 +318,16 @@ _(agregar aquí con persona sugerida y fecha)_
 - [x] (B, 2026-11-10) gateway `eventos.py`: el publicador manda un evento por POST, toma 50 por pasada y espera hasta 2 s entre pasadas. Con 100 usuarios en P6 se generan 27–29 eventos/s y llegan 8–11 al historial; quedaron 6 133 pendientes y sin carga se vaciaban a ~20/s (evidence/P6_carga_20261110-1727/eventos.txt). No se pierden, pero llegan al lago minutos tarde.
       Nota: corregido por A: los eventos de la pasada van en un solo POST (historial acepta una lista; si la rechaza con 4xx se prueban de a uno) y no espera mientras queden pendientes. 3 333 pendientes se vaciaron en unos 5 s. Caso nuevo en `prueba_eventos_b33`.
 - [x] (B, 2026-11-10) sesion `abrir`: si una tarea vuelve a la cola con el borrador de otro anotador todavía en Valkey (lock y plazo vencidos sin enviar), `abrir` responde 409 `borrador_de_otro_anotador`, el gateway compensa y `/tareas/siguiente` da 503; como la tarea sigue primera en la cola, se repite y solo el anotador original la puede tomar (visto en el código, sin prueba todavía). Toca a P3 («dejar vencer el candado y comprobar que la tarea vuelve a ofrecerse»). No afecta P6 porque el simulador todavía no guarda borradores (B4.2).
-- [ ] (B, 2026-11-10) gateway `/salud` consulta el `/salud` de cada servicio y no lee los mensajes que las capas dejan en Valkey (`sesion:/estado-capas`); el enunciado pide usar Valkey para esos mensajes (§7, `GET /salud`).
-- [ ] (A y B, 2026-11-10) el lock se renueva con latidos y borradores, pero `asignacion.vence_en` en MongoDB queda fijo en 120 s. Si alguien trabaja más de 120 s guardando borradores, el registro puede ofrecer la tarea a otro mientras el lock sigue tomado. Decidir si el gateway renueva también el plazo en el registro o si se documenta como limitación.
-- [ ] (B, 2026-11-15) `pruebas/prueba_b42_integracion.py` usa un proyecto con id fijo (`d2347c44-…`) creado a mano con `reset_entorno.py`, cuyo manifiesto (`pruebas/casos_b41.json`) no está en el repo. Después de recargar el dataset responde 204 en `/tareas/siguiente` y la prueba falla. Conviene que cree su proyecto al empezar (como `pruebas/a4_rutas_gateway.py`) o lo lea del manifiesto.
-      Resuelto en `alisson-b5` (753076b): `abrir` archiva el borrador del otro anotador en `borrador:archivado:{tarea}:{uuid}` (7 días) con un script Lua que exige el lock vigente. Verificado tras la fusión con `pruebas/prueba_borradores_huerfanos.py` (dentro de `sesion`) y `b52_vencimiento_gateway.py`.
-- [ ] (B, 2026-11-15) `pruebas/b52_*.py` y `pruebas/b53_fallo_valkey.py` usan un proyecto y una tarea fijos (`68ed85fa-…`, `58844be5-…`) que no existen en el dataset de semilla 2026: tras recargar dan 204. Pasan si se crean un proyecto con una tarea al empezar (como `a4_rutas_gateway.py`). Verificado así tras la fusión.
-- [ ] (B, 2026-11-15) Después de que vence el lock y otro anotador toma la tarea, la sesión del primero sigue en Valkey: `/sesiones/recuperar` le devuelve 200 con una tarea que ya no es suya (visto al correr `b53` justo después de `b52_vencimiento`). `recuperar` debería comprobar que el lock sigue siendo de ese token o borrar la sesión.
-- [ ] (Todos, 2026-11-15) §1 y §3 del informe siguen con `\falta{}` en `informe/informe.tex`; el texto de B está en `informe/seccion_1_arquitectura_B.md`, `seccion_3_sesiones_B.md` y `seccion_7_valkey_B.md` y falta pasarlo a LaTeX.
+      Nota: resuelto en `alisson-b5` (753076b): `abrir` archiva el borrador del otro anotador en `borrador:archivado:{tarea}:{uuid}` (7 días) con un script Lua que exige el lock vigente. Verificado tras la fusión con `pruebas/prueba_borradores_huerfanos.py` (dentro de `sesion`) y `b52_vencimiento_gateway.py`.
+- [x] (B, 2026-11-10) gateway `/salud` consulta el `/salud` de cada servicio y no lee los mensajes que las capas dejan en Valkey (`sesion:/estado-capas`); el enunciado pide usar Valkey para esos mensajes (§7, `GET /salud`).
+      Nota: corregido: el gateway lee `GET sesion:/estado-capas` junto con el `/salud` directo y gana el peor (D4). Una capa sin mensaje vigente sale `caido`. Con el historial parado: `caido` al instante por la consulta directa y, a los 16 s, también por Valkey (sin mensaje). Casos nuevos en `prueba_salud_b38`; `pruebas/p1_salud.sh` (evidence/P1_salud_20261115-2307.txt: normal, degradado con historial o analítica parados, caído con Valkey parado o MongoDB sin mayoría, y solo 8000 publicado).
+- [x] (A y B, 2026-11-10) el lock se renueva con latidos y borradores, pero `asignacion.vence_en` en MongoDB queda fijo en 120 s. Si alguien trabaja más de 120 s guardando borradores, el registro puede ofrecer la tarea a otro mientras el lock sigue tomado. Decidir si el gateway renueva también el plazo en el registro o si se documenta como limitación.
+      Nota: el gateway lo renueva (D16): `registro:/tareas/{id}/transicion` con `accion: "renovar"` (sin cambio de estado ni evento; solo escribe con menos de 60 s de plazo). `pruebas/b52_renovacion_registro.py`: 150 s con latidos, 2 escrituras en MongoDB, otro anotador recibió 204 todo el tiempo y el envío final dio 200.
+- [x] (B, 2026-11-15) `pruebas/prueba_b42_integracion.py` usa un proyecto con id fijo (`d2347c44-…`) creado a mano con `reset_entorno.py`, cuyo manifiesto (`pruebas/casos_b41.json`) no está en el repo. Después de recargar el dataset responde 204 en `/tareas/siguiente` y la prueba falla. Conviene que cree su proyecto al empezar (como `pruebas/a4_rutas_gateway.py`) o lo lea del manifiesto.
+      Nota: crea su proyecto con `pruebas/proyecto_prueba.py` (una sola tarea).
+- [x] (B, 2026-11-15) `pruebas/b52_*.py` y `pruebas/b53_fallo_valkey.py` usan un proyecto y una tarea fijos (`68ed85fa-…`, `58844be5-…`) que no existen en el dataset de semilla 2026: tras recargar dan 204. Pasan si se crean un proyecto con una tarea al empezar (como `a4_rutas_gateway.py`). Verificado así tras la fusión.
+      Nota: corregido: cada una crea su proyecto con una tarea (`pruebas/proyecto_prueba.py`). Pasan después de recargar el dataset.
+- [x] (B, 2026-11-15) Después de que vence el lock y otro anotador toma la tarea, la sesión del primero sigue en Valkey: `/sesiones/recuperar` le devuelve 200 con una tarea que ya no es suya (visto al correr `b53` justo después de `b52_vencimiento`). `recuperar` debería comprobar que el lock sigue siendo de ese token o borrar la sesión.
+      Nota: corregido: `recuperar` borra en Lua la sesión cuyo token ya no tiene el lock y responde 404 `sesion_no_existe`. `b53` corre bien justo después de `b52_vencimiento`. Se ajustaron `prueba_http_sesiones_b23` y `prueba_borradores_b24`, que abrían sesiones sin lock (desde `alisson-b5`, `abrir` lo exige).
+- [x] (C, 2026-11-15) Aislamiento por red: con todo en `interna`, registro resolvía `valkey` y sesión resolvía `mongo1`. Redes propias `mongo` y `valkey` (D15); evidencia en `pruebas/i4_aislamiento.sh`.
+- [ ] (Todos, 2026-11-15) §1 y §3 del informe siguen con `\falta{}` en `informe/informe.tex`; el texto de B está en `informe/seccion_1_arquitectura_B.md`, `seccion_3_sesiones_B.md` y `seccion_7_valkey_B.md` y falta pasarlo a LaTeX. También quedaron viejos tres límites de §2.5 y §8 (plazo `vence_en` fijo, borrador de otro anotador, `/salud` sin los mensajes de Valkey): ya se corrigieron (D16, `alisson-b5`, D4) y hay que cambiarlos por lo que se midió. La tabla de evidencia (§ apéndice) espera los archivos de B (P1, P3, P8 de Valkey) y los nuevos I2, I4, I5 y P1_salud.

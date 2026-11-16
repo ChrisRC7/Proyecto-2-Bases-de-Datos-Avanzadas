@@ -45,10 +45,31 @@ async def pruebas():
         )
 
     assert resultado["estado"] == "ok"
-    assert solicitar.await_args.kwargs["json"]["token"] == str(token)
-    assert solicitar.await_args.kwargs["json"]["anotador_id"] == str(anotador_id)
-    assert solicitar.await_args.kwargs["request_id"] == "b35-request-id"
+    a_sesion, a_registro = solicitar.await_args_list
+    assert a_sesion.args[0] == "sesion"
+    assert a_sesion.kwargs["json"]["token"] == str(token)
+    assert a_sesion.kwargs["json"]["anotador_id"] == str(anotador_id)
+    assert a_sesion.kwargs["request_id"] == "b35-request-id"
     print("OK | Borrador enviado a Sesión con token y anotador")
+
+    # El plazo de la asignación en registro se corre junto con el lock.
+    assert a_registro.args[:3] == ("registro", "POST", f"/tareas/{tarea_id}/transicion")
+    assert a_registro.kwargs["json"] == {
+        "accion": "renovar", "token": str(token), "actor_id": str(anotador_id),
+    }
+    print("OK | Plazo de la asignación renovado en Registro")
+
+    # Si el registro ya no tiene la asignación (venció), el borrador responde 409.
+    solicitar = AsyncMock(side_effect=[
+        respuesta(200, {"estado": "ok", "borrador": {}}),
+        respuesta(409, {"error": "asignacion_vencida", "detalle": {"estado": "abierta"}}),
+    ])
+    with patch.object(main, "solicitar", solicitar):
+        resultado = await main.guardar_borrador(
+            request, tarea_id, cuerpo, anotador_id
+        )
+    assert resultado.status_code == 409
+    print("OK | Asignación vencida en Registro: HTTP 409")
 
     # 2. Conflicto de lock.
     solicitar = AsyncMock(return_value=respuesta(

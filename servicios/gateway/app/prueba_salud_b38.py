@@ -34,6 +34,16 @@ async def pruebas():
                     json={"estado": "degradado"},
                 )
 
+            if escenario.startswith("valkey") and request.url.path == "/estado-capas":
+                # Mensajes que las capas dejaron en Valkey (llaves salud:{servicio}, TTL 15 s).
+                capas = {n: {"estado": "operativo", "detalle": {}, "ts": "t"}
+                         for n in ("registro", "historial", "analitica")}
+                if escenario == "valkey_sin_analitica":
+                    del capas["analitica"]  # dejó de publicar: su llave venció
+                if escenario == "valkey_registro_caido":
+                    capas["registro"]["estado"] = "caido"
+                return httpx.Response(200, json={"capas": capas})
+
             if escenario == "registro_caido" and nombre == "registro":
                 # MongoDB sin primario: registro responde 200 con estado caido.
                 return httpx.Response(200, json={"estado": "caido"})
@@ -95,6 +105,30 @@ async def pruebas():
     assert datos["capas"]["registro"]["estado"] == "caido"
     assert datos["capas"]["sesion"]["estado"] == "operativo"
     print("OK | Registro caido: gateway caido aunque el resto responda")
+
+    # Sin mensajes de Valkey (respuesta sin "capas"): solo la consulta directa.
+    datos, _ = await ejecutar("operativos")
+    assert datos["mensajes_valkey"] is False
+    assert datos["capas"]["registro"]["fuente"] == "directa"
+
+    # Con mensajes en Valkey: se combinan con la consulta directa.
+    datos, _ = await ejecutar("valkey_ok")
+    assert datos["estado"] == "operativo" and datos["mensajes_valkey"] is True
+    assert datos["capas"]["historial"]["fuente"] == "valkey+directa"
+    assert datos["capas"]["sesion"]["fuente"] == "directa"
+    print("OK | Mensajes de Valkey leidos para registro, historial y analitica")
+
+    # Una capa que dejó de publicar en Valkey cuenta como caída aunque su /salud responda.
+    datos, _ = await ejecutar("valkey_sin_analitica")
+    assert datos["capas"]["analitica"]["estado"] == "caido"
+    assert datos["estado"] == "degradado"
+    print("OK | Capa sin mensaje en Valkey: caido")
+
+    # El mensaje de Valkey dice que el registro está caído (MongoDB sin primario): gana el peor.
+    datos, _ = await ejecutar("valkey_registro_caido")
+    assert datos["capas"]["registro"]["estado"] == "caido"
+    assert datos["estado"] == "caido"
+    print("OK | Registro caido segun Valkey: gateway caido")
 
     # Todos los servicios inaccesibles.
     datos, duracion = await ejecutar("caidos")

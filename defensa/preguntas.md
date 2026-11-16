@@ -49,12 +49,49 @@ Consulta en paralelo el `/salud` de registro, sesión, historial y analítica, c
 y nunca lanza excepción: siempre responde 200 aunque todo esté caído. Si registro o sesión están caídos el
 sistema está `caido`, porque no se puede asignar ni enviar. Si solo fallan historial o analítica, está
 `degradado`. El registro se reporta `caido` cuando MongoDB no tiene primario. Además, cada capa publica su
-estado cada 5 s en `sesion:/estado-capas` (llaves `salud:{servicio}` con TTL 15 s). Pendiente: el gateway
-todavía no lee esos mensajes para armar su respuesta.
+estado cada 5 s en `sesion:/estado-capas` (llaves `salud:{servicio}` con TTL 15 s), y el gateway lee esos
+mensajes en la misma pasada. Para cada capa gana el peor de los dos: el mensaje trae lo que la capa sabe de sí
+misma (si MongoDB tiene primario, si Spark tiene ejecutores) y la consulta directa ve en el momento una capa
+que se cayó y cuyo último mensaje todavía no vence. Una capa que deja de publicar sale `caido` a los 15 s
+aunque su `/salud` conteste (`evidence/P1_salud_*.txt`).
 
 ## Lago y Spark (código de C, preguntas de B)
 
-Pendiente (B6.6).
+**1. ¿Cómo se asegura que Spark nunca lea un archivo Parquet a medio escribir?**
+El historial junta 500 eventos o 5 s en un micro-lote y lo escribe completo en `datalake/_tmp/`, hace `fsync`
+del archivo, lo mueve con `os.replace` a `eventos/mes=AAAA-MM/part-<rango del stream>.parquet` y hace
+`fsync` de la carpeta. El rename es atómico en el mismo sistema de archivos: Spark ve el archivo entero o no lo
+ve. Recién después hace `XACK` en la cola. Se probó con un lector de Spark que lista y cuenta el lago sin pausa
+durante 120 s mientras el simulador escribe: 39 vueltas, 0 errores y la cuenta nunca bajó
+(`evidence/P4_gateway_20261115-1102.md`).
+
+**2. Si un evento llega dos veces, ¿dónde se descarta y por qué en más de un lugar?**
+En la entrada, `POST historial:/eventos` hace `SET visto:{event_id} NX` y solo encola si es nuevo (un reenvío
+del gateway responde `duplicados: 1` y no agrega fila). Reprocesar un micro-lote reescribe el mismo archivo
+con el mismo nombre, porque el nombre es el rango del stream, así que no duplica. Y lo que pudiera quedar
+repetido igual (por ejemplo, durante la compactación) lo quita Spark con `dropDuplicates(["event_id"])` en
+cada consulta. El histórico trae 0,2 % de duplicados a propósito para probarlo.
+
+**3. ¿Por qué una tarea rechazada está `disponible` en MongoDB y `rechazada` en Parquet, y quién cuenta Q4?**
+MongoDB guarda el estado vigente: la tarea vuelve a la cola sin asignación para que otro la retrabaje. El lago
+guarda el hecho: la fila `rechazada` con motivo, revisor y el equipo de la asignación que se acaba de borrar
+(el registro arma el evento con el documento de antes del cambio, `ReturnDocument.BEFORE`). Q4 cuenta las filas
+`rechazada` del lago, por eso ve rechazos que MongoDB ya no muestra. Probado en I.3: Q4 del proyecto pasó de
+0 a 1 rechazadas.
+
+**4. ¿Por qué la primera ejecución de una consulta tarda más, y por qué dos workers no siempre ayudan?**
+No se cachea ningún DataFrame: la primera paga el arranque de los ejecutores, la carga de clases, la
+generación de código y el listado de archivos (de 1,1 a 2,1 veces la mediana en `principal`, 3,7 veces si
+arranca los ejecutores). Con dos workers, en `principal` es más lento (Q1 de 1,6 a 3,8 s) porque el trabajo cabe
+en 2 núcleos y el segundo solo agrega shuffle entre contenedores; en `grande` mejoran Q3 y Q4. La laptop tiene
+2 núcleos físicos: no es una medición de escalabilidad horizontal (`evidence/P5_analitica_20261030-1410.md`).
+
+**5. ¿Qué muestra el plan de Q1 sobre la partición por mes, y por qué Q1 casi no crece con el conjunto grande?**
+El `Scan parquet` de Q1 lleva `PartitionFilters: mes >= 2026-07`: solo lista y lee las carpetas de los 90 días
+de la ventana, y `PushedFilters` baja `estado = aprobada` al lector de Parquet. `max(ts)` (el fin de la
+ventana) sale de las estadísticas de los pies de archivo sin leer filas. Por eso Q1 pasa de 1,6 a 3,1 s con 12,5
+veces más filas, mientras Q2–Q5 leen los 12 meses y deduplican millones de filas. La partición decide qué
+archivos se leen; la agrupación por día no la aprovecha más allá de eso.
 
 ## Registro, índices y fallas de MongoDB (código de A, preguntas de C)
 

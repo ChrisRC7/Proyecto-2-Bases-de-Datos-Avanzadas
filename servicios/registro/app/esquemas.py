@@ -7,7 +7,8 @@ from pydantic import AfterValidator, BaseModel, Field, field_validator, model_va
 
 Modalidad = Literal["texto", "imagen", "video", "lidar"]
 TipoTarea = Literal["span", "bbox", "poligono", "bbox_video", "cuboide_3d"]
-Accion = Literal["enviar", "liberar", "empezar_revision", "aprobar", "rechazar"]
+# "renovar" no cambia el estado: corre asignacion.vence_en junto con el lock de Valkey (latido/borrador).
+Accion = Literal["enviar", "liberar", "empezar_revision", "aprobar", "rechazar", "renovar"]
 
 MOTIVOS = {"ETIQUETA_INCORRECTA", "GEOMETRIA_IMPRECISA", "OBJETO_OMITIDO", "INSTRUCCION_NO_SEGUIDA", "OTRO"}
 
@@ -118,7 +119,7 @@ class Transicion(BaseModel):
 
     @model_validator(mode="after")
     def reglas_por_accion(self) -> "Transicion":
-        if self.accion in ("enviar", "liberar") and not self.token:
+        if self.accion in ("enviar", "liberar", "renovar") and not self.token:
             raise ValueError(f"'{self.accion}' requiere el token de asignación")
         if self.accion == "enviar" and self.anotacion is None:
             raise ValueError("'enviar' requiere la anotación")

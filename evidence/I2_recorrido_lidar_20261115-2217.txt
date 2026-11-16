@@ -1,0 +1,25 @@
+# I.2 recorrido LiDAR · 2026-11-16T04:17:51Z · commit 2208c0e
+Máquina: Intel(R) Core(TM) i7-6500U CPU @ 2.50GHz · 4 CPU · 11 GiB
+
+/salud: operativo {'registro': 'operativo', 'sesion': 'operativo', 'historial': 'operativo', 'analitica': 'operativo'}
+Q1 antes (hoy, lidar): 11
+proyecto 7f3e520c-a244-4d7f-890b-bfc59d4d75ce (1 tarea cuboide_3d, taxonomía con 4 etiquetas)
+
+OK  POST /tareas/siguiente                                    200 (    54 ms)  asignación exclusiva + lock + sesión
+      tarea b6f3a9a0-9ca3-41a4-829b-8e32b3c6cefd · vence_en 2026-11-16T04:20:09.141Z · etiquetas ['lidar#peaton', 'lidar#vehiculo', 'lidar#ciclista', 'lidar#signal']
+OK  POST /tareas/siguiente                                    204 (    25 ms)  otro anotador: no hay más tareas en el proyecto
+OK  PUT  /tareas/b6f3a9a0-9ca3-41a4-829b-8e32b3c6cefd/borrador 200 (    20 ms)  borrador 1 (primera idea: peatón)
+OK  PUT  /tareas/b6f3a9a0-9ca3-41a4-829b-8e32b3c6cefd/borrador 200 (    16 ms)  borrador 2 (corrige: un skater es ciclista)
+OK  POST /sesiones/latido                                     200 (    15 ms)  latido
+OK  POST /sesiones/recuperar                                  200 (     7 ms)  recuperar sesión interrumpida
+      borrador recuperado: ['lidar#ciclista'] guardado 2026-11-16T04:18:11.240000+00:00
+OK  POST /tareas/b6f3a9a0-9ca3-41a4-829b-8e32b3c6cefd/enviar  200 (    57 ms)  enviar (MongoDB confirma)
+OK  POST /tareas/b6f3a9a0-9ca3-41a4-829b-8e32b3c6cefd/enviar  409 (     6 ms)  segundo envío de la misma tarea
+OK  POST /tareas/b6f3a9a0-9ca3-41a4-829b-8e32b3c6cefd/revision 200 (    25 ms)  revisión: empezar
+OK  POST /tareas/b6f3a9a0-9ca3-41a4-829b-8e32b3c6cefd/revision 200 (    28 ms)  revisión: aprobar
+OK  GET  /proyectos/7f3e520c-a244-4d7f-890b-bfc59d4d75ce/exportar 200 (    10 ms)  exportar aprobadas
+      exportada con etiquetas ['lidar#ciclista']
+
+Q1 después (hoy, lidar): 12 · visible 8.2 s después del 200 de aprobar
+RECORRIDO_LIDAR_OK
+EXIT_CODE=0

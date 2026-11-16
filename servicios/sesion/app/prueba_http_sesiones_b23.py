@@ -6,7 +6,7 @@ import urllib.error
 import urllib.request
 import uuid
 
-from app import sesiones
+from app import locks, sesiones
 
 anotador = f"prueba-http-b23-{uuid.uuid4().hex}"
 url = f"http://localhost:8002/sesiones/{anotador}"
@@ -29,6 +29,9 @@ def enviar(accion, **campos):
     except urllib.error.HTTPError as exc:
         return exc.code, json.load(exc)
 
+
+# Abrir exige que el token tenga el lock de la tarea (reasignación segura de borradores).
+locks.adquirir("tarea-b23", token)
 
 try:
     codigo, cuerpo = enviar(
@@ -57,6 +60,7 @@ try:
     print("B2.3_HTTP_OK")
 
 finally:
+    locks.soltar("tarea-b23", token)
     datos = sesiones.consultar(anotador)
     if datos:
         sesiones.cerrar(anotador, datos["token"])

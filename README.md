@@ -123,8 +123,10 @@ docker compose up -d
 
 El sistema utiliza volúmenes Docker para sus componentes persistentes.
 
-- MongoDB utiliza tres instancias organizadas en el conjunto de réplica `rs0`.
-- Valkey de Sesión utiliza el volumen `valkey_sesion`, con AOF activado y `appendfsync everysec`.
+- MongoDB utiliza tres instancias organizadas en el conjunto de réplica `rs0`, en la red `mongo`, que solo
+  comparte con el registro (y con la carga de datos).
+- Valkey de Sesión utiliza el volumen `valkey_sesion`, con AOF activado y `appendfsync everysec`, en la red
+  `valkey`, que solo comparte con el servicio de sesión.
 - Historial emplea una instancia Valkey independiente, `cola-eventos`, para la mensajería mediante Streams.
 - El lago de datos almacena archivos históricos Parquet y se regenera según el procedimiento del proyecto.
 
@@ -261,10 +263,16 @@ Cada prueba deja sus archivos en `evidence/`. Antes de cada una conviene recarga
 | Prueba | Comando | Evidencia |
 |---|---|---|
 | Rutas de A en el gateway | `python3 pruebas/a4_rutas_gateway.py` | `A4_rutas_gateway_*.txt` |
-| P1 rutas, sesiones, salud y puertos | `python3 pruebas/b51_sesiones_gateway.py` (más `a4_rutas_gateway.py` y parar historial/valkey para `/salud`) | `B5_1_*` |
+| P1 rutas y sesiones | `python3 pruebas/b51_sesiones_gateway.py` (y `a4_rutas_gateway.py`) | `B5_1_*` |
+| P1 `/salud` normal, degradado y caído, y puertos | `pruebas/p1_salud.sh` (para y vuelve a encender historial, analítica, Valkey y dos nodos de MongoDB; unos 3 min) | `P1_salud_*` |
 | P2 50 solicitudes contra 10 tareas | `docker compose --profile carga run --rm -v ./pruebas:/srv/pruebas simulador python /srv/pruebas/p2_concurrencia.py --modo gateway --csv /srv/evidence/P2_<fecha>.csv` | `P2_concurrencia_gateway_*` |
-| P3 sesión y borrador (interrupción, reinicio de Valkey, vencimiento del lock) | `python3 pruebas/b52_interrupcion_gateway.py`, `b52_persistencia_gateway.py`, `b52_vencimiento_gateway.py` (este espera 120 s) | `B5_2_*` |
-| Borradores huérfanos al reasignar una tarea | `python3 pruebas/prueba_borradores_huerfanos.py` | |
+| P3 sesión y borrador (interrupción, reinicio de Valkey, vencimiento del lock) | `python3 pruebas/b52_interrupcion_gateway.py`, `b52_persistencia_gateway.py`, `b52_vencimiento_gateway.py` (este espera 120 s). Cada una crea su proyecto con una sola tarea | `B5_2_*` |
+| B4.2 borradores y latidos del simulador, interrupción y recuperación | `docker compose --profile carga run --rm -v ./pruebas:/srv/pruebas -w /srv/pruebas simulador python prueba_b42_integracion.py` | |
+| P3 con latidos la asignación no vence en MongoDB (más de 120 s) | `python3 pruebas/b52_renovacion_registro.py` (unos 2,5 min) | |
+| Borradores huérfanos al reasignar una tarea | `docker compose cp pruebas/prueba_borradores_huerfanos.py sesion:/tmp/h.py && docker compose exec -T -e PYTHONPATH=/srv sesion python /tmp/h.py` | |
+| Recorrido completo de una tarea LiDAR (siguiente → borrador → enviar → revisión → exportar → Q1) | `pruebas/recorrido_lidar.sh` | `I2_recorrido_lidar_*` |
+| Aislamiento modular (puertos, redes, variables, bibliotecas, lago en solo lectura) | `pruebas/i4_aislamiento.sh` | `I4_aislamiento_*` |
+| Todas las anteriores, en orden, desde un entorno limpio (`down -v`) | `pruebas/i5_todas.sh` (hora y media aprox.) | `I5_entorno_limpio_*` |
 | P4 historial por el gateway (frescura, rechazo, lectura en bucle, reprocesar, caída) | `pruebas/p4_gateway.sh` (unos 8 min; recarga MongoDB y el conjunto principal) | `P4_gateway_*` |
 | P4 historial directo, sin gateway (incluye reenvío del mismo evento) | `pruebas/p4_historial.sh` | `P4_historial_*` |
 | P5 analítica (validación, 1ª vs siguientes, 1 y 2 workers, principal y grande) | `pruebas/p5_analitica.sh` (necesita el conjunto grande y prueba generados) | `P5_analitica_*` |
@@ -365,8 +373,11 @@ Se agotaron las tareas: recargar el dataset o usar `dataset.regenerar_tareas` (v
 
 ## Observaciones de integración
 
-Las pruebas identificaron dos puntos que requieren seguimiento: la posible permanencia de sesiones antiguas después del vencimiento de sus locks y la diferencia entre el vencimiento de una asignación en MongoDB y la renovación del lock correspondiente en Valkey.
+Las dos observaciones que dejaron las pruebas de B quedaron resueltas:
 
-La garantía integral de publicación durable de eventos también continúa bajo revisión.
+- Una sesión cuyo lock venció (o cuya tarea ya tomó otro anotador) se descarta al recuperarla:
+  `POST /sesiones/recuperar` responde `404 sesion_no_existe` en lugar de devolver una tarea ajena.
+- El latido y el borrador renuevan también `asignacion.vence_en` en MongoDB, así que el registro no ofrece a
+  otro una tarea cuyo lock sigue vivo (`pruebas/b52_renovacion_registro.py`).
 
-Estas limitaciones se documentan para facilitar la integración y validación final del sistema.
+Las limitaciones que siguen abiertas están en la sección de limitaciones del informe.

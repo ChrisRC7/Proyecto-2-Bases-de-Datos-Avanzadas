@@ -97,6 +97,32 @@ async def salud():
 
 
 
+async def renovar_registro(tarea_id, token, anotador_id, request_id) -> bool | None:
+    """Corre `asignacion.vence_en` en MongoDB junto con el lock de Valkey.
+
+    True/False: el registro respondió (False = no hacía falta escribir todavía). None: el registro
+    no respondió; el lock de Valkey ya se renovó y el próximo latido lo vuelve a intentar.
+    Lanza AsignacionVencida si el registro ya no tiene la tarea abierta con ese token.
+    """
+    try:
+        respuesta = await solicitar(
+            "registro", "POST", f"/tareas/{tarea_id}/transicion",
+            json={"accion": "renovar", "token": str(token), "actor_id": str(anotador_id)},
+            request_id=request_id,
+        )
+    except ServicioNoDisponible:
+        return None
+    if respuesta.status_code == 200:
+        return bool(respuesta.json().get("renovado"))
+    if respuesta.status_code in (404, 409):
+        raise AsignacionVencida(respuesta.json())
+    return None
+
+
+class AsignacionVencida(Exception):
+    pass
+
+
 class SolicitudBorrador(BaseModel):
     token: UUID
     contenido: dict = Field(...)
@@ -129,6 +155,13 @@ async def guardar_borrador(
             datos.get("error", "error_borrador"),
             datos.get("detalle"),
         )
+
+    try:
+        datos["registro_renovado"] = await renovar_registro(
+            tarea_id, cuerpo.token, anotador_id, request.state.request_id
+        )
+    except AsignacionVencida as exc:
+        return error(409, "asignacion_vencida", exc.args[0].get("detalle"))
 
     return datos
 
@@ -380,5 +413,13 @@ async def latido_sesion(
             datos.get("error", "error_latido"),
             datos.get("detalle"),
         )
+
+    try:
+        datos["sesion"]["registro_renovado"] = await renovar_registro(
+            datos["sesion"]["tarea_id"], cuerpo.token, anotador_id,
+            request.state.request_id,
+        )
+    except AsignacionVencida as exc:
+        return error(409, "asignacion_vencida", exc.args[0].get("detalle"))
 
     return datos

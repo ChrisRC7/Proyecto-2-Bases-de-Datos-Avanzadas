@@ -178,7 +178,7 @@ Evidencias: evidence/B5_1_A4_gateway.txt, evidence/B5_1_sesiones.txt, evidence/B
 - [x] B5.2 **P3**: interrumpir usuario, recuperar borrador (antigüedad ≤ 5 s); `docker compose restart valkey` → borrador sigue; dejar vencer lock (120 s o PX reducido por variable para la prueba, documentarlo) → la tarea se vuelve a ofrecer; ninguna tarea con dos dueños.
 Evidencia B5.2 (P3): pruebas/b52_interrupcion_gateway.py, pruebas/b52_persistencia_gateway.py y pruebas/b52_vencimiento_gateway.py. Recuperación de borrador en 0.047 s; persistencia de contenido y token después de docker compose restart valkey; vencimiento del lock a los 120 s, reasignación a otro anotador y rechazo HTTP 409 del token anterior. Evidencias: evidence/B5_2_interrupcion.txt, evidence/B5_2_persistencia.txt y evidence/B5_2_vencimiento.txt.
 
-Observaciones pendientes: al vencer el lock puede persistir una sesión antigua en Valkey, que se cerró mediante la API interna. Asimismo, los latidos renuevan Valkey, pero no asignacion.vence_en en MongoDB; requiere coordinación con el responsable de Registro.
+Observaciones (resueltas el 2026-11-15, ver «Tareas nuevas descubiertas»): la sesión antigua que quedaba en Valkey al vencer el lock ahora se descarta al recuperarla (404), y los latidos y borradores renuevan también `asignacion.vence_en` en MongoDB (D16).
 - [x] B5.3 **P8 (Valkey + sesión)**: reiniciar Valkey durante carga, interrumpir sesión; RTO/RPO de borradores (AOF everysec → hasta ~1 s)
 **Evidencia B5.3 (P8):** `pruebas/b53_fallo_valkey.py` y `evidence/B5_3_P8.txt`. Reinicio de Valkey durante latidos activos: se observaron respuestas HTTP 200 antes del fallo, HTTP 503 durante la interrupción y HTTP 200 después de la recuperación. RTO observado: **1.016 s**. RPO observado: **sin pérdida del borrador confirmado**; antigüedad del borrador recuperado: **2.024 s**. Se conservaron el token y el contenido, y la tarea quedó liberada mediante HTTP 200. AOF `everysec` mantiene una ventana potencial de pérdida cercana a 1 s.
 
@@ -214,7 +214,7 @@ Observaciones pendientes: al vencer el lock puede persistir una sesión antigua 
       Nota: además rehace con el mismo nombre los micro-lotes que abrieron y no confirmaron (`microlotes:abiertos`).
 - [x] C2.5 `POST /flush`, `POST /reprocesar/{micro_lote_id}` y `GET /micro-lotes` (para P4).
 - [x] C2.6 Compactación opcional de archivos pequeños por mes (documentar estrategia en el informe aunque sea manual).
-      Nota: manual, `docker compose exec historial python -m app.compactar --mes AAAA-MM --ejecutar` (sin `--ejecutar` solo simula). Junta el mes en un `part-compacto-*.parquet` sin duplicados de event_id, lo publica con rename y después borra los viejos. Falta explicarla en el informe (C6.1).
+      Nota: manual, `docker compose exec historial python -m app.compactar --mes AAAA-MM --ejecutar` (sin `--ejecutar` solo simula). Junta el mes en un `part-compacto-*.parquet` sin duplicados de event_id, lo publica con rename y después borra los viejos. Explicada en el informe §4 (C6.1).
 - [x] C2.7 `GET /salud` + latido cada 5 s a `POST sesion:/estado-capas` (D4).
       Nota: verificado contra el /estado-capas real de sesion: historial y analítica publican cada 5 s; con el historial detenido su llave `salud:historial` vence (TTL 15 s) y vuelve con el primer latido (evidence/C2.7_latidos_estado_capas_20261115-1059.txt).
 
@@ -231,7 +231,7 @@ Observaciones pendientes: al vencer el lock puede persistir una sesión antigua 
 
 ### C4. Servicio `analitica` (solo lee Parquet)
 - [x] C4.1 Cambiar la imagen de `analitica` a una con Java + `pyspark` (p. ej. base `apache/spark:3.5.1-python3`); `SparkSession` reutilizable; `conjunto=principal|grande|prueba`; latido de salud (D4).
-      Nota: la SparkSession se crea al arrancar en un hilo (reintenta si el master no está) y /salud responde siempre. El latido a /estado-capas está listo; falta verlo llegar a sesion (B2.7).
+      Nota: la SparkSession se crea al arrancar en un hilo (reintenta si el master no está) y /salud responde siempre. El latido llega al /estado-capas real de sesion (verificado en C2.7).
 - [x] C4.2 Lectura con `dropDuplicates(["event_id"])` y partition pruning por `mes`.
       Nota: filtro de estados antes de deduplicar (D14). Q1 poda por `mes >= mes de inicio de la ventana` (`PartitionFilters` en el plan).
 - [x] C4.3 Q1 aprobadas por día y modalidad (últimos 90 días, D6).
@@ -249,7 +249,7 @@ Observaciones pendientes: al vencer el lock puede persistir una sesión antigua 
 - [x] C5.1 **P4**: escribir lago vía flujo real, reprocesar un micro-lote, deduplicar por `event_id`, mostrar que no hay lecturas a medias (Spark leyendo en bucle mientras se escribe), medir segundos entre HTTP 200 y evento visible en Spark. Mostrar la fila `rechazada` en Parquet vs `disponible` en Mongo.
       Nota: repetida por el gateway (`pruebas/p4_gateway.sh`): frescura mediana 7,44 s (igual que directo); rechazo con 409 en el segundo envío y Q4 0 → 1; 39 vueltas de Spark sin error mientras escribe el simulador; reprocesar deja el mismo sha256; historial matado 30 s durante la carga: 149 eventos esperan en el gateway, 0 errores al usuario y 560 de 560 respuestas 200 en el lago (evidence/P4_gateway_20261115-1102.md). La corrida directa (reenvío del mismo evento → duplicados 1) sigue en evidence/P4_historial_20261030-1431.md.
 - [x] C5.2 **P5**: Q1–Q5 validadas contra `conjunto=prueba`; tiempos 1ª ejecución vs siguientes (≥ 5 repeticiones); 1 vs 2 workers; principal vs grande.
-      Nota: las 5 iguales a lo calculado a mano; 6 ejecuciones por consulta, principal y grande, 1 y 2 workers (con 2 núcleos físicos, 2 workers no acelera principal). Directo contra la analítica, sin gateway (C4.9). Ver evidence/P5_analitica_20261030-1410.md.
+      Nota: las 5 iguales a lo calculado a mano; 6 ejecuciones por consulta, principal y grande, 1 y 2 workers (con 2 núcleos físicos, 2 workers no acelera principal). Directo contra la analítica; por el gateway, validación y tiempos en C4.9. Ver evidence/P5_analitica_20261030-1410.md (repetida en la corrida limpia de I.5: evidence/P5_analitica_20261115-2227.txt).
 
 ### C6. Informe y README
 - [x] C6.1 Informe §4: lago Parquet, compactación, duplicados, fila rechazada.
@@ -281,7 +281,7 @@ Observaciones pendientes: al vencer el lock puede persistir una sesión antigua 
 - [ ] I.6 (S4) Sesión de explicación cruzada (cada persona explica su carril a las otras dos, 30 min c/u).
 - [ ] I.7 (S4) Preguntar al profesor por la prueba **P7** que falta en el enunciado.
 - [~] I.8 (S5) Ensamblar informe PDF con apéndices y enlace al repo; verificar que cada cifra apunta a un archivo de `evidence/`.
-      Nota: base en `informe/informe.tex` (LaTeX como los labs; el enunciado solo pide PDF con apéndices y el enlace al repo). Las secciones de B y C están marcadas con `\falta{}` y salen en rojo en `informe/informe.pdf`.
+      Nota: base en `informe/informe.tex` (LaTeX como los labs; el enunciado solo pide PDF con apéndices y el enlace al repo). §2, §4, §5, §6, §7.1 y §8 están escritas; quedan con `\falta{}` (en rojo en `informe/informe.pdf`) §1, §3 y §7.2 de B y sus filas del apéndice de evidencia. Ver la última tarea de «Tareas nuevas descubiertas».
 - [ ] I.9 (S5) README final revisado por alguien que no lo escribió.
 - [ ] I.10 (S5) Ensayo de defensa de 15 min con preguntas cruzadas (usar las de A8.5, B6.6, C6.5).
 - [ ] I.11 (S5) Entrega en TEC Digital.

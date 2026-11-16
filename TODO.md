@@ -10,11 +10,11 @@
 | Persona | Rol principal | Hechas / Total | Notas |
 |---|---|---|---|
 | A | Registro (MongoDB) + dataset operacional + simulador + carga | 34 / 34 | Todas hechas; quedan las tareas de «Todos» (integración, ensamblar el informe, defensa) |
-| B | Sesión (Valkey) + Gateway + salud | 19 / 29 | B1.1, B1.2, B2.1–B2.8, B3.1–B3.5, B3.7, B3.8, B4.1 y B4.2 completadas. B3.6 sigue parcialmente completada por la garantía de publicación durable de eventos. A corrigió seis errores del gateway en `integracion-a-b-c` (ver «Tareas nuevas descubiertas»). |
+| B | Sesión (Valkey) + Gateway + salud | 28 / 29 | B1–B5 completadas. B6.1–B6.5 completadas: arquitectura, sesiones, resultados de Valkey y README. Pendiente: B6.6. |
 | C | Historial (Parquet) + Analítica (Spark) + dataset histórico | 31 / 31 | Todas hechas: C4.9 (ruta del gateway), C2.7 y P4 verificados con el gateway real, §4, §5 y §8 del informe, README y preguntas de defensa |
 | Todos | Integración, informe, defensa | 1 / 12 | I.3 (rechazo completo) hecha dentro de P4 |
 
-_Última actualización: 2026-11-15 — C completa: ruta `GET /analitica/{q1..q5}` en el gateway (C4.9), latidos verificados en sesion (C2.7), P4 repetida por el gateway con caída del historial (C5.1, I.3), compactación medida, §4, §5 y §8 del informe, README de analítica e histórico y preguntas de defensa sobre A. A: 34/34. B: 19/29. C: 31/31._
+_Última actualización: 2026-11-15 — Fusión de `alisson-b5` con `ChrisDevelop`. B: P1, P3 y P8 de Valkey (borrador recuperado en 0,047 s, RTO 1,016 s, AOF verificado), §1, §3 y §7 en Markdown, README y `endpoints/gateway.md`; corrección de borradores huérfanos. C: completa. A: 34/34. B: 28/29. C: 31/31._
 ---
 
 ## Cómo está dividido el trabajo
@@ -158,9 +158,8 @@ dataset · **S3–S4** integración y pruebas · **S5** informe, README final, e
 - [x] B3.3 Función común `publicar_evento()` → `POST historial:/eventos` (usada por A y C también). Si historial falla, no se pierde el 200 (encolar/reintentar en background y documentarlo).
 - [x] B3.4 `POST /tareas/siguiente`: abre/actualiza sesión → asigna en registro → toma lock con el token → si el lock falla o Mongo falla, revertir (liberar en registro / soltar lock) → 204 si no hay tareas; incluir borrador recuperable si existe → evento `abierta`.
 - [x] B3.5 `PUT /tareas/{id}/borrador`: guarda borrador + renueva lock (409 si el token no coincide).
-- [~] B3.6 `POST /tareas/{id}/enviar`: verifica lock/token → transición en registro → 200 / 409 / 503 (sin reintento, borrador queda) → evento `anotada` solo tras 200 → borra borrador y suelta lock.
-Nota: implementación y 6 pruebas automatizadas aprobadas; validación HTTP 422 correcta. Pendiente recuperar eventos si SQLite falla después de confirmar MongoDB y reintentar limpiezas fallidas. Evidencia: evidence/B3_6_envio.txt.
-Nota: envío implementado y probado; limpiezas posteriores al HTTP 200 almacenadas en SQLite con reintentos automáticos. Se verificó la recuperación ante fallos de Sesión y la conservación de pendientes ante HTTP 409. Evidencias: evidence/B3_6_envio.txt y evidence/B3_6_limpiezas.txt. Pendiente recuperar eventos si MongoDB confirma pero falla SQLite.
+- [x] B3.6 `POST /tareas/{id}/enviar`: verifica lock/token → transición en registro → 200 / 409 / 503 (sin reintento, borrador queda) → evento `anotada` solo tras 200 → borra borrador y suelta lock.
+Limitación conocida: la prueba confirma la recuperación de eventos una vez persistidos en SQLite. No garantiza atomicidad entre la transición en MongoDB y el guardado del evento en SQLite; existe una posible ventana de pérdida si Gateway falla entre ambas operaciones.
 - [x] B3.7 `POST /tareas/{id}/liberar` y `POST /sesiones/recuperar` (tarea + último borrador).
       Nota: rutas implementadas; liberación con evento y limpiezas persistentes, recuperación de sesión y borrador con fecha ISO 8601. Siete pruebas simuladas aprobadas (200, 404, 409, 503). Pendiente prueba de interrupción real en B5.2. Evidencia: evidence/B3_7_pruebas.txt.
 - [x] B3.8 `GET /salud`: consulta cada capa con timeout ~1 s en paralelo; `operativo` / `degradado` / `caído` + detalle por capa; nunca lanza excepción (el gateway sigue vivo aunque todo esté caído).
@@ -172,16 +171,23 @@ Nota: envío implementado y probado; limpiezas posteriores al HTTP 200 almacenad
 Nota (2026-11-14): integración opcional mediante --borradores en simulador/simular.py. Prueba real: 6 borradores HTTP 200, 6 latidos HTTP 200 y 3 envíos HTTP 200. Interrupción real mediante docker kill y recuperación de la misma tarea, token y borrador. Liberación y limpieza posteriores verificadas. Evidencias: evidence/B4_2_borradores.txt, evidence/B4_2_integracion.txt, evidence/B4_2_interrupcion_real.txt y evidence/B4_2_simulador.csv. La interrupción se ejecuta desde un script independiente; no es una opción del CLI principal.
 
 ### B5. Pruebas
-- [ ] B5.1 **P1**: probar todas las rutas (casos felices y de error) + `/salud` en normal, degradado (parar historial o analítica) y caído (parar mongo/valkey). `docker compose ps` / `ss -tlnp` mostrando que solo 8000 está expuesto. Evidencia.
-- [ ] B5.2 **P3**: interrumpir usuario, recuperar borrador (antigüedad ≤ 5 s); `docker compose restart valkey` → borrador sigue; dejar vencer lock (120 s o PX reducido por variable para la prueba, documentarlo) → la tarea se vuelve a ofrecer; ninguna tarea con dos dueños.
-- [ ] B5.3 **P8 (Valkey + sesión)**: reiniciar Valkey durante carga, interrumpir sesión; RTO/RPO de borradores (AOF everysec → hasta ~1 s).
+- [x] B5.1 **P1**: probar todas las rutas (casos felices y de error) + `/salud` en normal, degradado (parar historial o analítica) y caído (parar mongo/valkey). `docker compose ps` / `ss -tlnp` mostrando que solo 8000 está expuesto. Evidencia.
+Nota (2026-11-15): validacion real de las 11 rutas del Gateway con casos exitosos y errores HTTP 404, 409 y 422. Prueba A4: FALLAS=0, EXIT_CODE=0. Borradores, latidos y recuperacion: B5_1_SESIONES_OK, EXIT_CODE=0; limpieza HTTP 200. /salud operativo con todas las capas; degradado al detener Historial; caido al detener Valkey; recuperacion posterior a operativo. docker compose ps confirma que solo Gateway publica el puerto 8000 al host. No se detuvo MongoDB: el escenario de caida critica se valido mediante Valkey.
+Evidencias: evidence/B5_1_A4_gateway.txt, evidence/B5_1_sesiones.txt, evidence/B5_1_salud_normal.json, evidence/B5_1_salud_sin_historial.txt, evidence/B5_1_salud_recuperada.json, evidence/B5_1_salud_sin_valkey.txt, evidence/B5_1_salud_post_valkey.json, evidence/B5_1_puertos.txt, evidence/B5_1_recuperar_sin_sesion.txt, evidence/B5_1_siguiente_sin_anotador.txt, evidence/B5_1_enviar_invalido.txt y evidence/B5_1_liberar_invalido.txt.
+
+- [x] B5.2 **P3**: interrumpir usuario, recuperar borrador (antigüedad ≤ 5 s); `docker compose restart valkey` → borrador sigue; dejar vencer lock (120 s o PX reducido por variable para la prueba, documentarlo) → la tarea se vuelve a ofrecer; ninguna tarea con dos dueños.
+Evidencia B5.2 (P3): pruebas/b52_interrupcion_gateway.py, pruebas/b52_persistencia_gateway.py y pruebas/b52_vencimiento_gateway.py. Recuperación de borrador en 0.047 s; persistencia de contenido y token después de docker compose restart valkey; vencimiento del lock a los 120 s, reasignación a otro anotador y rechazo HTTP 409 del token anterior. Evidencias: evidence/B5_2_interrupcion.txt, evidence/B5_2_persistencia.txt y evidence/B5_2_vencimiento.txt.
+
+Observaciones pendientes: al vencer el lock puede persistir una sesión antigua en Valkey, que se cerró mediante la API interna. Asimismo, los latidos renuevan Valkey, pero no asignacion.vence_en en MongoDB; requiere coordinación con el responsable de Registro.
+- [x] B5.3 **P8 (Valkey + sesión)**: reiniciar Valkey durante carga, interrumpir sesión; RTO/RPO de borradores (AOF everysec → hasta ~1 s)
+**Evidencia B5.3 (P8):** `pruebas/b53_fallo_valkey.py` y `evidence/B5_3_P8.txt`. Reinicio de Valkey durante latidos activos: se observaron respuestas HTTP 200 antes del fallo, HTTP 503 durante la interrupción y HTTP 200 después de la recuperación. RTO observado: **1.016 s**. RPO observado: **sin pérdida del borrador confirmado**; antigüedad del borrador recuperado: **2.024 s**. Se conservaron el token y el contenido, y la tarea quedó liberada mediante HTTP 200. AOF `everysec` mantiene una ventana potencial de pérdida cercana a 1 s.
 
 ### B6. Informe y README
-- [ ] B6.1 Informe §1: arquitectura, límites de responsabilidad, diagrama, recorrido completo con ejemplo LiDAR, evidencia de aislamiento modular (p. ej. variables de entorno/redes: registro no tiene credenciales de Valkey, etc.).
-- [ ] B6.2 Informe §3: sesión, recuperación de borrador, reinicio de Valkey.
-- [ ] B6.3 Informe §7 (parte Valkey).
-- [ ] B6.4 README: requisitos previos, `docker compose up/down`, perfiles, solución de problemas.
-- [ ] B6.5 `endpoints/gateway.md` completo (todas las rutas, ejemplos curl, códigos).
+- [x] B6.1 Informe §1: arquitectura, límites de responsabilidad, diagrama, recorrido completo con ejemplo LiDAR, evidencia de aislamiento modular (p. ej. variables de entorno/redes: registro no tiene credenciales de Valkey, etc.).
+- [x] B6.2 Informe §3: sesión, recuperación de borrador, reinicio de Valkey.
+- [x] B6.3 Informe §7 (parte Valkey).
+- [x] B6.4 README: requisitos previos, `docker compose up/down`, perfiles, solución de problemas.
+- [x] B6.5 `endpoints/gateway.md` completo (todas las rutas, ejemplos curl, códigos).
 - [ ] B6.6 Revisar PRs de **C** y preparar 5 preguntas/respuestas sobre lago y Spark para la defensa.
 
 ---
@@ -305,7 +311,11 @@ _(agregar aquí con persona sugerida y fecha)_
       Nota: corregido por A: WAL (un fsync por commit, ~10 ms contra ~22 ms), conexión que siempre se cierra y un commit por pasada del publicador. Con 10 usuarios, 0 errores (evidence/A6.2_simulador_gateway_20261110-1721.txt y -1726.txt).
 - [x] (B, 2026-11-10) gateway `eventos.py`: el publicador manda un evento por POST, toma 50 por pasada y espera hasta 2 s entre pasadas. Con 100 usuarios en P6 se generan 27–29 eventos/s y llegan 8–11 al historial; quedaron 6 133 pendientes y sin carga se vaciaban a ~20/s (evidence/P6_carga_20261110-1727/eventos.txt). No se pierden, pero llegan al lago minutos tarde.
       Nota: corregido por A: los eventos de la pasada van en un solo POST (historial acepta una lista; si la rechaza con 4xx se prueban de a uno) y no espera mientras queden pendientes. 3 333 pendientes se vaciaron en unos 5 s. Caso nuevo en `prueba_eventos_b33`.
-- [ ] (B, 2026-11-10) sesion `abrir`: si una tarea vuelve a la cola con el borrador de otro anotador todavía en Valkey (lock y plazo vencidos sin enviar), `abrir` responde 409 `borrador_de_otro_anotador`, el gateway compensa y `/tareas/siguiente` da 503; como la tarea sigue primera en la cola, se repite y solo el anotador original la puede tomar (visto en el código, sin prueba todavía). Toca a P3 («dejar vencer el candado y comprobar que la tarea vuelve a ofrecerse»). No afecta P6 porque el simulador todavía no guarda borradores (B4.2).
+- [x] (B, 2026-11-10) sesion `abrir`: si una tarea vuelve a la cola con el borrador de otro anotador todavía en Valkey (lock y plazo vencidos sin enviar), `abrir` responde 409 `borrador_de_otro_anotador`, el gateway compensa y `/tareas/siguiente` da 503; como la tarea sigue primera en la cola, se repite y solo el anotador original la puede tomar (visto en el código, sin prueba todavía). Toca a P3 («dejar vencer el candado y comprobar que la tarea vuelve a ofrecerse»). No afecta P6 porque el simulador todavía no guarda borradores (B4.2).
 - [ ] (B, 2026-11-10) gateway `/salud` consulta el `/salud` de cada servicio y no lee los mensajes que las capas dejan en Valkey (`sesion:/estado-capas`); el enunciado pide usar Valkey para esos mensajes (§7, `GET /salud`).
 - [ ] (A y B, 2026-11-10) el lock se renueva con latidos y borradores, pero `asignacion.vence_en` en MongoDB queda fijo en 120 s. Si alguien trabaja más de 120 s guardando borradores, el registro puede ofrecer la tarea a otro mientras el lock sigue tomado. Decidir si el gateway renueva también el plazo en el registro o si se documenta como limitación.
 - [ ] (B, 2026-11-15) `pruebas/prueba_b42_integracion.py` usa un proyecto con id fijo (`d2347c44-…`) creado a mano con `reset_entorno.py`, cuyo manifiesto (`pruebas/casos_b41.json`) no está en el repo. Después de recargar el dataset responde 204 en `/tareas/siguiente` y la prueba falla. Conviene que cree su proyecto al empezar (como `pruebas/a4_rutas_gateway.py`) o lo lea del manifiesto.
+      Resuelto en `alisson-b5` (753076b): `abrir` archiva el borrador del otro anotador en `borrador:archivado:{tarea}:{uuid}` (7 días) con un script Lua que exige el lock vigente. Verificado tras la fusión con `pruebas/prueba_borradores_huerfanos.py` (dentro de `sesion`) y `b52_vencimiento_gateway.py`.
+- [ ] (B, 2026-11-15) `pruebas/b52_*.py` y `pruebas/b53_fallo_valkey.py` usan un proyecto y una tarea fijos (`68ed85fa-…`, `58844be5-…`) que no existen en el dataset de semilla 2026: tras recargar dan 204. Pasan si se crean un proyecto con una tarea al empezar (como `a4_rutas_gateway.py`). Verificado así tras la fusión.
+- [ ] (B, 2026-11-15) Después de que vence el lock y otro anotador toma la tarea, la sesión del primero sigue en Valkey: `/sesiones/recuperar` le devuelve 200 con una tarea que ya no es suya (visto al correr `b53` justo después de `b52_vencimiento`). `recuperar` debería comprobar que el lock sigue siendo de ese token o borrar la sesión.
+- [ ] (Todos, 2026-11-15) §1 y §3 del informe siguen con `\falta{}` en `informe/informe.tex`; el texto de B está en `informe/seccion_1_arquitectura_B.md`, `seccion_3_sesiones_B.md` y `seccion_7_valkey_B.md` y falta pasarlo a LaTeX.

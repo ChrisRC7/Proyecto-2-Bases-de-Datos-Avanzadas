@@ -1,0 +1,17 @@
+ASIGNACION_OK
+BORRADOR_GUARDADO_OK
+REINICIANDO_VALKEY...
+python :  Container proyecto2-valkey-1 Restarting
+En línea: 1 Carácter: 1
++ python .\pruebas\b52_persistencia_gateway.py 2>&1 | Tee-Object .\evid ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ( Container proy...y-1 Restarting :String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+ Container proyecto2-valkey-1 Started
+VALKEY_REINICIADO_OK
+RESPUESTA_RECUPERACION={"tarea": {"tarea_id": "58844be5-7e57-49a9-8cc2-ee202d109321", "proyecto_id": "68ed85fa-f8ca-48ac-8e5a-88f0f3ac515b", "etapa": "anotando"}, "token": "87642e47-e05e-4a59-981e-fb911557897c", "borrador": {"contenido": {"etiquetas": ["lidar#ciclista"], "origen": "b52_persistencia_aof", "marcador": "sobrevive_reinicio_valkey"}, "guardado_en": "2026-11-15T21:14:02.335000+00:00"}}
+TOKEN_CONSERVADO_OK
+CONTENIDO_CONSERVADO_OK
+B5_2_PERSISTENCIA_AOF_OK
+LIMPIEZA_HTTP_200={'estado': 'disponible'}

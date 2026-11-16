@@ -1,0 +1,8 @@
+HTTP/1.1 200 OK
+date: Sun, 15 Nov 2026 17:44:56 GMT
+server: uvicorn
+content-length: 1218
+content-type: application/json
+x-request-id: 3a6525fa-1b17-42e8-851f-0d224a498acf
+
+{"servicio":"gateway","estado":"caido","capas":{"registro":{"estado":"operativo","detalle":{"servicio":"registro","estado":"operativo","mongodb":{"estado":"operativo","primario":"mongo1:27017","secundarios":2},"ts":"2026-11-15T17:44:57.368263+00:00"}},"sesion":{"estado":"caido","detalle":"ReadTimeout"},"historial":{"estado":"operativo","detalle":{"servicio":"historial","estado":"operativo","cola":{"estado":"operativo","eventos_en_stream":30,"pendientes_sin_ack":0,"micro_lotes_abiertos":0},"lago":{"escribible":true},"consumidor":{"vivo":true,"error":null},"ultimo_micro_lote":{"micro_lote_id":"1794764257623-0_1794764257812-0","archivos":[{"archivo":"eventos/mes=2026-11/part-1794764257623-0_1794764257812-0.parquet","filas":2}],"estado":"publicado","primero":"1794764257623-0","ultimo":"1794764257812-0","filas":2,"publicado_en":1794764262731},"ts":"2026-11-15T17:44:57.373728+00:00"}},"analitica":{"estado":"operativo","detalle":{"servicio":"analitica","estado":"operativo","spark":{"master":"spark://spark-master:7077","master_alcanzable":true,"sesion_spark":true,"arranque_ms":10488.6,"error":null,"ejecutores":1,"nucleos":2},"ts":"2026-11-15T17:44:57.372109+00:00"}}},"ts":"2026-11-15T17:44:58.368914+00:00"}

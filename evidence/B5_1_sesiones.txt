@@ -1,0 +1,14 @@
+ANOTADOR=adbafed0-b600-460c-bbdc-fd55304374b3
+OK | Crear proyecto aislado: HTTP 201
+OK | Crear tarea aislada: HTTP 201
+OK | Asignar tarea: HTTP 200
+PROYECTO=68ed85fa-f8ca-48ac-8e5a-88f0f3ac515b
+TAREA=58844be5-7e57-49a9-8cc2-ee202d109321
+OK | Borrador con token incorrecto: HTTP 409
+OK | Guardar borrador: HTTP 200
+OK | Latido con token incorrecto: HTTP 409
+OK | Latido valido: HTTP 200
+OK | Recuperar sesion: HTTP 200
+OK | Tarea, token y borrador coinciden
+B5_1_SESIONES_OK
+LIMPIEZA | Liberar tarea: HTTP 200 {'estado': 'disponible'}

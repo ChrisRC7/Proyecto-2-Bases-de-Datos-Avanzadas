@@ -1,0 +1,7 @@
+ASIGNACION_OK tarea=58844be5-7e57-49a9-8cc2-ee202d109321
+BORRADOR_GUARDADO_OK
+INTERRUPCION_SIMULADA
+RESPUESTA_RECUPERACION={"tarea": {"tarea_id": "58844be5-7e57-49a9-8cc2-ee202d109321", "proyecto_id": "68ed85fa-f8ca-48ac-8e5a-88f0f3ac515b", "etapa": "anotando"}, "token": "2c094f4c-db0c-4a98-b554-c1ca746f4f4d", "borrador": {"contenido": {"etiquetas": ["lidar#ciclista"], "origen": "b52_interrupcion_automatica", "marcador": "recuperacion_borrador"}, "guardado_en": "2026-11-15T21:11:17.193000+00:00"}}
+RECUPERACION_EN_0.047_SEGUNDOS
+B5_2_INTERRUPCION_OK
+LIMPIEZA_HTTP_200={'estado': 'disponible'}

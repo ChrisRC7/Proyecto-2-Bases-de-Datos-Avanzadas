@@ -9,12 +9,145 @@ Gateway REST (único puerto expuesto, 8000) delante de cuatro servicios: registr
 
 ## Requisitos previos
 
-> Pendiente (B6.4).
+- Git.
+- Docker Desktop con Docker Compose v2.
+- Docker Desktop iniciado y con recursos suficientes para MongoDB, Valkey y Spark.
+- En Windows (PowerShell) usar `curl.exe` en lugar de `curl` en los ejemplos.
+- Python 3.12 para las pruebas en `pruebas/` que corren desde el anfitrión.
 
-## Inicio y detención
+Las dependencias internas de cada servicio se instalan mediante sus imágenes Docker.
 
-> Pendiente (B6.4): `docker compose up -d --build`, `docker compose down` (y `-v` para borrar los
-> volúmenes), perfiles `datos`, `carga` y `spark2`.
+## Iniciar el sistema
+
+Desde la raíz del repositorio:
+
+```bash
+docker compose up -d --build
+```
+
+Comprobar el estado de los contenedores:
+
+```bash
+docker compose ps
+```
+
+Consultar la salud consolidada del sistema:
+
+```bash
+curl -sS http://localhost:8000/salud
+```
+
+El Gateway es el punto de entrada público mediante el puerto `8000`. Los servicios internos y sus motores de almacenamiento no requieren puertos publicados al equipo anfitrión.
+
+Documentación interactiva del Gateway:
+
+`http://localhost:8000/docs`
+
+## Perfiles de Docker Compose
+
+El archivo `docker-compose.yml` define tres perfiles opcionales.
+
+| Perfil | Uso |
+|---|---|
+| `carga` | Habilitar el simulador de usuarios |
+| `datos` | Habilitar los servicios o tareas de preparación de datos |
+| `spark2` | Habilitar un segundo trabajador de Spark |
+
+Ejecutar el sistema con el simulador:
+
+```bash
+docker compose --profile carga up -d --build
+```
+
+Ejecutar la configuración de preparación de datos:
+
+```bash
+docker compose --profile datos up -d --build
+```
+
+Habilitar un segundo trabajador de Spark:
+
+```bash
+docker compose --profile spark2 up -d --build
+```
+
+Los perfiles pueden combinarse:
+
+```bash
+docker compose --profile carga --profile spark2 up -d --build
+```
+
+La disponibilidad de cada componente depende de sus servicios y dependencias definidos en Docker Compose.
+
+## Comandos de operación
+
+Ver los servicios en ejecución:
+
+```bash
+docker compose ps
+```
+
+Consultar los últimos registros del Gateway:
+
+```bash
+docker compose logs --tail 100 gateway
+```
+
+Seguir los registros del servicio de Sesión:
+
+```bash
+docker compose logs -f sesion
+```
+
+Reiniciar únicamente Valkey:
+
+```bash
+docker compose restart valkey
+```
+
+Detener los servicios conservando los volúmenes:
+
+```bash
+docker compose down
+```
+
+Volver a iniciarlos:
+
+```bash
+docker compose up -d
+```
+
+**Precaución:** los volúmenes persistentes contienen información operacional, sesiones y datos de los motores. No deben eliminarse durante las pruebas habituales.
+
+## Persistencia de datos
+
+El sistema utiliza volúmenes Docker para sus componentes persistentes.
+
+- MongoDB utiliza tres instancias organizadas en el conjunto de réplica `rs0`.
+- Valkey de Sesión utiliza el volumen `valkey_sesion`, con AOF activado y `appendfsync everysec`.
+- Historial emplea una instancia Valkey independiente, `cola-eventos`, para la mensajería mediante Streams.
+- El lago de datos almacena archivos históricos Parquet y se regenera según el procedimiento del proyecto.
+
+La separación entre los motores ayuda a mantener responsabilidades independientes.
+
+## Principales operaciones del Gateway
+
+| Método | Ruta | Finalidad |
+|---|---|---|
+| `GET` | `/salud` | Estado consolidado de los componentes |
+| `POST` | `/proyectos` | Crear un proyecto |
+| `POST` | `/proyectos/{id}/lotes` | Registrar un lote |
+| `POST` | `/tareas/siguiente` | Solicitar una tarea |
+| `PUT` | `/tareas/{id}/borrador` | Guardar un borrador |
+| `POST` | `/sesiones/recuperar` | Recuperar sesión y borrador |
+| `POST` | `/sesiones/latido` | Renovar actividad y lock |
+| `POST` | `/tareas/{id}/enviar` | Enviar una anotación |
+| `POST` | `/tareas/{id}/liberar` | Liberar una asignación |
+| `POST` | `/tareas/{id}/revision` | Revisar una tarea |
+| `GET` | `/proyectos/{id}/exportar` | Exportar resultados |
+| `GET` | `/analitica/{q1..q5}?conjunto=` | Consultas analíticas con Spark |
+
+Los cuerpos JSON, encabezados y códigos HTTP se documentan en `endpoints/gateway.md`.
 
 ## Carga de datos
 
@@ -128,9 +261,10 @@ Cada prueba deja sus archivos en `evidence/`. Antes de cada una conviene recarga
 | Prueba | Comando | Evidencia |
 |---|---|---|
 | Rutas de A en el gateway | `python3 pruebas/a4_rutas_gateway.py` | `A4_rutas_gateway_*.txt` |
-| P1 rutas, salud y puertos | Pendiente (B5.1) | |
+| P1 rutas, sesiones, salud y puertos | `python3 pruebas/b51_sesiones_gateway.py` (más `a4_rutas_gateway.py` y parar historial/valkey para `/salud`) | `B5_1_*` |
 | P2 50 solicitudes contra 10 tareas | `docker compose --profile carga run --rm -v ./pruebas:/srv/pruebas simulador python /srv/pruebas/p2_concurrencia.py --modo gateway --csv /srv/evidence/P2_<fecha>.csv` | `P2_concurrencia_gateway_*` |
-| P3 sesión y borrador | Pendiente (B5.2) | |
+| P3 sesión y borrador (interrupción, reinicio de Valkey, vencimiento del lock) | `python3 pruebas/b52_interrupcion_gateway.py`, `b52_persistencia_gateway.py`, `b52_vencimiento_gateway.py` (este espera 120 s) | `B5_2_*` |
+| Borradores huérfanos al reasignar una tarea | `python3 pruebas/prueba_borradores_huerfanos.py` | |
 | P4 historial por el gateway (frescura, rechazo, lectura en bucle, reprocesar, caída) | `pruebas/p4_gateway.sh` (unos 8 min; recarga MongoDB y el conjunto principal) | `P4_gateway_*` |
 | P4 historial directo, sin gateway (incluye reenvío del mismo evento) | `pruebas/p4_historial.sh` | `P4_historial_*` |
 | P5 analítica (validación, 1ª vs siguientes, 1 y 2 workers, principal y grande) | `pruebas/p5_analitica.sh` (necesita el conjunto grande y prueba generados) | `P5_analitica_*` |
@@ -138,7 +272,7 @@ Cada prueba deja sus archivos en `evidence/`. Antes de cada una conviene recarga
 | Compactación de un mes del lago | `pruebas/c26_compactacion.sh <AAAA-MM>` | `C2.6_compactacion_*` |
 | P6 carga (10, 40 y 100 usuarios, 3 corridas de 90 s) | `pruebas/p6_carga.sh` (unos 20 min); después `python3 pruebas/p6_lago.py evidence/P6_carga_<fecha>` para ver si los eventos llegaron al lago | `P6_carga_<fecha>/resumen.txt` |
 | P8 MongoDB (secundario, primario, sin mayoría) | `pruebas/p8_mongo.sh secundario`, `primario`, `sin-mayoria` | `P8_mongo_gateway_*` |
-| P8 Valkey y sesión | Pendiente (B5.3) | |
+| P8 Valkey y sesión (RTO/RPO) | `python3 pruebas/b53_fallo_valkey.py` | `B5_3_P8.txt` |
 | Índices (explain) | ver `evidence/A3_explain_registro_20261022-2003.md` | `A3_explain_*` |
 | `w: majority` frente a `w: 1` | ver `evidence/A7.4_write_concern_20261022-2011.md` | `A7.4_write_concern_*` |
 
@@ -146,11 +280,93 @@ Cada prueba deja sus archivos en `evidence/`. Antes de cada una conviene recarga
 SECONDARY antes de terminar. `pruebas/estado_rs.sh` imprime el estado del replica set en cualquier momento.
 `pruebas/p6_carga.sh` recarga el dataset y borra las llaves de sesión de Valkey antes de cada corrida.
 
+Las pruebas que reinician Valkey o paran servicios interrumpen las sesiones en curso: correrlas sin otros
+usuarios ni otras pruebas al mismo tiempo.
+
 ## Solución de problemas
 
-> Pendiente (B6.4). De lo que encontró A:
->
-> - `pruebas/p8_mongo.sh` se cortó a la mitad y quedó un nodo apagado: `docker compose start mongo1 mongo2
->   mongo3` y esperar a que `pruebas/estado_rs.sh` muestre un PRIMARY.
-> - `/tareas/siguiente` responde 204 en todo: se agotaron las tareas; recargar el dataset o usar
->   `dataset.regenerar_tareas`.
+### El Gateway no responde
+
+Comprobar los contenedores y revisar los registros:
+
+```bash
+docker compose ps
+docker compose logs --tail 100 gateway
+```
+
+Si el Gateway está levantado, consultar:
+
+```bash
+curl -i http://localhost:8000/salud
+```
+
+### El estado de salud aparece degradado o caído
+
+La ruta `/salud` muestra el estado de los componentes. Revisar los registros del servicio indicado y sus dependencias.
+
+```bash
+docker compose logs --tail 100 sesion
+docker compose logs --tail 100 registro
+```
+
+### No se pueden guardar borradores
+
+Comprobar que el anotador tenga una sesión activa y utilice el token correcto. Los locks vencen después de 120 segundos si no se renuevan.
+
+Un error HTTP 409 puede indicar que el lock venció o que el token no coincide.
+
+### Una sesión no aparece al recuperarla
+
+La respuesta HTTP 404 `sesion_no_existe` indica que no hay una sesión registrada para el anotador consultado.
+
+Comprobar que se envíe correctamente el encabezado `X-Anotador-Id`.
+
+### MongoDB no está disponible
+
+Revisar los contenedores del conjunto de réplica:
+
+```bash
+docker compose ps
+docker compose logs --tail 100 mongo1
+```
+
+### Spark no responde
+
+Comprobar los servicios de Analítica y Spark:
+
+```bash
+docker compose ps
+docker compose logs --tail 100 analitica
+docker compose logs --tail 100 spark-master
+```
+
+### Un archivo de evidencia aparece como binario en Git
+
+Algunas versiones de PowerShell pueden guardar la salida de `Tee-Object` con una codificación distinta de UTF-8. Conviene convertir los archivos de evidencia a UTF-8 antes de agregarlos al repositorio.
+
+### `pruebas/p8_mongo.sh` se cortó y quedó un nodo apagado
+
+```bash
+docker compose start mongo1 mongo2 mongo3
+pruebas/estado_rs.sh   # esperar a ver un PRIMARY
+```
+
+### `/tareas/siguiente` responde 204 siempre
+
+Se agotaron las tareas: recargar el dataset o usar `dataset.regenerar_tareas` (ver «Carga de datos»).
+
+## Documentación adicional
+
+- `DECISIONES.md`: decisiones técnicas y justificaciones.
+- `TODO.md`: distribución de responsabilidades y avance del proyecto.
+- `endpoints/`: documentación de las interfaces HTTP.
+- `informe/`: secciones preparadas para el informe final.
+- `evidence/`: resultados de las pruebas.
+
+## Observaciones de integración
+
+Las pruebas identificaron dos puntos que requieren seguimiento: la posible permanencia de sesiones antiguas después del vencimiento de sus locks y la diferencia entre el vencimiento de una asignación en MongoDB y la renovación del lock correspondiente en Valkey.
+
+La garantía integral de publicación durable de eventos también continúa bajo revisión.
+
+Estas limitaciones se documentan para facilitar la integración y validación final del sistema.

@@ -1,0 +1,505 @@
+﻿historial-1  | INFO:     172.19.0.11:54420 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:08:19.619621+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "b0b5c7a8-ff9f-4e68-abdf-eee3a06077c0", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 4.58}
+historial-1  | {"ts": "2026-11-15T23:08:24.739922+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "f98315c5-3aef-4de1-8362-ecaf8c0bda71", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 3.85}
+historial-1  | INFO:     127.0.0.1:51188 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:08:29.802412+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "707aa1b7-c1dd-4fb1-8b50-5b7dfbafa1da", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 4.46}
+historial-1  | INFO:     172.19.0.11:53598 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:08:34.885466+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "04e835c4-bced-42bf-ab1b-c93f30c6de81", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 3.25}
+historial-1  | INFO:     127.0.0.1:41714 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:08:39.980791+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "c6aed174-c4fa-4a85-aa6c-c3e7396fc1cb", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 4.3}
+historial-1  | INFO:     172.19.0.11:40588 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:08:45.074338+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "1508156d-8f32-452f-9179-d01d6c13a94e", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 3.48}
+historial-1  | INFO:     127.0.0.1:50750 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:08:50.144265+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "b8745949-1077-42e4-8741-3d55df15c163", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 4.1}
+historial-1  | INFO:     172.19.0.11:45768 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:08:55.261838+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "6fcbd0ed-e00e-4a8b-b672-2e30041d70c1", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 3.91}
+historial-1  | INFO:     127.0.0.1:39710 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:09:00.307505+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "a20cb1d1-c478-420e-bcba-565b13359a85", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 4.22}
+historial-1  | INFO:     172.19.0.11:58984 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | INFO:     127.0.0.1:57690 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:09:05.410771+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "cce55210-e94e-4f80-80ef-2d0dbe94d7f3", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 2.94}
+historial-1  | {"ts": "2026-11-15T23:09:10.483252+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "049163ff-4780-4de3-8a72-e3cd150566ca", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 3.98}
+historial-1  | INFO:     172.19.0.11:60686 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | INFO:     127.0.0.1:43548 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:09:15.592947+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "ffee4c8a-ce77-4b4f-84e4-0ba478372e1c", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 2.84}
+historial-1  | {"ts": "2026-11-15T23:09:20.628710+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "72b13013-00d7-44d1-a948-58a6ae9d5fe4", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 4.83}
+historial-1  | INFO:     172.19.0.11:60470 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | INFO:     127.0.0.1:53724 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:09:25.763244+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "b149ab1b-a3c7-4a04-8158-a1f4671bcf4c", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 3.94}
+historial-1  | {"ts": "2026-11-15T23:09:30.781049+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "c21b27cc-213f-4818-9b1c-a7c2b1a0b4c3", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 3.98}
+historial-1  | INFO:     172.19.0.11:59664 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | INFO:     127.0.0.1:51848 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:09:35.902964+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "de6bfc32-6930-41a2-a049-1a18e9fe214e", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 2.7}
+historial-1  | INFO:     172.19.0.11:37474 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:09:40.994191+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "0200ebe2-0bb5-48ec-a76b-3c8743ae6170", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 4.52}
+historial-1  | {"ts": "2026-11-15T23:09:46.087397+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "8b2f86aa-8f94-4958-a083-382d21e811a3", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 4.24}
+historial-1  | INFO:     127.0.0.1:44600 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:09:51.156864+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "27e531fb-5787-4b26-ad07-92b4900c1316", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 3.19}
+historial-1  | INFO:     172.19.0.11:53608 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:09:56.261167+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "473af852-5da9-46a8-97c7-67538c027346", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 3.1}
+historial-1  | INFO:     127.0.0.1:37398 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:10:01.323331+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "041d6c8a-b865-4d1e-afac-1c4c85ac0970", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 4.25}
+historial-1  | INFO:     172.19.0.11:57090 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:10:06.439382+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "c2bae6b1-a0d4-4dd0-a016-ed642472f0d2", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 2.71}
+historial-1  | INFO:     127.0.0.1:34958 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:10:11.492359+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "7d411909-6e55-45d9-a339-0da6e9d77840", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 4.59}
+historial-1  | INFO:     172.19.0.11:60756 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:10:16.594419+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "ef7f5ab2-46c1-45c9-8c5f-38fef0f9b7a7", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 3.9}
+historial-1  | INFO:     127.0.0.1:53016 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:10:21.649640+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "31fe9562-d6bb-415e-a262-21e82510d7fe", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 4.46}
+historial-1  | INFO:     172.19.0.11:54458 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | INFO:     127.0.0.1:35866 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:10:26.727347+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "11b40fa5-9a79-4e61-93f9-618b9da6998f", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 3.84}
+historial-1  | INFO:     172.19.0.11:38000 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:10:31.822940+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "6ac71a34-5b62-444f-9447-ef4c3a1e0305", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 5.1}
+historial-1  | {"ts": "2026-11-15T23:10:36.928693+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "4f8b83ac-dd8b-432c-99e2-80e076d27c1e", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 4.0}
+historial-1  | INFO:     127.0.0.1:56638 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:10:42.002570+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "6ed5d393-63c3-4051-9cf3-e99ccd49e0e8", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 5.44}
+historial-1  | INFO:     172.19.0.11:47300 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:10:47.061419+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "1e987db0-dffa-4c00-aa2d-411e79462558", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 2.19}
+historial-1  | INFO:     127.0.0.1:41580 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:10:52.161311+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "62ecf917-44f3-4a9c-82e1-8f87ed0f6c1b", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 3.99}
+historial-1  | INFO:     172.19.0.11:45206 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | INFO:     127.0.0.1:39626 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:10:57.238637+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "73a56ac7-3b19-471f-b3e6-fd01dfd5c5fa", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 2.75}
+historial-1  | {"ts": "2026-11-15T23:11:02.387488+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "417dcc11-1d64-4eee-b7e2-df275f16980c", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 6.8}
+historial-1  | INFO:     172.19.0.11:44358 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | INFO:     127.0.0.1:51812 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:11:07.385350+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "ac90cc18-1b16-46da-8e5a-de320923410e", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 2.99}
+historial-1  | {"ts": "2026-11-15T23:11:12.517778+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "d08e13c9-64ee-4e9e-8922-60cb433ccee0", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 3.68}
+historial-1  | INFO:     172.19.0.11:55818 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:11:17.548426+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "973b2251-a745-4724-bc3b-763028df62b8", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 2.36}
+historial-1  | INFO:     127.0.0.1:60134 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:11:22.660173+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "6619977f-20b2-4c9d-9ee2-08332d8ec195", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 5.34}
+historial-1  | INFO:     172.19.0.11:38330 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | INFO:     127.0.0.1:55668 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:11:27.732093+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "67384e9e-e4f8-4b66-beba-4ea6daded57c", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 4.02}
+historial-1  | INFO:     172.19.0.11:60346 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:11:32.817728+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "a1dd6dd0-3bc4-4d82-97e3-806ea57ee5ab", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 3.99}
+historial-1  | {"ts": "2026-11-15T23:11:37.914336+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "c7cbaa15-3359-43c6-9582-7b57c45b32e4", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 2.91}
+historial-1  | INFO:     127.0.0.1:53362 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:11:42.988109+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "b3aed4c4-9ceb-4739-aed2-967befb78f24", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 3.95}
+historial-1  | INFO:     172.19.0.11:58484 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:11:48.089241+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "2eddf58c-a107-4ee5-8240-c58374b697e5", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 3.96}
+historial-1  | INFO:     127.0.0.1:35922 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:11:53.160268+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "ea3b998b-4236-4905-a3ae-a9089fa46163", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 4.15}
+historial-1  | INFO:     172.19.0.11:37098 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:11:58.227422+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "04f2669e-7250-4506-ad44-da943e07ee21", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 3.48}
+historial-1  | INFO:     127.0.0.1:56324 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:12:03.327834+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "63872cc8-5267-4c34-9fa8-3cd8e770eab4", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 4.58}
+historial-1  | INFO:     172.19.0.11:34044 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | INFO:     127.0.0.1:52770 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:12:08.386383+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "172652d1-4113-4762-af81-3556c7aabada", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 6.4}
+historial-1  | {"ts": "2026-11-15T23:12:13.503943+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "9802f7bf-7996-47b2-93b9-f862ea9a9aa9", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 3.93}
+historial-1  | INFO:     172.19.0.11:55060 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:12:18.584908+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "7d87fd1c-da8b-4b1b-b901-6b3ded1d8004", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 5.42}
+historial-1  | INFO:     127.0.0.1:38498 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:12:23.674166+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "9537d6f5-e9c7-4f32-910a-04679abaa1bd", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 4.76}
+historial-1  | INFO:     172.19.0.11:52918 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:12:28.716559+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "5b1da895-71a9-4a6a-9800-e069652dfcc0", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 3.31}
+historial-1  | INFO:     127.0.0.1:52694 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | INFO:     172.19.0.11:39834 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:12:33.800390+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "0dae0896-4b01-4984-b50a-17dbd67a8b23", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 4.27}
+historial-1  | {"ts": "2026-11-15T23:12:38.871516+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "1bcd0319-18d6-4200-846c-7448def823a4", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 3.56}
+historial-1  | INFO:     127.0.0.1:48838 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:12:43.974655+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "aa4fdc32-44f4-4c4e-872c-e293deea1466", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 4.27}
+historial-1  | INFO:     172.19.0.11:41786 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | INFO:     127.0.0.1:35446 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:12:49.034187+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "2bb6cab8-9814-4c4b-9ec4-3e6099dd1734", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 2.88}
+historial-1  | {"ts": "2026-11-15T23:12:54.177827+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "7f0513ed-a12e-465f-bd6f-ca444cc313bf", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 4.3}
+historial-1  | INFO:     172.19.0.11:39956 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | INFO:     127.0.0.1:48202 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:12:59.211594+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "32937a3e-da9c-4ea6-af7c-8de93248d3b5", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 3.97}
+historial-1  | {"ts": "2026-11-15T23:13:04.362964+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "73aa4c1c-61f0-4df4-a611-761d52b82fcc", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 5.36}
+historial-1  | INFO:     172.19.0.11:34130 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:13:09.381913+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "a20e9e67-10fb-43e8-a10e-9dec93317870", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 3.0}
+historial-1  | INFO:     127.0.0.1:46140 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | INFO:     172.19.0.11:33058 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:13:14.616603+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "9f1021ae-f750-4141-b78a-3ce51a507f38", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 5.42}
+historial-1  | INFO:     127.0.0.1:34782 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:13:19.525659+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "2430be73-8d4b-47bd-afeb-035f54555625", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 3.19}
+historial-1  | {"ts": "2026-11-15T23:13:24.790683+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "2c04cf25-0250-4e7e-875e-332af7534483", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 5.2}
+historial-1  | INFO:     172.19.0.11:57902 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:13:29.712509+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "98473af1-51a8-4c76-8b80-3edda042eddc", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 4.28}
+historial-1  | INFO:     127.0.0.1:50312 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | INFO:     172.19.0.11:56104 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:13:35.012489+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "d35b7d01-c4ae-4c53-9055-e172bc3f28f0", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 4.11}
+historial-1  | {"ts": "2026-11-15T23:13:39.881326+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "4f09538e-8af0-4459-a0a0-620204cbde55", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 3.22}
+historial-1  | INFO:     127.0.0.1:59390 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | INFO:     172.19.0.11:49512 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:13:45.171543+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "d0d3cc75-5e87-40bd-bb15-12be5c7b3420", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 4.22}
+historial-1  | {"ts": "2026-11-15T23:13:50.077439+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "0a875d28-6bc9-4f5a-aad8-e35046142719", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 3.77}
+historial-1  | INFO:     127.0.0.1:49754 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:13:55.335164+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "b5b58adc-ed9e-4e6a-bd5f-e5abf74d347e", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 4.46}
+historial-1  | INFO:     172.19.0.11:37534 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:14:00.270920+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "1ca41a99-04c0-40ef-97e0-62d176cd5578", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 4.21}
+historial-1  | INFO:     127.0.0.1:48832 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:14:05.464352+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "ca30c3cc-dd41-4c48-9ffd-f20f4b98cee9", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 2.91}
+historial-1  | INFO:     172.19.0.11:37334 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:14:10.469584+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "d0256a1a-c955-43c0-9432-8e5955cd83c9", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 3.57}
+historial-1  | INFO:     127.0.0.1:44756 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:14:15.649546+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "301b2411-90fe-488c-a60c-5b955b458fdd", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 6.97}
+historial-1  | INFO:     172.19.0.11:36004 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | INFO:     127.0.0.1:45564 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:14:20.653488+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "f1690620-a2f5-417b-a789-720abd387eac", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 2.89}
+historial-1  | {"ts": "2026-11-15T23:14:25.797577+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "7f29f20e-dbc4-45fe-8fb7-7c8ee33efd37", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 4.05}
+historial-1  | INFO:     172.19.0.11:50938 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | INFO:     127.0.0.1:54372 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:14:30.884602+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "00d6a790-9d2c-41fa-b8dc-6c7eaeac810f", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 4.27}
+historial-1  | INFO:     172.19.0.11:57018 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:14:35.944718+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "10557810-8228-4e06-9fd9-82c7468081c9", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 3.57}
+historial-1  | {"ts": "2026-11-15T23:14:41.039814+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "c26f623d-afe1-43db-b4b2-31fab421aa28", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 4.5}
+historial-1  | INFO:     127.0.0.1:55098 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:14:46.129230+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "93ec9eb4-6c4a-48de-8749-856cdb1d68f4", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 3.57}
+historial-1  | INFO:     172.19.0.11:35986 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | INFO:     127.0.0.1:60418 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:14:51.203300+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "fabaff76-5bae-4bca-8cbb-2943584b24a5", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 2.73}
+historial-1  | INFO:     172.19.0.11:50756 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:14:56.292825+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "a12cc9a9-d820-403f-b73a-a453b54b7f4e", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 3.37}
+historial-1  | INFO:     127.0.0.1:34020 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:15:01.362097+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "0ac67e85-2e79-425c-bb8e-16345a4caaec", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 3.2}
+historial-1  | INFO:     172.19.0.11:44654 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:15:06.435318+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "ed76095c-9695-4b77-85d0-1f12ad2bd1a7", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 3.64}
+historial-1  | {"ts": "2026-11-15T23:15:11.496136+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "9d09187e-47a6-426e-84de-98aac37160bf", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 2.46}
+historial-1  | INFO:     127.0.0.1:33026 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | INFO:     172.19.0.11:59098 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:15:16.581221+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "1b5576d0-0006-495a-b83c-08f12f7cfb65", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 4.5}
+historial-1  | {"ts": "2026-11-15T23:15:21.662795+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "33dd6388-2b45-431b-8576-ab391957be12", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 3.07}
+historial-1  | INFO:     127.0.0.1:47364 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | INFO:     172.19.0.11:60856 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:15:26.750879+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "15081bce-ff6f-47e3-9fe3-61db3943678d", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 4.01}
+historial-1  | INFO:     127.0.0.1:53780 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:15:31.838263+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "5500a8bf-0f16-468b-a4d5-bb82e4899964", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 3.43}
+historial-1  | {"ts": "2026-11-15T23:15:36.960566+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "d00be85f-fb9b-4408-a85b-f562ec9fa455", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 4.01}
+historial-1  | INFO:     172.19.0.11:55316 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:15:41.998982+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "c6ae71d2-0d44-4750-bc14-d053b9446b6f", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 2.53}
+historial-1  | INFO:     127.0.0.1:43874 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:15:47.113799+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "cc3f5237-8e1e-4493-bbed-d67df60d2d19", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 4.4}
+historial-1  | INFO:     172.19.0.11:46384 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | INFO:     127.0.0.1:55578 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:15:52.174283+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "9b854685-e506-443d-853b-7dc52520b01a", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 4.05}
+historial-1  | INFO:     172.19.0.11:42692 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:15:57.263489+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "15884cb5-ce4c-43fd-8b7b-cfe270d10578", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 5.24}
+historial-1  | INFO:     127.0.0.1:35170 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:16:02.331195+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "a626b8b9-e37c-4a27-bb8e-143194b5cb3d", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 3.45}
+historial-1  | {"ts": "2026-11-15T23:16:07.439946+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "c8df2fd5-8b09-4640-9439-9f9bb2037490", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 4.99}
+historial-1  | INFO:     172.19.0.11:39214 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:16:12.524686+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "334b4d38-7752-4715-8b93-875c1e078bdb", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 5.36}
+historial-1  | INFO:     127.0.0.1:37486 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:16:17.620731+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "12e45e8d-f4c4-49fb-872d-f6349cab0ceb", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 6.11}
+historial-1  | INFO:     172.19.0.11:57586 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | INFO:     127.0.0.1:47764 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:16:22.652746+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "998cc864-3bb6-4e28-bb50-e79a8bbfb88d", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 3.34}
+historial-1  | INFO:     172.19.0.11:36806 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:16:27.772145+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "584d1f48-a787-4e9f-b9a2-c492f267f7b0", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 3.25}
+historial-1  | INFO:     127.0.0.1:58528 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:16:32.817962+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "acff2ba0-b14a-4cb5-baaf-c14fb03e9601", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 3.47}
+historial-1  | INFO:     172.19.0.11:33238 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:16:37.915728+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "73e60aac-e2f7-4556-a207-eaee74f10d12", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 3.51}
+historial-1  | {"ts": "2026-11-15T23:16:43.027459+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "d250388d-a506-4ab1-b922-52553412de07", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 3.94}
+historial-1  | INFO:     127.0.0.1:60094 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | INFO:     172.19.0.11:55566 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:16:48.104999+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "4522d9fd-1ae2-4ed7-8330-7a9fa9fb1563", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 3.72}
+historial-1  | {"ts": "2026-11-15T23:16:53.165902+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "e8d23143-968a-4ddf-8680-0a3fc8322d72", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 3.73}
+historial-1  | INFO:     127.0.0.1:38488 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:16:58.246427+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "b8cf6203-5ef1-49eb-b88f-1547651b70f4", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 4.55}
+historial-1  | INFO:     172.19.0.11:58264 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | INFO:     127.0.0.1:36054 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:17:03.357977+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "6bbb22c7-f655-41a5-9190-a71809dc7b91", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 4.78}
+historial-1  | {"ts": "2026-11-15T23:17:08.403146+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "159da8ab-bc25-485c-afc8-4e3184eec9e1", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 6.23}
+historial-1  | INFO:     172.19.0.11:52138 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | INFO:     127.0.0.1:40648 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:17:13.502773+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "55df6386-5618-485e-8ed2-3168457b8b02", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 2.42}
+historial-1  | {"ts": "2026-11-15T23:17:18.585284+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "be984bd5-1e62-4c1c-8c66-a7edbddf1477", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 5.0}
+historial-1  | INFO:     172.19.0.11:47976 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:17:23.652203+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "99390fec-5c62-47ef-be9a-33f148eebd07", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 3.01}
+historial-1  | INFO:     127.0.0.1:51746 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:17:28.728885+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "e07bca91-78a4-4661-ab5f-2a9d4cb5a0af", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 3.82}
+historial-1  | INFO:     172.19.0.11:56772 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:17:33.824977+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "04d7b5ca-f318-4899-b8b2-f5ff70a5a20b", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 5.0}
+historial-1  | INFO:     127.0.0.1:41316 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:17:38.856626+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "88d240cf-9230-4fe6-ad42-3d2aaa7810fb", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 3.32}
+historial-1  | INFO:     172.19.0.11:38040 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | INFO:     127.0.0.1:53382 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:17:43.966478+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "429d31dc-5bab-41fe-8702-54df0d2c1edd", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 3.93}
+historial-1  | {"ts": "2026-11-15T23:17:49.063612+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "33a9926f-0a6f-49c9-b7d9-3f8d58fa766a", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 4.02}
+historial-1  | INFO:     172.19.0.11:51116 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:17:54.127453+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "55d838ad-b2b0-4f54-a129-905474ec9384", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 4.14}
+historial-1  | INFO:     127.0.0.1:49778 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:17:59.232474+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "08a28d8b-7ce1-487a-b89b-0306876d2110", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 4.4}
+historial-1  | INFO:     172.19.0.11:51604 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | INFO:     127.0.0.1:60478 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:18:04.306493+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "96191ead-f824-4bce-8778-ee5d3a3b1c90", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 3.49}
+historial-1  | INFO:     172.19.0.11:37460 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:18:09.407022+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "7c8d47d3-472d-4aef-a3fa-6d1805970aa8", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 5.34}
+historial-1  | INFO:     127.0.0.1:57224 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:18:14.470348+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "32a7e54f-6406-4eff-b84a-6ad56a8434b1", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 5.26}
+historial-1  | INFO:     172.19.0.11:57950 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:18:19.587647+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "90836c64-c885-4967-8e03-de8eaa6b10b0", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 5.18}
+historial-1  | {"ts": "2026-11-15T23:18:24.614287+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "319bd907-4ec5-4ed4-8785-fadeecbf2d0a", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 3.56}
+historial-1  | INFO:     127.0.0.1:40538 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | INFO:     172.19.0.11:49878 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:18:29.734472+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "d8b028cb-b053-41eb-adcd-c4ac0d6d60dc", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 3.63}
+historial-1  | {"ts": "2026-11-15T23:18:34.810536+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "5b57f6a0-1db3-481e-8e6a-74b861e245b4", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 4.31}
+historial-1  | INFO:     127.0.0.1:35574 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | INFO:     172.19.0.11:34158 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:18:40.020134+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "9a87106c-57d5-4fa8-af6d-9254c56ae459", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 6.66}
+historial-1  | {"ts": "2026-11-15T23:18:45.135201+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "71542263-004e-4d2e-bdf0-fb598f21caae", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 4.49}
+historial-1  | INFO:     127.0.0.1:50162 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | INFO:     Started server process [7]
+historial-1  | INFO:     Waiting for application startup.
+historial-1  | INFO:     Application startup complete.
+historial-1  | INFO:     Uvicorn running on http://0.0.0.0:8003 (Press CTRL+C to quit)
+historial-1  | {"ts": "2026-11-15T23:20:46.957141+00:00", "nivel": "INFO", "servicio": "historial", "msg": "recuperacion", "tmp_huerfanos": [], "reclamados": 0, "micro_lotes_rehechos": [], "pendientes_publicados": 0}
+historial-1  | {"ts": "2026-11-15T23:20:56.122607+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "b1e5a4a6-3945-4575-919a-2a870a8e6c74", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 4.03}
+historial-1  | INFO:     127.0.0.1:54870 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | INFO:     172.19.0.7:35240 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:20:56.262675+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "a3f27435-e20f-4e2d-89bf-868885dd15b4", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 4.65}
+historial-1  | INFO:     127.0.0.1:47676 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:21:06.245524+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "fa63b1c4-eade-4103-aee0-ad09d3404f1d", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 2.92}
+historial-1  | INFO:     172.19.0.7:36970 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:21:06.386622+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "f6f060a8-7d11-427e-89a2-20cf72fbf469", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 3.68}
+historial-1  | {"ts": "2026-11-15T23:21:16.410515+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "34cfa31a-b22c-4b55-ae9c-4d7d792ee8ba", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 3.14}
+historial-1  | INFO:     127.0.0.1:49930 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:21:16.504607+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "958a067d-6579-48cf-9ee5-a88ff0d79bec", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 4.7}
+historial-1  | INFO:     172.19.0.7:34232 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:21:18.357549+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "8fa120b2-d26d-4c54-b219-33276cdfc0e5", "metodo": "POST", "ruta": "/eventos", "status": 202, "ms": 12.16}
+historial-1  | INFO:     172.19.0.7:34232 - "POST /eventos HTTP/1.1" 202 Accepted
+historial-1  | {"ts": "2026-11-15T23:21:23.507685+00:00", "nivel": "INFO", "servicio": "historial", "msg": "micro-lote publicado", "micro_lote_id": "1794784878353-0_1794784878353-0", "filas": 1, "archivos": ["eventos/mes=2026-11/part-1794784878353-0_1794784878353-0.parquet"]}
+historial-1  | {"ts": "2026-11-15T23:21:26.540122+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "7c9e59d0-17e7-48ff-a23c-272a92e6fde5", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 2.2}
+historial-1  | INFO:     127.0.0.1:60614 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:21:26.630107+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "a36f94a0-db36-4bae-88ed-9e9d117bb4f7", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 4.24}
+historial-1  | INFO:     172.19.0.7:38688 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:21:36.674898+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "b35ce479-12b0-425d-9578-1dc81f0ac3af", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 2.7}
+historial-1  | INFO:     127.0.0.1:35408 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:21:36.791674+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "6e790023-1f6f-4083-a14d-a38e757accb4", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 4.33}
+historial-1  | INFO:     172.19.0.7:40894 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | INFO:     127.0.0.1:52686 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:21:46.830214+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "0dc5c280-c04c-427c-9eee-3dfd05036f5e", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 3.04}
+historial-1  | {"ts": "2026-11-15T23:21:46.914643+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "fb9748f6-9816-4ddb-a1bd-9aa285dc854f", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 2.65}
+historial-1  | INFO:     172.19.0.7:52580 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | INFO:     127.0.0.1:37330 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:21:56.996459+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "64be3ae7-b4ed-42f8-a076-ea0c2750ee7a", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 2.84}
+historial-1  | {"ts": "2026-11-15T23:21:57.039874+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "0332e00a-94ad-4276-98bd-b8f014833acb", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 4.44}
+historial-1  | INFO:     172.19.0.7:58408 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:22:07.170438+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "c41660b1-b76f-4c5a-a5ea-f1ae1868f063", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 2.59}
+historial-1  | INFO:     127.0.0.1:38546 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:22:07.225490+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "ffd15229-0264-4fc7-b7f5-06cd0dc9a5ab", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 3.75}
+historial-1  | INFO:     172.19.0.7:40662 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | INFO:     127.0.0.1:49038 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:22:17.289056+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "7f9b7b2a-abc4-4f0b-b1e5-1a15f286d68a", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 2.48}
+historial-1  | {"ts": "2026-11-15T23:22:17.378004+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "e77e739c-750f-4334-b6c3-08545128e286", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 4.19}
+historial-1  | INFO:     172.19.0.7:43222 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:22:27.442862+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "cd69b335-1427-41f7-9bb2-23d4d908a45a", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 4.56}
+historial-1  | INFO:     127.0.0.1:57802 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | INFO:     172.19.0.7:33408 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:22:27.538387+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "0bbd9076-69d5-4ffb-9269-aab4987d3eb3", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 4.32}
+historial-1  | {"ts": "2026-11-15T23:22:37.610195+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "ecbf2ad0-a726-4032-83ac-9e792ce3d2af", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 5.15}
+historial-1  | INFO:     127.0.0.1:55642 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:22:37.715346+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "f597867d-3dbb-4ac7-a011-d73e9b9bb8fc", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 5.33}
+historial-1  | INFO:     172.19.0.7:37370 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:22:47.759809+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "ecd96bdd-93ed-4c22-bd79-46c720038334", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 2.52}
+historial-1  | INFO:     127.0.0.1:41322 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:22:47.851664+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "49862c9b-116b-4eaf-876e-37f64a155bd7", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 5.78}
+historial-1  | INFO:     172.19.0.7:60454 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:22:57.889384+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "3622c152-6e23-46a2-afa6-a0003518f561", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 2.4}
+historial-1  | INFO:     127.0.0.1:48832 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:22:57.985632+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "8c95ca16-43f2-4db5-a350-c19a54def088", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 3.98}
+historial-1  | INFO:     172.19.0.7:35908 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | INFO:     127.0.0.1:42594 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:23:08.052641+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "63d8bd75-b8c5-4a5c-ac4b-a15e6cb5eb6b", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 4.01}
+historial-1  | {"ts": "2026-11-15T23:23:08.178007+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "5033d666-62a9-4b32-8da2-3f5cd0863831", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 4.07}
+historial-1  | INFO:     172.19.0.7:33272 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | INFO:     127.0.0.1:39866 - "GET /salud HTTP/1.1" 200 OK
+historial-1  | {"ts": "2026-11-15T23:23:18.205095+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "57d03448-7aaa-4425-b9de-5a7c44e4544b", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 3.54}
+historial-1  | {"ts": "2026-11-15T23:23:18.332686+00:00", "nivel": "INFO", "servicio": "historial", "msg": "peticion", "request_id": "f8e2b958-6b27-49d4-9921-1e41e48c3f03", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 4.52}
+historial-1  | INFO:     172.19.0.7:40950 - "GET /salud HTTP/1.1" 200 OK
+gateway-1    | {"ts": "2026-11-15T23:08:19.621977+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "5c882ba5-a5bc-478e-9fdb-f0cee55acb90", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 11.34}
+gateway-1    | INFO:     127.0.0.1:35870 - "GET /salud HTTP/1.1" 200 OK
+gateway-1    | INFO:     127.0.0.1:38202 - "GET /salud HTTP/1.1" 200 OK
+gateway-1    | {"ts": "2026-11-15T23:08:29.804799+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "fd43502c-7a3b-43eb-a54b-ccd059a1ba23", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 12.6}
+gateway-1    | {"ts": "2026-11-15T23:08:39.983023+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "e27ca82c-d05d-404f-a0e4-645bff1a55bc", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 11.66}
+gateway-1    | INFO:     127.0.0.1:33014 - "GET /salud HTTP/1.1" 200 OK
+gateway-1    | {"ts": "2026-11-15T23:08:50.146402+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "42a6afae-8d69-42ac-b847-4acc8153178f", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 11.67}
+gateway-1    | INFO:     127.0.0.1:41196 - "GET /salud HTTP/1.1" 200 OK
+gateway-1    | INFO:     127.0.0.1:53050 - "GET /salud HTTP/1.1" 200 OK
+gateway-1    | {"ts": "2026-11-15T23:09:00.309536+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "2a0ae02f-257b-4213-a873-5e346984df65", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 10.51}
+gateway-1    | {"ts": "2026-11-15T23:09:10.485413+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "cd80df2b-f993-46d4-b48b-b3f1901b9b61", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 11.79}
+gateway-1    | INFO:     127.0.0.1:36334 - "GET /salud HTTP/1.1" 200 OK
+gateway-1    | {"ts": "2026-11-15T23:09:20.630940+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "7e802334-0695-4369-ac60-1f32ec86f580", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 12.2}
+gateway-1    | INFO:     127.0.0.1:59100 - "GET /salud HTTP/1.1" 200 OK
+gateway-1    | {"ts": "2026-11-15T23:09:30.786952+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "96f39f7b-ca9d-4c74-9ab3-a23e3082e9f5", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 15.41}
+gateway-1    | INFO:     127.0.0.1:40556 - "GET /salud HTTP/1.1" 200 OK
+gateway-1    | {"ts": "2026-11-15T23:09:40.996015+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "f84b3995-4c2e-4b45-af9d-d02a2f20772a", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 10.7}
+gateway-1    | INFO:     127.0.0.1:48570 - "GET /salud HTTP/1.1" 200 OK
+gateway-1    | INFO:     127.0.0.1:46270 - "GET /salud HTTP/1.1" 200 OK
+gateway-1    | {"ts": "2026-11-15T23:09:51.159352+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "f3911764-012c-467f-b4e9-b38dd915e45c", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 12.27}
+gateway-1    | INFO:     127.0.0.1:57542 - "GET /salud HTTP/1.1" 200 OK
+gateway-1    | {"ts": "2026-11-15T23:10:01.325282+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "df7f29cc-e7f7-4a19-bc1f-76a8b7b603c0", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 12.11}
+gateway-1    | INFO:     127.0.0.1:48074 - "GET /salud HTTP/1.1" 200 OK
+gateway-1    | {"ts": "2026-11-15T23:10:11.495641+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "756b2391-83d1-4ab8-9b63-353a2ade930a", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 13.72}
+gateway-1    | {"ts": "2026-11-15T23:10:21.652480+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "c78e740b-545a-4433-9558-23a0cfc65d93", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 12.05}
+gateway-1    | INFO:     127.0.0.1:50222 - "GET /salud HTTP/1.1" 200 OK
+gateway-1    | {"ts": "2026-11-15T23:10:31.827081+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "2579feed-4a1c-4d1c-a208-4b7e91a0235e", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 14.97}
+gateway-1    | INFO:     127.0.0.1:33258 - "GET /salud HTTP/1.1" 200 OK
+gateway-1    | INFO:     127.0.0.1:39198 - "GET /salud HTTP/1.1" 200 OK
+gateway-1    | {"ts": "2026-11-15T23:10:42.005407+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "e240eead-d109-4e65-8c43-5ec69197b010", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 12.7}
+gateway-1    | {"ts": "2026-11-15T23:10:52.169789+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "c7800488-b364-4ff4-879f-7970953dc1fa", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 21.34}
+gateway-1    | INFO:     127.0.0.1:51104 - "GET /salud HTTP/1.1" 200 OK
+gateway-1    | INFO:     127.0.0.1:33346 - "GET /salud HTTP/1.1" 200 OK
+gateway-1    | {"ts": "2026-11-15T23:11:02.397283+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "c610afdd-6de6-49db-83af-1271c29f524a", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 28.72}
+gateway-1    | INFO:     127.0.0.1:44500 - "GET /salud HTTP/1.1" 200 OK
+gateway-1    | {"ts": "2026-11-15T23:11:12.519842+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "6815723a-071d-4aeb-8b16-80a607d662a0", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 10.01}
+gateway-1    | INFO:     127.0.0.1:48840 - "GET /salud HTTP/1.1" 200 OK
+gateway-1    | {"ts": "2026-11-15T23:11:22.666470+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "5f5dcba7-857f-4ceb-bf47-55e643e0d42f", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 21.04}
+gateway-1    | {"ts": "2026-11-15T23:11:32.819962+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "e17934f3-f222-4043-9431-084af127f272", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 12.06}
+gateway-1    | INFO:     127.0.0.1:60520 - "GET /salud HTTP/1.1" 200 OK
+gateway-1    | {"ts": "2026-11-15T23:11:42.991242+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "fab18e40-4e64-4c0d-9661-c6479db5f7aa", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 12.31}
+gateway-1    | INFO:     127.0.0.1:39922 - "GET /salud HTTP/1.1" 200 OK
+gateway-1    | INFO:     127.0.0.1:42286 - "GET /salud HTTP/1.1" 200 OK
+gateway-1    | {"ts": "2026-11-15T23:11:53.168143+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "7d272343-23cc-403d-b857-5e7dfdb30b8b", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 20.29}
+gateway-1    | {"ts": "2026-11-15T23:12:03.330462+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "d62c9787-3ef9-4d7f-a30e-c00f1a8433cb", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 12.93}
+gateway-1    | INFO:     127.0.0.1:41924 - "GET /salud HTTP/1.1" 200 OK
+gateway-1    | {"ts": "2026-11-15T23:12:13.505450+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "20912434-8cac-4f75-8c1c-73690ca8478e", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 10.73}
+gateway-1    | INFO:     127.0.0.1:59670 - "GET /salud HTTP/1.1" 200 OK
+gateway-1    | {"ts": "2026-11-15T23:12:23.676284+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "c4fae372-153e-4e58-800a-bdddf93431cb", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 11.9}
+gateway-1    | INFO:     127.0.0.1:36680 - "GET /salud HTTP/1.1" 200 OK
+gateway-1    | INFO:     127.0.0.1:42788 - "GET /salud HTTP/1.1" 200 OK
+gateway-1    | {"ts": "2026-11-15T23:12:33.802139+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "04f3ca21-3d16-424e-b533-38f550173b8e", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 11.18}
+gateway-1    | {"ts": "2026-11-15T23:12:43.977054+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "7c19b736-1f27-42bb-b496-378cca8cd000", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 11.37}
+gateway-1    | INFO:     127.0.0.1:45306 - "GET /salud HTTP/1.1" 200 OK
+gateway-1    | INFO:     127.0.0.1:58218 - "GET /salud HTTP/1.1" 200 OK
+gateway-1    | {"ts": "2026-11-15T23:12:54.179996+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "1803f379-9b4f-4af8-9645-e51143fa6f2d", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 12.67}
+gateway-1    | {"ts": "2026-11-15T23:13:04.369287+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "2948467e-b0f5-4ac8-a85a-d17c35269b1f", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 23.47}
+gateway-1    | INFO:     127.0.0.1:45312 - "GET /salud HTTP/1.1" 200 OK
+gateway-1    | {"ts": "2026-11-15T23:13:14.621305+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "4de4a74c-bb6e-4a24-bc16-7d069a26a7dc", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 16.77}
+gateway-1    | INFO:     127.0.0.1:43466 - "GET /salud HTTP/1.1" 200 OK
+gateway-1    | INFO:     127.0.0.1:47858 - "GET /salud HTTP/1.1" 200 OK
+gateway-1    | {"ts": "2026-11-15T23:13:24.791965+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "637acfe6-2ad5-4865-933f-d7ef52253170", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 10.46}
+gateway-1    | {"ts": "2026-11-15T23:13:35.015497+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "ffd0baf6-b7a3-4a1e-91ef-a3c13d016dce", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 16.71}
+gateway-1    | INFO:     127.0.0.1:55536 - "GET /salud HTTP/1.1" 200 OK
+gateway-1    | {"ts": "2026-11-15T23:13:45.174960+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "452becfa-a74c-4d82-9381-d52b4f6febca", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 12.45}
+gateway-1    | INFO:     127.0.0.1:39718 - "GET /salud HTTP/1.1" 200 OK
+gateway-1    | {"ts": "2026-11-15T23:13:55.338631+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "a3faee0f-31ab-4ab5-820c-bf8a2ffb9b97", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 13.99}
+gateway-1    | INFO:     127.0.0.1:56666 - "GET /salud HTTP/1.1" 200 OK
+gateway-1    | INFO:     127.0.0.1:48278 - "GET /salud HTTP/1.1" 200 OK
+gateway-1    | {"ts": "2026-11-15T23:14:05.467435+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "a11683cc-1b12-49a5-9312-ed85914fece3", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 10.17}
+gateway-1    | INFO:     127.0.0.1:44610 - "GET /salud HTTP/1.1" 200 OK
+gateway-1    | {"ts": "2026-11-15T23:14:15.653133+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "e730e0a9-4175-4d98-b7c8-0b4894799679", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 18.88}
+gateway-1    | INFO:     127.0.0.1:51794 - "GET /salud HTTP/1.1" 200 OK
+gateway-1    | {"ts": "2026-11-15T23:14:25.799203+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "06fdcc95-022d-4524-8ccb-141e29c146a3", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 10.64}
+gateway-1    | INFO:     127.0.0.1:49334 - "GET /salud HTTP/1.1" 200 OK
+gateway-1    | {"ts": "2026-11-15T23:14:35.946903+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "136a2c47-f7d6-4992-9481-bca661d8d24f", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 9.87}
+gateway-1    | {"ts": "2026-11-15T23:14:46.131339+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "273f4775-1de5-4c4f-8a95-4957364f55f5", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 14.82}
+gateway-1    | INFO:     127.0.0.1:44320 - "GET /salud HTTP/1.1" 200 OK
+gateway-1    | {"ts": "2026-11-15T23:14:56.294521+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "961e6279-e302-45fb-bd1a-533d76411e8a", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 9.54}
+gateway-1    | INFO:     127.0.0.1:56138 - "GET /salud HTTP/1.1" 200 OK
+gateway-1    | INFO:     127.0.0.1:44988 - "GET /salud HTTP/1.1" 200 OK
+gateway-1    | {"ts": "2026-11-15T23:15:06.437639+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "0d9afdd5-d40e-40bd-9ccc-814f174c89f9", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 11.24}
+gateway-1    | INFO:     127.0.0.1:36026 - "GET /salud HTTP/1.1" 200 OK
+gateway-1    | {"ts": "2026-11-15T23:15:16.583980+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "ae683e4b-4442-45d4-80f1-2149dbb65cc4", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 11.83}
+gateway-1    | {"ts": "2026-11-15T23:15:26.752682+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "b22cee41-bdc2-432c-9002-9435969d51fd", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 11.84}
+gateway-1    | INFO:     127.0.0.1:55140 - "GET /salud HTTP/1.1" 200 OK
+gateway-1    | INFO:     127.0.0.1:36356 - "GET /salud HTTP/1.1" 200 OK
+gateway-1    | {"ts": "2026-11-15T23:15:36.963509+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "8ec4a0d8-dd40-4c78-b87e-e3462bc0918d", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 12.19}
+gateway-1    | {"ts": "2026-11-15T23:15:47.115891+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "cc37c271-1fd8-4af9-b63d-f00dc6f0ba14", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 12.19}
+gateway-1    | INFO:     127.0.0.1:39554 - "GET /salud HTTP/1.1" 200 OK
+gateway-1    | INFO:     127.0.0.1:53162 - "GET /salud HTTP/1.1" 200 OK
+gateway-1    | {"ts": "2026-11-15T23:15:57.264651+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "1bac79b9-0527-4f0a-b7d9-e00af1900631", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 13.81}
+gateway-1    | {"ts": "2026-11-15T23:16:07.443178+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "55fa0a93-3c7f-425f-99b7-1de4d5d8a98f", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 16.55}
+gateway-1    | INFO:     127.0.0.1:38658 - "GET /salud HTTP/1.1" 200 OK
+gateway-1    | {"ts": "2026-11-15T23:16:17.627940+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "fefb7017-7939-40e9-9fa0-1700bfdb2fa7", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 21.22}
+gateway-1    | INFO:     127.0.0.1:53956 - "GET /salud HTTP/1.1" 200 OK
+gateway-1    | INFO:     127.0.0.1:53062 - "GET /salud HTTP/1.1" 200 OK
+gateway-1    | {"ts": "2026-11-15T23:16:27.774764+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "c069dd44-1be4-4bd6-b28b-65d539dba2d1", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 10.18}
+gateway-1    | INFO:     127.0.0.1:41380 - "GET /salud HTTP/1.1" 200 OK
+gateway-1    | {"ts": "2026-11-15T23:16:37.918517+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "07629064-6304-4ddf-a4c5-6c6be43f01a6", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 10.57}
+gateway-1    | INFO:     127.0.0.1:34928 - "GET /salud HTTP/1.1" 200 OK
+gateway-1    | {"ts": "2026-11-15T23:16:48.107868+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "ce6a9b8b-3849-40d8-8b69-011821bc4da8", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 11.87}
+gateway-1    | INFO:     127.0.0.1:33720 - "GET /salud HTTP/1.1" 200 OK
+gateway-1    | {"ts": "2026-11-15T23:16:58.248217+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "3c270292-a1b1-47be-bdf0-3e83fd375ff5", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 13.46}
+gateway-1    | INFO:     127.0.0.1:41744 - "GET /salud HTTP/1.1" 200 OK
+gateway-1    | {"ts": "2026-11-15T23:17:08.406135+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "24681f44-2496-4a17-baf9-93b5b21cb846", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 14.55}
+gateway-1    | {"ts": "2026-11-15T23:17:18.587581+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "41346ebe-c5a9-4958-88d1-690834c5e704", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 13.04}
+gateway-1    | INFO:     127.0.0.1:58172 - "GET /salud HTTP/1.1" 200 OK
+gateway-1    | INFO:     127.0.0.1:54638 - "GET /salud HTTP/1.1" 200 OK
+gateway-1    | {"ts": "2026-11-15T23:17:28.731428+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "a24f070d-0818-4b76-b658-88c1af393a73", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 10.38}
+gateway-1    | INFO:     127.0.0.1:42404 - "GET /salud HTTP/1.1" 200 OK
+gateway-1    | {"ts": "2026-11-15T23:17:38.859328+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "acfc8df6-d357-4261-adcd-f64b9e3c37a8", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 9.45}
+gateway-1    | INFO:     127.0.0.1:49490 - "GET /salud HTTP/1.1" 200 OK
+gateway-1    | {"ts": "2026-11-15T23:17:49.067041+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "84ed81a8-d0d6-4239-9a65-3605f569d8bc", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 15.62}
+gateway-1    | {"ts": "2026-11-15T23:17:59.236160+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "61082387-4317-4c5c-b844-6b45f585ef1c", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 13.43}
+gateway-1    | INFO:     127.0.0.1:50428 - "GET /salud HTTP/1.1" 200 OK
+gateway-1    | {"ts": "2026-11-15T23:18:09.411475+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "4ede00b1-383e-43c1-bd68-e726661ad89b", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 18.16}
+gateway-1    | INFO:     127.0.0.1:36658 - "GET /salud HTTP/1.1" 200 OK
+gateway-1    | INFO:     127.0.0.1:60550 - "GET /salud HTTP/1.1" 200 OK
+gateway-1    | {"ts": "2026-11-15T23:18:19.590501+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "e98069ee-ef00-4a2e-b975-0d879f33d76b", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 13.36}
+gateway-1    | {"ts": "2026-11-15T23:18:29.737100+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "c744e95c-da88-4a7c-bd2a-313766726aac", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 10.7}
+gateway-1    | INFO:     127.0.0.1:57626 - "GET /salud HTTP/1.1" 200 OK
+gateway-1    | {"ts": "2026-11-15T23:18:40.023466+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "327877a5-d9eb-4985-86a8-67b8035f001f", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 20.64}
+gateway-1    | INFO:     127.0.0.1:51238 - "GET /salud HTTP/1.1" 200 OK
+gateway-1    | INFO:     127.0.0.1:38564 - "GET /salud HTTP/1.1" 200 OK
+gateway-1    | {"ts": "2026-11-15T23:18:51.232653+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "9be42aa8-6d06-45ea-8104-f13407437d9e", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 1009.0}
+gateway-1    | {"ts": "2026-11-15T23:19:02.374858+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "0a19e231-ea78-4bbe-a235-c0bbe0901c08", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 1002.8}
+gateway-1    | INFO:     127.0.0.1:33122 - "GET /salud HTTP/1.1" 200 OK
+gateway-1    | {"ts": "2026-11-15T23:19:08.595685+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "3a0cd0b2-6877-4f14-bd82-63ff2b3a805e", "metodo": "POST", "ruta": "/tareas/siguiente", "status": 200, "ms": 125.71}
+gateway-1    | INFO:     172.20.0.1:34350 - "POST /tareas/siguiente HTTP/1.1" 200 OK
+gateway-1    | {"ts": "2026-11-15T23:19:09.600430+00:00", "nivel": "WARNING", "servicio": "gateway", "msg": "eventos_pendientes", "cantidad": 1, "causa": "Error de comunicaci├│n: ConnectTimeout"}
+gateway-1    | {"ts": "2026-11-15T23:19:12.616752+00:00", "nivel": "WARNING", "servicio": "gateway", "msg": "eventos_pendientes", "cantidad": 1, "causa": "Error de comunicaci├│n: ConnectTimeout"}
+gateway-1    | INFO:     127.0.0.1:40594 - "GET /salud HTTP/1.1" 200 OK
+gateway-1    | {"ts": "2026-11-15T23:19:13.516108+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "a50a363f-5303-4393-a331-87d11cb6ab39", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 1004.45}
+gateway-1    | {"ts": "2026-11-15T23:19:17.637433+00:00", "nivel": "WARNING", "servicio": "gateway", "msg": "eventos_pendientes", "cantidad": 1, "causa": "Error de comunicaci├│n: ConnectTimeout"}
+gateway-1    | INFO:     127.0.0.1:59698 - "GET /salud HTTP/1.1" 200 OK
+gateway-1    | {"ts": "2026-11-15T23:19:24.660668+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "d98dea62-6849-4eb4-8fd5-c8ab14c6d012", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 1002.87}
+gateway-1    | {"ts": "2026-11-15T23:19:26.660136+00:00", "nivel": "WARNING", "servicio": "gateway", "msg": "eventos_pendientes", "cantidad": 1, "causa": "Error de comunicaci├│n: ConnectTimeout"}
+gateway-1    | INFO:     127.0.0.1:54030 - "GET /salud HTTP/1.1" 200 OK
+gateway-1    | {"ts": "2026-11-15T23:19:35.839549+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "2388aafd-358c-4c79-9923-f5b96843e6ea", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 1002.93}
+gateway-1    | {"ts": "2026-11-15T23:19:43.688289+00:00", "nivel": "WARNING", "servicio": "gateway", "msg": "eventos_pendientes", "cantidad": 1, "causa": "Error de comunicaci├│n: ConnectTimeout"}
+gateway-1    | {"ts": "2026-11-15T23:19:47.010220+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "c7d21bb2-5277-4cdb-8f18-642394bcc717", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 1003.01}
+gateway-1    | INFO:     127.0.0.1:57518 - "GET /salud HTTP/1.1" 200 OK
+gateway-1    | {"ts": "2026-11-15T23:19:58.166934+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "b022e890-3e3f-45bf-a8fd-baee624f86a5", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 1004.94}
+gateway-1    | INFO:     127.0.0.1:34334 - "GET /salud HTTP/1.1" 200 OK
+gateway-1    | INFO:     127.0.0.1:41686 - "GET /salud HTTP/1.1" 200 OK
+gateway-1    | {"ts": "2026-11-15T23:20:09.318459+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "0ddffde1-6fdb-4e2f-b93b-275ffe11bc3f", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 1002.26}
+gateway-1    | INFO:     Started server process [6]
+gateway-1    | INFO:     Waiting for application startup.
+gateway-1    | INFO:     Application startup complete.
+gateway-1    | INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+gateway-1    | {"ts": "2026-11-15T23:20:18.252411+00:00", "nivel": "WARNING", "servicio": "gateway", "msg": "eventos_pendientes", "cantidad": 1, "causa": "Error de comunicaci├│n: ConnectTimeout"}
+gateway-1    | INFO:     127.0.0.1:59100 - "GET /salud HTTP/1.1" 200 OK
+gateway-1    | {"ts": "2026-11-15T23:20:23.780572+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "fea3c824-d018-4c0e-9e79-32a1f664dbd6", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 1003.33}
+gateway-1    | INFO:     127.0.0.1:38070 - "GET /salud HTTP/1.1" 200 OK
+gateway-1    | {"ts": "2026-11-15T23:20:34.950007+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "0d460503-dc67-4db4-b878-a2af11606e93", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 1004.88}
+gateway-1    | {"ts": "2026-11-15T23:20:46.122315+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "977a868d-6020-4b40-a81e-b17be48e6d8b", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 1003.75}
+gateway-1    | INFO:     127.0.0.1:41068 - "GET /salud HTTP/1.1" 200 OK
+gateway-1    | {"ts": "2026-11-15T23:20:56.264422+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "99eb2e0c-16dd-4ae1-8252-cfbd72ab90b6", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 12.23}
+gateway-1    | INFO:     127.0.0.1:52522 - "GET /salud HTTP/1.1" 200 OK
+gateway-1    | INFO:     127.0.0.1:38838 - "GET /salud HTTP/1.1" 200 OK
+gateway-1    | {"ts": "2026-11-15T23:21:06.389215+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "ebe28e85-2c92-40c5-aff8-4a226350ae20", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 10.61}
+gateway-1    | INFO:     127.0.0.1:47030 - "GET /salud HTTP/1.1" 200 OK
+gateway-1    | {"ts": "2026-11-15T23:21:16.506714+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "e8f10e01-0fd9-4b9d-a00d-bb6f5920180b", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 11.54}
+gateway-1    | {"ts": "2026-11-15T23:21:18.360208+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "eventos_entregados", "cantidad": 1}
+gateway-1    | {"ts": "2026-11-15T23:21:26.631396+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "52191bc2-dbf6-494b-abfd-c50c96f883d6", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 10.4}
+gateway-1    | INFO:     127.0.0.1:50636 - "GET /salud HTTP/1.1" 200 OK
+gateway-1    | {"ts": "2026-11-15T23:21:36.794096+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "5c63f7ed-81b5-41f6-b985-a75cca6cc574", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 14.69}
+gateway-1    | INFO:     127.0.0.1:33884 - "GET /salud HTTP/1.1" 200 OK
+gateway-1    | {"ts": "2026-11-15T23:21:46.918670+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "7b6d0184-1ca7-4adb-899e-578c95d437ab", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 10.45}
+gateway-1    | INFO:     127.0.0.1:45648 - "GET /salud HTTP/1.1" 200 OK
+gateway-1    | {"ts": "2026-11-15T23:21:57.041393+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "45f65a62-0c3b-4bc5-a75c-bda6e6b3b564", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 10.69}
+gateway-1    | INFO:     127.0.0.1:36150 - "GET /salud HTTP/1.1" 200 OK
+gateway-1    | INFO:     127.0.0.1:32784 - "GET /salud HTTP/1.1" 200 OK
+gateway-1    | {"ts": "2026-11-15T23:22:07.228145+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "277adc0c-aba8-41ff-ae24-9c326569f865", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 29.77}
+gateway-1    | INFO:     127.0.0.1:38422 - "GET /salud HTTP/1.1" 200 OK
+gateway-1    | {"ts": "2026-11-15T23:22:17.379028+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "239fbd5e-fb68-4906-9bc0-aa9f84459537", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 10.15}
+gateway-1    | {"ts": "2026-11-15T23:22:27.542303+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "4cd6f14d-56a6-46c3-90f5-b61cadb77203", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 13.65}
+gateway-1    | INFO:     127.0.0.1:56352 - "GET /salud HTTP/1.1" 200 OK
+gateway-1    | {"ts": "2026-11-15T23:22:37.718929+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "8e90d579-1fd7-413d-81a7-90d73c1dff21", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 13.83}
+gateway-1    | INFO:     127.0.0.1:35906 - "GET /salud HTTP/1.1" 200 OK
+gateway-1    | {"ts": "2026-11-15T23:22:47.855413+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "e9d537fe-95d8-4556-bbb5-d5726cd742f5", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 13.99}
+gateway-1    | INFO:     127.0.0.1:48590 - "GET /salud HTTP/1.1" 200 OK
+gateway-1    | {"ts": "2026-11-15T23:22:57.988823+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "bcd557ea-652c-4a18-a622-2c91ac53744e", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 11.53}
+gateway-1    | INFO:     127.0.0.1:50698 - "GET /salud HTTP/1.1" 200 OK
+gateway-1    | INFO:     127.0.0.1:45468 - "GET /salud HTTP/1.1" 200 OK
+gateway-1    | {"ts": "2026-11-15T23:23:08.182953+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "7180cc07-a649-4adb-9b08-65388ded34e8", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 14.95}
+gateway-1    | {"ts": "2026-11-15T23:23:18.335811+00:00", "nivel": "INFO", "servicio": "gateway", "msg": "peticion", "request_id": "15a72eb4-2702-496d-890d-033d40aed210", "metodo": "GET", "ruta": "/salud", "status": 200, "ms": 13.79}
+gateway-1    | INFO:     127.0.0.1:57176 - "GET /salud HTTP/1.1" 200 OK

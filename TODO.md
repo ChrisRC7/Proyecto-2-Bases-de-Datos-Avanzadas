@@ -14,7 +14,7 @@
 | C | Historial (Parquet) + Analítica (Spark) + dataset histórico | 31 / 31 | Todas hechas: C4.9 (ruta del gateway), C2.7 y P4 verificados con el gateway real, §4, §5 y §8 del informe, README y preguntas de defensa |
 | Todos | Integración, informe, defensa | 5 / 12 | I.1–I.5 hechas (I.0 a medias: falta confirmar la protección de `main`). Quedan el informe (I.8), la revisión del README (I.9) y las tareas de personas: explicación cruzada, P7 al profesor, ensayo y entrega |
 
-_Última actualización: 2026-11-15 — Errores de integración corregidos: sesión vieja tras vencer el lock, `vence_en` renovado con latidos y borradores, `/salud` con los mensajes de Valkey, pruebas de B sin ids fijos, redes propias para MongoDB y Valkey (D15, D16). I.2 (recorrido LiDAR), I.4 (aislamiento) e I.5 (todo desde cero). B6.6 redactada. A: 34/34. B: 29/29. C: 31/31. Falta el informe._
+_Última actualización: 2026-11-17 — A actualizó el límite de §2.5 del informe: el plazo `vence_en` ya no es fijo (D16), con lo medido en I5. 2026-11-15: errores de integración corregidos: sesión vieja tras vencer el lock, `vence_en` renovado con latidos y borradores, `/salud` con los mensajes de Valkey, pruebas de B sin ids fijos, redes propias para MongoDB y Valkey (D15, D16). I.2 (recorrido LiDAR), I.4 (aislamiento) e I.5 (todo desde cero). B6.6 redactada. A: 34/34. B: 29/29. C: 31/31. Falta el informe._
 ---
 
 ## Cómo está dividido el trabajo
@@ -331,3 +331,4 @@ _(agregar aquí con persona sugerida y fecha)_
       Nota: corregido: `recuperar` borra en Lua la sesión cuyo token ya no tiene el lock y responde 404 `sesion_no_existe`. `b53` corre bien justo después de `b52_vencimiento`. Se ajustaron `prueba_http_sesiones_b23` y `prueba_borradores_b24`, que abrían sesiones sin lock (desde `alisson-b5`, `abrir` lo exige).
 - [x] (C, 2026-11-15) Aislamiento por red: con todo en `interna`, registro resolvía `valkey` y sesión resolvía `mongo1`. Redes propias `mongo` y `valkey` (D15); evidencia en `pruebas/i4_aislamiento.sh`.
 - [ ] (Todos, 2026-11-15) §1 y §3 del informe siguen con `\falta{}` en `informe/informe.tex`; el texto de B está en `informe/seccion_1_arquitectura_B.md`, `seccion_3_sesiones_B.md` y `seccion_7_valkey_B.md` y falta pasarlo a LaTeX. También quedaron viejos tres límites de §2.5 y §8 (plazo `vence_en` fijo, borrador de otro anotador, `/salud` sin los mensajes de Valkey): ya se corrigieron (D16, `alisson-b5`, D4) y hay que cambiarlos por lo que se midió. La tabla de evidencia (§ apéndice) espera los archivos de B (P1, P3, P8 de Valkey) y los nuevos I2, I4, I5 y P1_salud.
+      Nota: §2.5 actualizada por A el 2026-11-17 (plazo renovado con D16; la prueba de P3 en evidence/I5_entorno_limpio_20261115-2205.log). Quedan los límites viejos de §8.

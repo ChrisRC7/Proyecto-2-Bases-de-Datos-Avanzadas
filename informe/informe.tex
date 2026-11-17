@@ -229,10 +229,15 @@ puede perder si ese primario cae antes de replicarla (sección~7.1).
 \subsection{Límites del registro}
 
 \begin{itemize}\setlength{\itemsep}{1pt}
-\item El plazo de la asignación (\texttt{vence\_en}) es fijo: 120~s desde que se toma. El lock de Valkey se
-renueva con cada borrador y latido, pero el plazo en MongoDB no. Si alguien trabaja más de 120~s, el
-registro puede ofrecer la tarea a otra persona mientras el lock sigue tomado; el gateway no logra el lock,
-devuelve la tarea y responde 503. Lo anotamos como tarea pendiente; en las pruebas nadie tarda tanto.
+\item El plazo de la asignación (\texttt{vence\_en}) es de 120~s y se renueva junto con el lock de Valkey en
+cada latido y borrador (D16): el gateway le pide al registro la transición \texttt{renovar}, que no cambia el
+estado ni genera evento. Para no hacer una escritura \texttt{w: "majority"} en cada latido, el registro solo
+escribe cuando queda menos de la mitad del plazo. En la prueba de P3, un anotador mandó un latido cada 10~s
+durante 150~s: el registro escribió dos veces (a los 60 y a los 120~s), otro anotador recibió 204 todo ese
+tiempo y el envío final dio 200 (\ev{I5\_entorno\_limpio\_20261115-2205.log}). Queda una ventana: si el
+registro no responde, el latido igual da 200 (el lock ya se renovó) y la renovación se reintenta en el
+siguiente. Si sigue sin responder hasta que vence el plazo, la asignación vencida no se revive y el registro
+puede ofrecer la tarea a otro mientras el lock sigue tomado. No se probó con el registro caído.
 \item La exportación ordena en memoria; está bien para 500 aprobadas por proyecto, no para miles.
 \item Los explain y las mediciones son de una sola máquina con una colección pequeña: comparan documentos
 examinados y latencias relativas, no tiempos de un despliegue real.

@@ -8,7 +8,7 @@ Escritura con `w: "majority"` (configurable con `MONGO_W` solo para la comparaci
 | 1 | `POST /proyectos` | Crear proyecto (valida cliente). |
 | 2 | `POST /proyectos/{id}/lotes` | Crear batch + tareas. |
 | 3 | `POST /tareas/asignar` | Asignación atómica (`findOneAndUpdate`). |
-| 4 | `POST /tareas/{id}/transicion` | enviar · empezar_revision · aprobar · rechazar · liberar. |
+| 4 | `POST /tareas/{id}/transicion` | enviar · empezar_revision · aprobar · rechazar · liberar · renovar (plazo, sin cambio de estado). |
 | 5 | `GET /proyectos/{id}/exportar` | Aprobadas, paginación por cursor (`_id > cursor`). |
 | 6 | `GET /salud` | Estado del servicio y del replica set (PRIMARY visible o no). |
 
@@ -28,6 +28,13 @@ Body `{"accion": "...", "token": "uuid|null", "version": n, "actor_id": "uuid", 
 | empezar_revision | anotada | no | en_revision | en_revision |
 | aprobar | en_revision | no | aprobada | aprobada |
 | rechazar | en_revision | no | disponible | **rechazada** |
+
+| renovar | abierta y plazo vigente | sí | (sin cambio) | (sin evento) |
+
+`renovar` corre `asignacion.vence_en` otros 120 s cuando el gateway recibe un latido o un borrador, igual
+que el lock de Valkey. Solo escribe si quedan menos de 60 s (si no, `200 {"renovado": false, "vence_en"}`);
+no cambia la versión ni genera evento. Si la asignación ya venció o no es de ese token → `409
+asignacion_vencida`. Va como acción de esta ruta para no pasar de seis rutas por servicio.
 
 \* `liberar` no aparece en la tabla de transiciones del enunciado; se registra como evento `liberada`
 para trazabilidad y Spark lo ignora en Q1–Q5 (documentarlo en el informe).

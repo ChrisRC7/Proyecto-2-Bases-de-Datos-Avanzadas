@@ -1,0 +1,85 @@
+﻿{
+    "servicio":  "gateway",
+    "estado":  "operativo",
+    "capas":  {
+                  "registro":  {
+                                   "estado":  "operativo",
+                                   "detalle":  {
+                                                   "servicio":  "registro",
+                                                   "estado":  "operativo",
+                                                   "mongodb":  {
+                                                                   "estado":  "operativo",
+                                                                   "primario":  "mongo1:27017",
+                                                                   "secundarios":  2
+                                                               },
+                                                   "ts":  "2026-11-15T17:44:04.743631+00:00"
+                                               }
+                               },
+                  "sesion":  {
+                                 "estado":  "operativo",
+                                 "detalle":  {
+                                                 "servicio":  "sesion",
+                                                 "estado":  "operativo",
+                                                 "valkey":  {
+                                                                "ping":  true,
+                                                                "aof_activo":  true,
+                                                                "aof_escribiendo":  true
+                                                            },
+                                                 "ts":  "2026-11-15T17:44:04.742761+00:00"
+                                             }
+                             },
+                  "historial":  {
+                                    "estado":  "operativo",
+                                    "detalle":  {
+                                                    "servicio":  "historial",
+                                                    "estado":  "operativo",
+                                                    "cola":  {
+                                                                 "estado":  "operativo",
+                                                                 "eventos_en_stream":  30,
+                                                                 "pendientes_sin_ack":  0,
+                                                                 "micro_lotes_abiertos":  0
+                                                             },
+                                                    "lago":  {
+                                                                 "escribible":  true
+                                                             },
+                                                    "consumidor":  {
+                                                                       "vivo":  true,
+                                                                       "error":  null
+                                                                   },
+                                                    "ultimo_micro_lote":  {
+                                                                              "micro_lote_id":  "1794764257623-0_1794764257812-0",
+                                                                              "archivos":  [
+                                                                                               {
+                                                                                                   "archivo":  "eventos/mes=2026-11/part-1794764257623-0_1794764257812-0.parquet",
+                                                                                                   "filas":  2
+                                                                                               }
+                                                                                           ],
+                                                                              "estado":  "publicado",
+                                                                              "primero":  "1794764257623-0",
+                                                                              "ultimo":  "1794764257812-0",
+                                                                              "filas":  2,
+                                                                              "publicado_en":  1794764262731
+                                                                          },
+                                                    "ts":  "2026-11-15T17:44:04.748680+00:00"
+                                                }
+                                },
+                  "analitica":  {
+                                    "estado":  "operativo",
+                                    "detalle":  {
+                                                    "servicio":  "analitica",
+                                                    "estado":  "operativo",
+                                                    "spark":  {
+                                                                  "master":  "spark://spark-master:7077",
+                                                                  "master_alcanzable":  true,
+                                                                  "sesion_spark":  true,
+                                                                  "arranque_ms":  10488.6,
+                                                                  "error":  null,
+                                                                  "ejecutores":  1,
+                                                                  "nucleos":  2
+                                                              },
+                                                    "ts":  "2026-11-15T17:44:04.745878+00:00"
+                                                }
+                                }
+              },
+    "ts":  "2026-11-15T17:44:04.750425+00:00"
+}

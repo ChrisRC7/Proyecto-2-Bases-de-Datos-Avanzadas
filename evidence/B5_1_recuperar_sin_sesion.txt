@@ -1,0 +1,8 @@
+HTTP/1.1 404 Not Found
+date: Sun, 15 Nov 2026 17:49:08 GMT
+server: uvicorn
+content-length: 43
+content-type: application/json
+x-request-id: 74ff82cd-293d-4f60-9c1f-0e7464d1b456
+
+{"error":"sesion_no_existe","detalle":null}

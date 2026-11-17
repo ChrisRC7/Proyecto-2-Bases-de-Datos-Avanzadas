@@ -1,0 +1,72 @@
+# I.4 aislamiento modular · 2026-11-16T04:18:21Z · commit 2208c0e
+
+## 1. Puertos publicados al anfitrión (solo el gateway, 8000)
+analitica	(ninguno)
+cola-eventos	(ninguno)
+gateway	0.0.0.0:8000->8000/tcp, [::]:8000->8000/tcp
+historial	(ninguno)
+mongo1	(ninguno)
+mongo2	(ninguno)
+mongo3	(ninguno)
+registro	(ninguno)
+sesion	(ninguno)
+spark-master	(ninguno)
+spark-worker	(ninguno)
+valkey	(ninguno)
+
+## 2. Redes de cada contenedor
+gateway        borde interna 
+registro       interna mongo 
+sesion         interna valkey 
+historial      cola interna 
+analitica      interna spark 
+mongo1         mongo 
+mongo2         mongo 
+mongo3         mongo 
+valkey         valkey 
+cola-eventos   cola 
+spark-master   spark 
+spark-worker   spark 
+simulador      borde
+
+## 3. Variables de conexión de cada servicio (qué motor conoce)
+gateway: ANALITICA_URL=http://analitica:8004 HISTORIAL_URL=http://historial:8003 REGISTRO_URL=http://registro:8001 SESION_URL=http://sesion:8002 
+registro: MONGO_URI=mongodb://mongo1:27017,mongo2:27017,mongo3:27017/?replicaSet=rs0 SESION_URL=http://sesion:8002 
+sesion: VALKEY_URL=redis://valkey:6379/0 
+historial: COLA_HOST=cola-eventos SESION_URL=http://sesion:8002 
+analitica: SESION_URL=http://sesion:8002 SPARK_TGZ_ASC_URL=https://archive.apache.org/dist/spark/spark-3.5.1/spark-3.5.1-bin-hadoop3.tgz.asc SPARK_TGZ_URL=https://archive.apache.org/dist/spark/spark-3.5.1/spark-3.5.1-bin-hadoop3.tgz 
+
+## 4. Bibliotecas de cliente instaladas (pymongo = MongoDB, valkey = Valkey, pyarrow = Parquet)
+servicio   pymongo  valkey   pyarrow  pyspark 
+gateway    no       no       no       no      
+registro   sí      no       no       no      
+sesion     no       sí      no       no      
+historial  no       sí      sí      no      
+analitica  no       no       no       sí     
+
+## 5. A qué motores llega cada servicio por la red (resolución DNS dentro de la red de Docker)
+(«no» = el nombre ni siquiera existe en sus redes: no hay camino para conectarse)
+servicio   mongo1  valkey  cola-eventos  spark-master  gateway 
+gateway    no      no      no            no            sí     
+registro   sí     no      no            no            sí     
+sesion     no      sí     no            no            sí     
+historial  no      no      sí           no            sí     
+analitica  no      no      no            sí           sí     
+simulador: gateway sí · mongo1 no · valkey no · registro no · sesion no · historial no · analitica no · 
+
+## 6. Lago Parquet: quién lo monta y cómo
+historial: /datalake rw=true
+analitica: /datalake rw=false
+spark-worker: /datalake rw=false
+analitica escribiendo en /datalake: no puede (solo lectura)
+
+## 7. Menciones en el código de un servicio al motor de otro (deben ser solo comentarios)
+registro → Valkey:
+  servicios/registro/app/esquemas.py:10:# "renovar" no cambia el estado: corre asignacion.vence_en junto con el lock de Valkey (latido/borrador).
+  servicios/registro/app/main.py:1:"""Servicio registro — única fuente de verdad del estado de las tareas (MongoDB, nunca Valkey).
+  servicios/registro/app/main.py:24:LOCK_SEGUNDOS = int(os.getenv("LOCK_SEGUNDOS", "120"))  # igual que el lock de Valkey
+sesion → MongoDB:
+  servicios/sesion/app/prueba_pendientes_b26.py:25:    # Simulamos el resultado del gateway ante Mongo 503.
+analitica → MongoDB / Valkey / historial: 0 líneas
+sesion → estados de una tarea (disponible/anotada/en_revision/aprobada), sin pruebas: 0 líneas
+simulador → bibliotecas: httpx==0.28.1 

@@ -7,11 +7,13 @@ tiene la dirección/credenciales de esta instancia.
 | # | Método y ruta | Uso |
 |---|---|---|
 | 1 | `POST /locks/{tarea_id}` | `{"accion": "adquirir|renovar|soltar", "token": "uuid"}` |
-| 2 | `PUT /borradores/{tarea_id}` | Guarda borrador (requiere token vigente) y renueva el lock. |
-| 3 | `POST /sesiones/{anotador_id}` | `{"accion": "abrir|latido|cerrar|recuperar", "tarea_id", "proyecto_id", "etapa", "token"}`. `abrir` y `recuperar` devuelven el borrador existente si lo hay. |
-| 4 | `POST /estado-capas` | Una capa publica su mensaje de salud `{"servicio", "estado", "detalle"}`. |
-| 5 | `GET /estado-capas` | Lee los últimos mensajes de salud de todas las capas. |
-| 6 | `GET /salud` | `PING` + `INFO persistence` (AOF activo). |
+| 2 | `PUT · DELETE /borradores/{tarea_id}` | `PUT` guarda el borrador (requiere token vigente) y renueva el lock. `DELETE` `{"anotador_id", "token"}` lo borra solo si es de ese token (limpieza del gateway después del envío; `409 borrador_no_coincide` si no). |
+| 3 | `POST /sesiones/{anotador_id}` | `{"accion": "abrir|latido|cerrar|recuperar", "tarea_id", "proyecto_id", "etapa", "token"}`. `abrir` y `recuperar` devuelven el borrador existente si lo hay. `abrir` exige que el token tenga el lock (`409 conflicto_lock` si no); si el borrador era de otro anotador lo archiva en `borrador:archivado:{tarea}:{uuid}` (7 días). `recuperar` responde `404 sesion_no_existe` y borra la sesión si su token ya no tiene el lock (venció o la tomó otro). |
+| 4 | `POST · GET /estado-capas` | `POST`: una capa publica su mensaje de salud `{"servicio", "estado", "detalle"}`. `GET`: los mensajes vigentes de todas las capas (el gateway los usa en `/salud`). |
+| 5 | `GET /salud` | `PING` + `INFO persistence` (AOF activo). |
+
+Cinco rutas (el enunciado pide un máximo de seis por servicio); `/borradores` y `/estado-capas` aceptan dos
+métodos sobre el mismo recurso.
 
 Respuestas: `200`; `409` si el lock está tomado por otro token o el token no coincide; `404` sin datos.
 

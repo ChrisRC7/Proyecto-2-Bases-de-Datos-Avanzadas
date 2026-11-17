@@ -6,6 +6,7 @@ import os
 import httpx
 
 from b42_borradores import guardar_periodicamente, recuperar
+from proyecto_prueba import crear_proyecto
 
 
 GATEWAY = os.getenv("GATEWAY_URL", "http://gateway:8000")
@@ -13,8 +14,8 @@ GATEWAY = os.getenv("GATEWAY_URL", "http://gateway:8000")
 # Anotador del dataset (rol: anotador).
 ANOTADOR = "adbafed0-b600-460c-bbdc-fd55304374b3"
 
-# Proyecto aislado creado para B4.1.
-PROYECTO = "d2347c44-16a6-43cf-ad47-1c1e435b4b09"
+# Proyecto propio con una sola tarea (antes era un id creado a mano para B4.1).
+PROYECTO = crear_proyecto("b42", GATEWAY)  # una sola tarea: la primera asignación es esa
 
 CONTENIDO = {
     "etiquetas": ["lidar#ciclista"],

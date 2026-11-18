@@ -756,16 +756,24 @@ separando lo que el sistema no hace de lo que las mediciones no pueden decir.
 \item \textbf{El gateway es un solo proceso.} Es el cuello de botella de la carga: no pasa de $\sim$30
 peticiones por segundo (sección~6.3). Con dos procesos de uvicorn sale un 38--53\,\% más, pero no se dejó así
 porque cada proceso correría su propio publicador de eventos y sus limpiezas sobre el mismo SQLite.
-\item \textbf{Plazo de la asignación fijo.} El lock de Valkey se renueva con borradores y latidos, pero el
-\texttt{vence\_en} de MongoDB queda en 120~s desde la toma. Si alguien trabaja más, el registro puede ofrecer
-la tarea a otro mientras el lock sigue tomado: el gateway no consigue el lock, devuelve la tarea y responde
-503. No hay doble dueño, pero la tarea queda atascada hasta que el lock vence (sección~2.5).
-\item \textbf{Borrador de otro anotador.} Si una tarea vuelve a la cola con el borrador de otro todavía en
-Valkey, la sesión se niega a abrirla (409) y el gateway responde 503; como la tarea sigue primera en la cola,
-solo el anotador original la puede tomar. Se vio en el código y no tiene prueba.
-\item \textbf{\texttt{/salud} no usa los mensajes de Valkey.} Cada capa publica su estado cada 5~s en
-\texttt{sesion:/estado-capas} (llaves con TTL de 15~s; \ev{C2.7\_latidos\_estado\_capas\_20261115-1059.txt}),
-pero el gateway arma su respuesta consultando el \texttt{/salud} de cada servicio, no esos mensajes.
+\item \textbf{Plazo de la asignación con el registro caído.} El \texttt{vence\_en} de MongoDB se renueva
+junto con el lock de Valkey en cada latido y borrador (D16, sección~2.5). La ventana que queda es la del
+registro sin responder: el latido igual da 200 porque el lock ya se renovó, y si el registro sigue caído
+hasta que vence el plazo, puede ofrecer la tarea a otro con el lock todavía tomado. El gateway no consigue el
+lock, devuelve la tarea y responde 503: no hay doble dueño, pero la tarea queda atascada hasta que el lock
+vence. Este caso no se probó con el registro caído.
+\item \textbf{El borrador de un anotador vencido no se recupera.} Cuando una tarea vuelve a la cola con el
+borrador de otro anotador todavía en Valkey, la sesión lo mueve con un script Lua (solo si el nuevo anotador
+tiene el lock vigente) a \texttt{borrador:archivado:\{tarea\}:\{uuid\}} por 7~días, y el nuevo empieza sin
+borrador. Así la tarea ya no se atasca (prueba de borradores huérfanos, repetida en
+\ev{I5\_entorno\_limpio\_20261115-2205.txt}), pero ninguna ruta devuelve ese borrador archivado: el trabajo
+del primer anotador solo se puede revisar a mano en Valkey.
+\item \textbf{\texttt{/salud} depende de Valkey para los mensajes.} El gateway combina los mensajes de
+\texttt{sesion:/estado-capas} (cada 5~s, TTL de 15~s) con un \texttt{GET /salud} directo a cada servicio, y
+gana el peor (D4). Una capa sin mensaje vigente sale \texttt{caido}. Con Valkey caído no hay mensajes y
+\texttt{/salud} se arma solo con la consulta directa (\texttt{mensajes\_valkey: false}); la sesión no publica
+mensaje propio y su estado sale siempre de la consulta directa. Un servicio parado se ve al instante por la
+consulta directa y a los 16~s también por Valkey (\ev{P1\_salud\_20261115-2307.txt}).
 \item \textbf{Ventana entre MongoDB y la cola del gateway.} El evento se guarda en SQLite después del 200 de
 MongoDB. Si el proceso del gateway muere justo entre las dos cosas, la transición queda hecha y su fila no
 llega al lago; si lo que falla es la escritura en SQLite, el usuario recibe error aunque MongoDB confirmó.
@@ -838,6 +846,12 @@ Archivo & Qué respalda \\
 \texttt{C2.7\_latidos\_estado\_capas\_20261115-1059.txt} & Latidos de historial y analítica en \texttt{sesion:/estado-capas} (8.1). \\
 \texttt{P5\_analitica\_20261030-1410.md} (\texttt{.txt}, \texttt{.csv}, planes de Q1 y Q3) & P5: validación contra \texttt{prueba}, tiempos, 1 y 2 workers, principal y grande, planes (5.2--5.4). \\
 \texttt{C4.9\_analitica\_gateway\_20261115-1057.txt} (\texttt{.csv}) & Q1--Q5 por el gateway: validación, costo del gateway y errores 422, 404 y 503 (5.2 y 5.3). \\
+\texttt{I2\_recorrido\_lidar\_20261115-2217.txt} & Recorrido completo de una tarea LiDAR: siguiente, borradores, recuperar, enviar, segundo envío 409, revisión, exportar, visible en Q1 8,2~s después de aprobar (1). \\
+\texttt{I4\_aislamiento\_20261115-2218.txt} & Aislamiento modular: solo el gateway publica el 8000, redes por motor (D15), bibliotecas de cliente por servicio, lago en solo lectura para la analítica (1). \\
+\texttt{I5\_entorno\_limpio\_20261115-2205.txt} (y \texttt{.log}) & Todas las pruebas en orden desde \texttt{docker compose down -v} siguiendo el README; incluye la renovación del plazo (2.5), la prueba de borradores huérfanos (8.1) y P8 de Valkey (7.2). \\
+\texttt{P1\_salud\_20261115-2307.txt} & \texttt{/salud} con los mensajes de Valkey y la consulta directa: normal, degradado con historial o analítica parados, caído con Valkey parado o MongoDB sin mayoría (7.2 y 8.1). \\
+\texttt{C4.9\_analitica\_gateway\_20261115-2218.txt}, \texttt{P4\_gateway\_20261115-2220.txt}, \texttt{C2.6\_compactacion\_20261115-2227.txt}, \texttt{P5\_analitica\_20261115-2227.txt} (con sus \texttt{.csv}, planes y carpetas) & Las mismas pruebas de C repetidas en la corrida desde cero (I5), todas con exit 0 (4 y 5). \\
+\texttt{P2\_concurrencia\_gateway\_20261115-2213.csv}, \texttt{P8\_mongo\_gateway\_*\_20261115-224*}, \texttt{P6\_carga\_20261115-2246/} & P2, P8 de MongoDB y P6 repetidas en la corrida desde cero (I5), todas con exit 0 (2, 6 y 7.1). \\
 \bottomrule
 \end{tabular}
 \end{center}

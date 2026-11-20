@@ -10,12 +10,12 @@
 | Persona | Rol principal | Hechas / Total | Notas |
 |---|---|---|---|
 | A | Registro (MongoDB) + dataset operacional + simulador + carga | 29 / 34 | 29 hechas, 1 a medias (README), 1 bloqueada (PRs de B), 3 del informe pendientes |
-| B | Sesión (Valkey) + Gateway + salud | 28 / 29 | B1–B5 completada. B6.1–B6.5 completadas: arquitectura, sesiones, resultados de Valkey y README. Pendientes: B6.6.
+| B | Sesión (Valkey) + Gateway + salud | 29 / 29 | Todas las tareas de Persona B completadas. B1–B5 finalizadas; B6.1–B6.6 completadas, incluyendo arquitectura, sesiones, resultados de Valkey, README, documentación del Gateway y revisión del PR de C con cinco preguntas de defensa.
 | C | Historial (Parquet) + Analítica (Spark) + dataset histórico | 23 / 31 | 23 hechas, 2 a medias (falta el gateway y /estado-capas de B), 1 bloqueada por B, 5 del informe y README al final |
 | Todos | Integración, informe, defensa | 0 / 12 | |
 
 
-*_Última actualización: 2026-11-15 — Persona B: 28/29. Se completaron las pruebas P1, P3 y P8, con recuperación de borradores en 0.047 s, RTO observado de 1.016 s y persistencia AOF verificada. También se documentaron arquitectura (§1), sesiones (§3), resultados de Valkey (§7) y README. Pendientes de integración: limpieza de sesiones vencidas, sincronización MongoDB/Valkey y corrección de borradores huérfanos implementada en `alisson-b5`. A: 29/34. B: 28/29. C: 23/31._*
+__Última actualización: 2026-11-20 — Persona B: 29/29 tareas completadas. Se realizaron las pruebas P1, P3 y P8, con recuperación de borradores en 0.047 s, RTO observado de 1.016 s y persistencia AOF verificada. También se documentaron arquitectura (§1), sesiones (§3), resultados de Valkey (§7), README y las 11 rutas del Gateway de alisson-b5. B3.6 validó la persistencia y recuperación de eventos en SQLite tras la caída de Historial y el reinicio de Gateway; permanece documentada la limitación de atomicidad entre MongoDB y SQLite. B6.6 se completó mediante la revisión y aprobación del PR #2 de Chris y la verificación de cinco preguntas con respuestas sobre lago de datos y Spark en defensa/preguntas.md de documentacion. La integración final de ramas continúa siendo una actividad del equipo; deberá conservar la ruta de Analítica, la sincronización MongoDB/Valkey y las correcciones de borradores huérfanos de alisson-b5. A: 29/34. B: 29/29. C: 23/31.__
 
 ---
 
@@ -190,7 +190,8 @@ Observaciones pendientes: al vencer el lock puede persistir una sesión antigua 
 - [x] B6.3 Informe §7 (parte Valkey).
 - [x] B6.4 README: requisitos previos, `docker compose up/down`, perfiles, solución de problemas.
 - [x] B6.5 `endpoints/gateway.md` completo (todas las rutas, ejemplos curl, códigos).
-- [ ] B6.6 Revisar PRs de **C** y preparar 5 preguntas/respuestas sobre lago y Spark para la defensa.
+- [x] B6.6 Revisar PRs de **C** y preparar 5 preguntas/respuestas sobre lago y Spark para la defensa.
+B6.6 completada: revisión y aprobación del PR #2 de Chris (ChrisDevelop → documentacion). Verificadas las cinco preguntas y respuestas sobre lago de datos, Parquet, Historial y Spark en defensa/preguntas.md de la rama documentacion.
 
 ---
 

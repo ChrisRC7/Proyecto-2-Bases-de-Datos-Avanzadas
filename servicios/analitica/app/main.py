@@ -21,25 +21,32 @@ from fastapi import Path as RutaParam, Query
 from app.comun import SERVICIO, ahora_iso, crear_app, error, log
 from app.consultas import CONSULTAS, ConjuntoVacio, a_json, explicar, leer
 
+# Configuración: master de Spark, URL de sesión, periodo del latido.
 SPARK_MASTER = os.getenv("SPARK_MASTER", "spark://spark-master:7077")
 SESION_URL = os.getenv("SESION_URL", "http://sesion:8002")
 LATIDO_SEGUNDOS = 5
+# Parámetros reutilizables: ?conjunto= (principal|grande|prueba) y {n} entre 1 y 5.
 CONJUNTO = Query("principal", pattern="^(principal|grande|prueba)$")
 NUMERO = RutaParam(..., ge=1, le=5)
 
+# Aplicación FastAPI con el middleware y errores comunes.
 app = crear_app(SERVICIO)
 
 
 class Motor:
+    """Guarda la SparkSession única del proceso y su estado."""
+
     def __init__(self):
+        """Estado inicial: sin sesión; `lista` se activa cuando Spark queda conectado."""
         self.spark = None
         self.lista = threading.Event()
-        self.candado = threading.Lock()
+        self.candado = threading.Lock()  # una consulta a la vez
         self.ejecutadas = set()  # (n, conjunto) que ya corrieron en este proceso
         self.arranque_ms: Optional[float] = None
         self.ultimo_error: Optional[str] = None
 
     def crear(self) -> None:
+        """Intenta crear la SparkSession contra el master; si falla, reintenta cada 5 s."""
         from pyspark.sql import SparkSession
         while self.spark is None:
             t0 = time.perf_counter()
@@ -73,10 +80,12 @@ class Motor:
         return self.spark.sparkContext._jsc.sc().getExecutorMemoryStatus().size() - 1
 
 
+# Motor único del proceso.
 motor = Motor()
 
 
 def master_alcanzable() -> bool:
+    """True si se puede abrir una conexión TCP al puerto del master de Spark."""
     host, puerto = SPARK_MASTER.replace("spark://", "").split(":")
     try:
         socket.create_connection((host, int(puerto)), timeout=1).close()
@@ -86,6 +95,10 @@ def master_alcanzable() -> bool:
 
 
 def _preparar(n: int, conjunto: str):
+    """Espera hasta 60 s a que Spark esté listo y carga el conjunto.
+
+    Devuelve (DataFrame, None) o (None, respuesta de error 503/404).
+    """
     if not motor.lista.wait(timeout=60):
         return None, error(503, "spark_no_disponible", motor.ultimo_error)
     try:
@@ -97,10 +110,12 @@ def _preparar(n: int, conjunto: str):
 
 @app.get("/q/{n}")
 def consulta(n: int = NUMERO, conjunto: str = CONJUNTO):
+    """Ejecuta la consulta Qn sobre el conjunto y devuelve filas, tiempo en ms y si fue la primera vez."""
     df, problema = _preparar(n, conjunto)
     if problema:
         return problema
     with motor.candado:
+        # Se marca si es la primera ejecución de esta consulta (incluye costo de arranque).
         primera = (n, conjunto) not in motor.ejecutadas
         t0 = time.perf_counter()
         try:
@@ -119,6 +134,7 @@ def consulta(n: int = NUMERO, conjunto: str = CONJUNTO):
 
 @app.get("/plan/{n}")
 def plan(n: int = NUMERO, conjunto: str = CONJUNTO):
+    """Devuelve el plan físico de Spark de la consulta Qn sin ejecutarla."""
     df, problema = _preparar(n, conjunto)
     if problema:
         return problema
@@ -129,6 +145,7 @@ def plan(n: int = NUMERO, conjunto: str = CONJUNTO):
 
 
 def estado_capa() -> dict:
+    """Operativo solo si el master responde, hay SparkSession y al menos un ejecutor; si no, caído."""
     master = master_alcanzable()
     detalle = {"master": SPARK_MASTER, "master_alcanzable": master, "sesion_spark": motor.lista.is_set(),
                "arranque_ms": motor.arranque_ms, "error": motor.ultimo_error}
@@ -144,6 +161,7 @@ def estado_capa() -> dict:
 
 @app.get("/salud")
 def salud():
+    """GET /salud: estado de la capa de analítica."""
     return {"servicio": SERVICIO, **estado_capa(), "ts": ahora_iso()}
 
 
@@ -163,5 +181,6 @@ def _latido():
 
 @app.on_event("startup")
 def iniciar():
+    """Al arrancar: crea la SparkSession en un hilo aparte y lanza el latido."""
     threading.Thread(target=motor.crear, name="spark", daemon=True).start()
     threading.Thread(target=_latido, name="latido", daemon=True).start()

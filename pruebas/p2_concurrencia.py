@@ -27,6 +27,7 @@ from collections import Counter
 from concurrent.futures import ProcessPoolExecutor
 from multiprocessing import Barrier
 
+# Destino de cada modo, lugares donde buscar ids.json y anotación válida que se envía.
 URLS = {
     "registro": os.getenv("REGISTRO_URL", "http://registro:8001"),
     "gateway": os.getenv("GATEWAY_URL", "http://gateway:8000"),
@@ -35,11 +36,13 @@ IDS = [os.getenv("IDS_JSON", ""), "/srv/ids/ids.json", "/srv/dataset/salida/ids.
 GEOMETRIA = {"tipo": "cuboide_3d", "centro": [1.2, 3.4, 0.5], "dimensiones": [0.6, 1.8, 1.7], "yaw": 0.3}
 ANOTACION = {"etiquetas": ["lidar#ciclista"], "geometria": GEOMETRIA}
 
+# Variables de cada proceso hijo (las fija `iniciar`): barrera compartida y modo.
 barrera = None
 modo = "gateway"
 
 
 def http(metodo: str, ruta: str, cuerpo=None, anotador: str | None = None):
+    """Petición JSON al gateway o al registro según `modo`; devuelve (status, cuerpo)."""
     cabeceras = {"Content-Type": "application/json"}
     if anotador:
         cabeceras["X-Anotador-Id"] = anotador
@@ -55,11 +58,13 @@ def http(metodo: str, ruta: str, cuerpo=None, anotador: str | None = None):
 
 
 def iniciar(b, m):
+    """Inicializador de cada proceso del pool: recibe la barrera y el modo."""
     global barrera, modo
     barrera, modo = b, m
 
 
 def pedir(anotador_id: str, proyecto_id: str) -> dict:
+    """Un proceso: espera en la barrera (todos salen juntos), pide una tarea y devuelve el resultado."""
     if modo == "gateway":
         barrera.wait(timeout=60)  # las 50 salen a la vez
         t0 = time.time()
@@ -79,6 +84,7 @@ def pedir(anotador_id: str, proyecto_id: str) -> dict:
 
 
 def enviar(r: dict, token: str) -> int:
+    """Envía la anotación de la tarea asignada con el token dado; devuelve el código HTTP."""
     if modo == "gateway":
         return http("POST", f"/tareas/{r['tarea_id']}/enviar", {"token": token, "anotacion": ANOTACION},
                     r["anotador_id"])[0]
@@ -88,6 +94,7 @@ def enviar(r: dict, token: str) -> int:
 
 
 def revisar(tarea_id: str, revisor: str):
+    """Empieza la revisión y aprueba la tarea (para que salga en la exportación)."""
     if modo == "gateway":
         for accion in ("empezar", "aprobar"):
             http("POST", f"/tareas/{tarea_id}/revision", {"accion": accion}, revisor)
@@ -97,6 +104,7 @@ def revisar(tarea_id: str, revisor: str):
 
 
 def main() -> int:
+    """Prepara N tareas, lanza las solicitudes simultáneas y verifica la exclusividad; 0 si todo OK."""
     global modo
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--modo", choices=["gateway", "registro"], default="gateway")
@@ -139,6 +147,7 @@ def main() -> int:
     por_tarea = Counter(r["tarea_id"] for r in asignadas)
     dobles = {t: n for t, n in por_tarea.items() if n > 1}
 
+    # Para cada asignada: envío con token ajeno (409), envío bueno (200), repetido (409) y revisión.
     envios, segundos, ajenos = Counter(), Counter(), Counter()
     for r in asignadas:
         ajenos[enviar(r, str(uuid.uuid4()))] += 1
@@ -146,6 +155,7 @@ def main() -> int:
         segundos[enviar(r, r["token"])] += 1
         revisar(r["tarea_id"], revisor)
 
+    # La exportación debe tener cada tarea con el anotador que realmente la tomó.
     s, exportado = http("GET", f"/proyectos/{proyecto}/exportar?limite=100")
     dueño = {r["tarea_id"]: r["anotador_id"] for r in asignadas}
     coinciden = sum(1 for t in exportado["tareas"] if dueño.get(t["tarea_id"]) == t["anotacion"]["anotador_id"])
@@ -161,6 +171,7 @@ def main() -> int:
     if errores:
         print(f"Errores: {dict(errores)}")
     print(f"Enviar con token ajeno: {dict(ajenos)} · primer envío: {dict(envios)} · segundo envío: {dict(segundos)}")
+    # Lista de comprobaciones finales (texto, resultado).
     chequeos = [
         (f"{args.tareas} asignaciones (200)", estados[200] == args.tareas),
         (f"{len(anotadores) - args.tareas} sin tarea (204)", estados[204] == len(anotadores) - args.tareas),

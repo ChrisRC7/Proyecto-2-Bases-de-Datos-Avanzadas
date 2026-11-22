@@ -1,5 +1,11 @@
 
-"""Pruebas B3.3: cola durable, reintentos y recuperación."""
+"""Pruebas B3.3: cola durable, reintentos y recuperación.
+
+Se ejecuta dentro del contenedor del gateway:
+    docker compose exec -T gateway python -m app.prueba_eventos_b33
+No necesita los demás servicios: las llamadas internas se reemplazan con mocks.
+Imprime una línea OK por cada caso y una marca final si todo pasa.
+"""
 
 import asyncio
 import json
@@ -15,6 +21,7 @@ from app.cliente_interno import ServicioNoDisponible
 
 
 def evento_ejemplo():
+    """Devuelve un evento válido (fila del lago) con un event_id nuevo."""
     return {
         "event_id": str(uuid4()),
         "ts": "2026-11-09T20:00:00Z",
@@ -36,6 +43,7 @@ def evento_ejemplo():
 
 
 async def pruebas():
+    """Usa una base SQLite temporal y un historial simulado para probar el publicador."""
     with tempfile.TemporaryDirectory() as carpeta:
         ruta_db = Path(carpeta) / "eventos.sqlite3"
 
@@ -59,6 +67,7 @@ async def pruebas():
             llamadas = []
 
             async def historial_caido(*args, **kwargs):
+                """Historial simulado caído: anota los ids y lanza ServicioNoDisponible."""
                 llamadas.extend(e["event_id"] for e in kwargs["json"])
                 raise ServicioNoDisponible("historial", "Sin conexión")
 
@@ -80,6 +89,7 @@ async def pruebas():
             enviados = []
 
             async def historial_recuperado(*args, **kwargs):
+                """Historial simulado sano: guarda lo recibido y responde 202."""
                 enviados.append(kwargs["json"])
                 return httpx.Response(202, json={
                     "aceptados": 1,
@@ -126,6 +136,7 @@ async def pruebas():
             await eventos.publicar_evento(bueno)
 
             async def historial_valida(*args, **kwargs):
+                """Rechaza listas y el evento malo (422); acepta los demás de a uno (202)."""
                 cuerpo = kwargs["json"]
                 if isinstance(cuerpo, list) or cuerpo["event_id"] == malo["event_id"]:
                     return httpx.Response(422, json={"error": "validacion"})

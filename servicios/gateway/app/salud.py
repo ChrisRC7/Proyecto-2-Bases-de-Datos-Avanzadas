@@ -6,6 +6,7 @@ import asyncio
 from app.cliente_interno import SERVICIOS, cliente_compartido
 from app.comun import ahora_iso
 
+# Tiempo máximo de espera por cada consulta de salud.
 TIMEOUT = 1.0
 
 # Sin registro (MongoDB) o sin sesión (Valkey) no se puede asignar ni enviar: el sistema está caído
@@ -14,6 +15,11 @@ CRITICAS = ("registro", "sesion")
 
 
 async def revisar_servicio(cliente, nombre, url):
+    """Consulta GET /salud de un servicio y normaliza su estado.
+
+    Devuelve {"estado": operativo|degradado|caido, "detalle": ...}. Un error de red o un
+    código distinto de 200 se considera caído.
+    """
     try:
         respuesta = await cliente.get(
             url.rstrip("/") + "/salud",
@@ -60,11 +66,13 @@ async def revisar_servicio(cliente, nombre, url):
 # el mensaje trae lo que la capa sabe de sí misma (primario de MongoDB, ejecutores de Spark, cola) y la
 # consulta directa detecta en el momento una capa que se cayó y cuyo último mensaje sigue vivo hasta 15 s.
 # Gana el peor de los dos. Si sesion (Valkey) no responde no hay mensajes y queda solo la consulta directa.
+# Gravedad de cada estado (para elegir el peor) y capas que publican mensajes en Valkey.
 ORDEN = {"operativo": 0, "degradado": 1, "caido": 2}
 CON_MENSAJE = ("registro", "historial", "analitica")
 
 
 def normalizar(estado) -> str:
+    """Traduce cualquier texto de estado a operativo, caido o degradado."""
     estado = str(estado or "").lower()
     if estado in ("operativo", "ok", "healthy"):
         return "operativo"
@@ -89,6 +97,11 @@ async def leer_mensajes(cliente) -> dict | None:
 
 
 def combinar(nombre, directa, mensajes):
+    """Junta la consulta directa con el mensaje de Valkey de una capa y se queda con el peor estado.
+
+    Si no hay mensajes (sesión caída) o la capa no publica mensajes, se usa solo la directa.
+    Una capa que debería publicar y no tiene mensaje vigente cuenta como caída.
+    """
     if mensajes is None or nombre not in CON_MENSAJE:
         return {**directa, "fuente": "directa"}
     mensaje = mensajes.get(nombre)
@@ -103,7 +116,13 @@ def combinar(nombre, directa, mensajes):
 
 
 async def consultar_salud(cliente=None):
+    """Salud agregada del sistema para GET /salud del gateway.
+
+    Estado general: caído si registro o sesión están caídos; operativo si todas las capas
+    lo están; degradado en cualquier otro caso.
+    """
     async def consultar(http):
+        """Consulta todas las capas y los mensajes de Valkey en paralelo y arma la respuesta."""
         nombres = list(SERVICIOS)
 
         *resultados, mensajes = await asyncio.gather(
@@ -116,12 +135,14 @@ async def consultar_salud(cliente=None):
             leer_mensajes(http),
         )
 
+        # Estado final de cada capa (directa + mensaje de Valkey).
         capas = {
             nombre: combinar(nombre, directa, mensajes)
             for nombre, directa in zip(nombres, resultados)
         }
         estados = [capa["estado"] for capa in capas.values()]
 
+        # Regla del estado general del sistema.
         if any(capas[n]["estado"] == "caido" for n in CRITICAS if n in capas):
             general = "caido"
         elif all(e == "operativo" for e in estados):
@@ -140,6 +161,7 @@ async def consultar_salud(cliente=None):
     try:
         return await consultar(cliente or cliente_compartido())
 
+    # Error inesperado armando la salud: se informa degradado en vez de fallar.
     except Exception as exc:
         return {
             "servicio": "gateway",

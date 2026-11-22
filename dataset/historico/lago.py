@@ -11,10 +11,12 @@ from pathlib import Path
 import pyarrow as pa
 import pyarrow.parquet as pq
 
+# Raíz del lago, carpeta temporal y carpeta de cada conjunto.
 LAGO = Path(os.getenv("LAGO_DIR", "/datalake"))
 TMP = LAGO / "_tmp"
 CONJUNTOS = {"principal": "eventos", "grande": "eventos_grande", "prueba": "eventos_prueba"}
 
+# Columnas de cada fila del lago (un evento de cambio de estado de una tarea).
 ESQUEMA = pa.schema([
     pa.field("event_id", pa.string(), nullable=False),
     pa.field("ts", pa.timestamp("ms", tz="UTC"), nullable=False),
@@ -50,6 +52,7 @@ def escribir(columnas: dict, base: Path, mes: str, micro_lote_id: str) -> int:
     t = pa.table({c: pa.array(columnas[c], type=pa.int64() if c in ("ts", "tomada_ts") else ESQUEMA.field(c).type)
                   for c in CAMPOS})
     t = t.cast(ESQUEMA)  # int64 -> timestamp[ms, UTC]
+    # Escritura atómica: archivo completo en _tmp/, fsync y rename al destino.
     TMP.mkdir(parents=True, exist_ok=True)
     tmp = TMP / f"{micro_lote_id}__{mes}.parquet"
     with open(tmp, "wb") as f:

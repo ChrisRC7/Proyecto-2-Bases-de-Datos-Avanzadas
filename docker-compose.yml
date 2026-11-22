@@ -17,6 +17,8 @@
 
 name: proyecto2
 
+# Bloque común de los cinco servicios Python (se reutiliza con "<<: *servicio-python"):
+# se reinician solos, están en la red interna y Docker los marca sanos si /salud responde.
 x-servicio-python: &servicio-python
   restart: unless-stopped
   networks: [interna]
@@ -27,6 +29,8 @@ x-servicio-python: &servicio-python
     retries: 3
 
 services:
+  # Gateway: única entrada (puerto 8000 del host). Guarda eventos y limpiezas pendientes en SQLite
+  # dentro del volumen eventos_gateway para no perderlos si se reinicia.
   gateway:
     <<: *servicio-python
     build: ./servicios/gateway
@@ -46,6 +50,7 @@ services:
     # Sin "condition": el gateway debe arrancar y responder /salud aunque otra capa esté caída.
     depends_on: [registro, sesion, historial, analitica]
 
+  # Registro: fuente de verdad del estado de las tareas (MongoDB).
   registro:
     <<: *servicio-python
     build: ./servicios/registro
@@ -59,6 +64,7 @@ services:
       SESION_URL: http://sesion:8002
     networks: [interna, mongo]  # único servicio que ve a MongoDB
 
+  # Sesión: locks, borradores, sesiones activas y mensajes de salud (Valkey).
   sesion:
     <<: *servicio-python
     build: ./servicios/sesion
@@ -71,6 +77,7 @@ services:
       valkey:
         condition: service_healthy
 
+  # Historial: consume la cola de eventos y escribe el lago Parquet en micro-lotes.
   historial:
     <<: *servicio-python
     build: ./servicios/historial
@@ -90,6 +97,7 @@ services:
       - ./datalake:/datalake  # lectura/escritura solo aquí (C1.2)
     depends_on: [cola-eventos]
 
+  # Analítica: consultas Q1–Q5 con Spark sobre el lago (solo lectura).
   analitica:
     <<: *servicio-python
     build: ./servicios/analitica
@@ -114,6 +122,7 @@ services:
   mongo1: &mongo
     image: mongo:7.0
     hostname: mongo1
+    # Nodo del replica set rs0; caché de WiredTiger limitada para que quepan 3 nodos en la máquina.
     command: ["mongod", "--replSet", "rs0", "--bind_ip_all", "--wiredTigerCacheSizeGB", "0.25"]
     restart: unless-stopped
     networks: [mongo]
@@ -194,6 +203,7 @@ services:
   valkey:
     image: valkey/valkey:8.0
     restart: unless-stopped
+    # AOF activado con fsync cada segundo: ante una caída se pierde como máximo ~1 s de cambios.
     command:
       - valkey-server
       - --appendonly
@@ -295,6 +305,7 @@ services:
       - ./dataset/salida:/srv/ids:ro
       - ./evidence:/srv/evidence
 
+# Redes aisladas: cada base de datos solo es visible para el servicio que la usa.
 networks:
   interna:
   borde:
@@ -303,6 +314,7 @@ networks:
   cola:   # historial <-> cola-eventos
   spark:  # analitica <-> spark-master/workers
 
+# Volúmenes con nombre: datos que sobreviven a `docker compose down` (sin -v).
 volumes:
   mongo1:
   mongo2:

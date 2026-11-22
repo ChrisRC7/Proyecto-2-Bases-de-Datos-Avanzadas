@@ -1,5 +1,12 @@
 
-"""B3.6: limpieza durable despues de confirmar un envio."""
+"""B3.6: limpieza durable despues de confirmar un envio.
+
+Cuando el registro confirma un envío (o una liberación), hay que borrar el borrador,
+soltar el lock y cerrar la sesión en el servicio de sesión. Esas tres acciones se anotan
+primero en la tabla SQLite `limpiezas` (misma base que los eventos pendientes) y luego se
+ejecutan; si sesión no responde, quedan en la tabla y un trabajador en segundo plano las
+reintenta cada 2 s con espera exponencial.
+"""
 
 import asyncio
 import json
@@ -9,10 +16,12 @@ from app import eventos
 from app.cliente_interno import ServicioNoDisponible, solicitar
 from app.comun import log
 
+# Tarea asyncio que reintenta las limpiezas pendientes.
 _trabajador = None
 
 
 def _inicializar():
+    """Crea la tabla `limpiezas` (una fila por tarea, token y acción) si no existe."""
     with eventos._conexion() as db:
         db.execute("""
             CREATE TABLE IF NOT EXISTS limpiezas (
@@ -35,12 +44,13 @@ def _registrar(tarea_id, anotador_id, token, espera=0):
     espera: segundos antes de que el trabajador en segundo plano las tome.
     Devuelve las filas como las lee _pendientes, para correrlas en el momento.
     """
+    # (nombre, método, ruta en sesión, cuerpo) de cada limpieza.
     acciones = [
         (
             "eliminar_borrador",
-            "DELETE",
-            f"/borradores/{tarea_id}",
-            {"anotador_id": anotador_id, "token": token},
+            "POST",
+            f"/sesiones/{anotador_id}",
+            {"accion": "borrar_borrador", "tarea_id": tarea_id, "token": token},
         ),
         (
             "soltar_lock",
@@ -74,6 +84,7 @@ def _registrar(tarea_id, anotador_id, token, espera=0):
 
 
 def _pendientes():
+    """Hasta 50 limpiezas cuyo próximo intento ya llegó."""
     with eventos._conexion() as db:
         return db.execute(
             """
@@ -87,6 +98,7 @@ def _pendientes():
 
 
 async def registrar(tarea_id, anotador_id, token):
+    """Solo anota las limpiezas (sin ejecutarlas); las toma el trabajador."""
     await asyncio.to_thread(
         _registrar,
         str(tarea_id),
@@ -107,6 +119,7 @@ def _cerrar_varias(cerradas, reprogramadas):
             """,
             cerradas,
         )
+        # Espera exponencial: 2, 4, 8, ... segundos, con tope de 60 s.
         db.executemany(
             """
             UPDATE limpiezas
@@ -127,6 +140,7 @@ def _cerrar_varias(cerradas, reprogramadas):
 
 
 async def _procesar(filas):
+    """Ejecuta cada limpieza contra sesión y luego cierra o reprograma las filas en SQLite."""
     cerradas, reprogramadas = [], []
 
     for tarea_id, token, accion, metodo, ruta, cuerpo, intentos in filas:
@@ -171,6 +185,7 @@ async def _procesar(filas):
 
 
 async def procesar_pendientes():
+    """Una pasada del trabajador: toma las limpiezas vencidas y las ejecuta."""
     filas = await asyncio.to_thread(_pendientes)
     await _procesar(filas)
 
@@ -200,6 +215,7 @@ async def ejecutar(tarea_id, anotador_id, token):
 
 
 async def _trabajar():
+    """Bucle del trabajador: una pasada cada 2 s; un error no lo detiene."""
     while True:
         try:
             await procesar_pendientes()
@@ -210,6 +226,7 @@ async def _trabajar():
 
 
 async def iniciar():
+    """Crea la tabla y lanza el trabajador (al arrancar el gateway)."""
     global _trabajador
 
     await asyncio.to_thread(_inicializar)
@@ -217,6 +234,7 @@ async def iniciar():
 
 
 async def detener():
+    """Cancela el trabajador y espera a que termine (al apagar el gateway)."""
     global _trabajador
 
     if _trabajador is not None:

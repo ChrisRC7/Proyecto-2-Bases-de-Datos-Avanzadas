@@ -10,6 +10,7 @@
 set -u
 cd "$(dirname "$0")/.."
 
+# Escenario y modo; la duración de la sonda depende del escenario.
 esc=${1:?uso: pruebas/p8_mongo.sh secundario|primario|sin-mayoria [gateway|registro]}
 modo=${2:-gateway}
 case $modo in gateway) prefijo=P8_mongo_gateway ;; registro) prefijo=P8_mongo ;; *) echo "modo desconocido: $modo" >&2; exit 2 ;; esac
@@ -27,6 +28,7 @@ rol() {  # nodos con ese estado según el primer nodo que responda, p. ej. «rol
       "rs.status().members.filter(m => m.stateStr == '$1').forEach(m => print(m.name.split(':')[0]))" 2>/dev/null && return
   done
 }
+# Corre un script de pruebas/ en el contenedor dataset (red interna, ve a MongoDB).
 corre() { docker compose --profile datos run --rm -T -v ./pruebas:/srv/pruebas dataset python "$@" 2>&1 | grep -v '^ Container'; }
 sonda() {  # en modo gateway corre en el simulador, que solo ve al gateway
   if [ "$modo" = gateway ]; then
@@ -36,6 +38,7 @@ sonda() {  # en modo gateway corre en el simulador, que solo ve al gateway
     corre /srv/pruebas/p8_sonda.py --modo registro "$@"
   fi
 }
+# True si el replica set volvió a tener 1 primario y 2 secundarios.
 sano() { [ "$(rol PRIMARY | wc -l)" -eq 1 ] && [ "$(rol SECONDARY | wc -l)" -eq 2 ]; }
 
 {
@@ -43,6 +46,7 @@ sano() { [ "$(rol PRIMARY | wc -l)" -eq 1 ] && [ "$(rol SECONDARY | wc -l)" -eq 
   echo; echo "## Precondición"
   docker compose --profile datos run --rm dataset 2>&1 | grep -E 'Semilla|tareas  '  # dataset limpio
   pruebas/estado_rs.sh
+  # Elige qué nodo(s) se van a matar según el escenario.
   primario=$(rol PRIMARY)
   read -r -a secundarios <<< "$(rol SECONDARY | tr '\n' ' ')"
   case $esc in
@@ -69,6 +73,7 @@ sano() { [ "$(rol PRIMARY | wc -l)" -eq 1 ] && [ "$(rol SECONDARY | wc -l)" -eq 
   echo "-- recuperación: docker compose start ${objetivo[*]} · $recuperacion ($(date -u +%FT%T.%3NZ))"
   wait "$sonda"
 
+  # Espera hasta 60 s a que el conjunto se recupere por completo.
   for _ in $(seq 1 30); do sano && break; sleep 2; done
   echo; echo "## Después (conjunto restaurado)"
   pruebas/estado_rs.sh

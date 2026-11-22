@@ -15,6 +15,9 @@ import subprocess
 import sys
 from pathlib import Path
 
+# Script que se ejecuta dentro del contenedor historial (recibe las ventanas por stdin):
+# lee ts, event_id y mtime de cada Parquet del lago e imprime por corrida cuántos eventos
+# llegaron y el atraso (mtime del archivo - ts del evento) en p50/p95/máx.
 EN_HISTORIAL = r'''
 import glob, json, os, sys
 import pyarrow.parquet as pq
@@ -35,9 +38,11 @@ for k, (ini, fin, a, b, ok, cero) in ventanas.items():
 
 
 def main():
+    """Calcula la ventana de cada corrida a partir de sus CSV y le pide el conteo al historial."""
     ventanas = {}
     for carpeta in map(Path, sys.argv[1:]):
         for archivo in sorted(carpeta.glob("*u_c[0-9].csv"), key=lambda p: (int(p.name.split("u_")[0]), p.name)):
+            # [inicio, fin, inicio medición, fin medición, respuestas 200, sin respuesta]
             filas = list(csv.DictReader(open(archivo)))
             medidas = [float(f["ts"]) for f in filas if f["fase"] == "medicion"]
             ventanas[f"{carpeta.name}/{archivo.stem}"] = [

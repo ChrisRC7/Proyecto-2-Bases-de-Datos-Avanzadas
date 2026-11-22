@@ -3,9 +3,10 @@
 # y después, y compara Q1–Q5 (por el gateway) antes y después: deben dar lo mismo.
 # Uso: pruebas/c26_compactacion.sh [AAAA-MM]   (por defecto el mes actual, donde escribe el historial)
 #   → evidence/C2.6_compactacion_<AAAAMMDD-HHMM>.txt
-set -u
-cd "$(dirname "$0")/.."
+set -u                       # error si se usa una variable sin definir
+cd "$(dirname "$0")/.."      # se trabaja desde la raíz del repo
 
+# Mes a compactar, archivo de evidencia y carpeta temporal para los resultados de Q1–Q5.
 mes=${1:-$(date -u +%Y-%m)}
 base=evidence/C2.6_compactacion_$(date +%Y%m%d-%H%M)
 dir=$(mktemp -d)
@@ -33,6 +34,7 @@ EOF
 {
   echo "# C2.6 compactación de mes=$mes (conjunto principal) · $(date -u +%FT%TZ) · commit $(git rev-parse --short HEAD)"
   echo; echo "## Antes"
+  # Fuerza la publicación del micro-lote abierto para que el conteo "antes" esté completo.
   docker compose exec -T historial python -c "import urllib.request; urllib.request.urlopen(urllib.request.Request('http://localhost:8003/flush', method='POST'), timeout=30)"
   mes_lago
   consultas antes
@@ -50,4 +52,5 @@ for q in a:
     print(f"{q}: {'igual' if a[q] == d[q] else 'DIFERENTE'} antes y después")
 EOF
 } 2>&1 | tee "$base.txt"
+# Borra la carpeta temporal.
 rm -rf "$dir"

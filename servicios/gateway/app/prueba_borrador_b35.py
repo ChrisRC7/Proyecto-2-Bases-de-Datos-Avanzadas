@@ -1,5 +1,11 @@
 
-"""Pruebas B3.5: guardado de borradores desde gateway."""
+"""Pruebas B3.5: guardado de borradores desde gateway.
+
+Se ejecuta dentro del contenedor del gateway:
+    docker compose exec -T gateway python -m app.prueba_borrador_b35
+No necesita los demás servicios: las llamadas internas se reemplazan con mocks.
+Imprime una línea OK por cada caso y una marca final si todo pasa.
+"""
 
 import asyncio
 from unittest.mock import AsyncMock, patch
@@ -12,6 +18,7 @@ from app.cliente_interno import permite_reintento
 
 
 def respuesta(codigo, datos):
+    """Construye una httpx.Response falsa con ese código y cuerpo JSON (para los mocks)."""
     return httpx.Response(
         codigo,
         json=datos,
@@ -20,6 +27,7 @@ def respuesta(codigo, datos):
 
 
 async def pruebas():
+    """Llama a main.guardar_borrador directamente con `solicitar` simulado."""
     tarea_id = uuid4()
     anotador_id = uuid4()
     token = uuid4()
@@ -29,6 +37,7 @@ async def pruebas():
         contenido={"texto": "borrador de prueba"},
     )
 
+    # Objeto mínimo que imita a fastapi.Request (solo se usa request.state.request_id).
     request = type("RequestPrueba", (), {})()
     request.state = type("EstadoPrueba", (), {})()
     request.state.request_id = "b35-request-id"

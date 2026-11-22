@@ -13,21 +13,26 @@ import sys
 from collections import defaultdict
 from pathlib import Path
 
+# Nombre del endpoint de envío tal como aparece en el CSV del simulador.
 ENVIAR = "POST /tareas/{id}/enviar"
 
 
 def percentil(valores, p):
+    """Percentil p (0-100) por rango más cercano."""
     orden = sorted(valores)  # rango más cercano, igual que simulador/simular.py
     return orden[min(len(orden) - 1, max(0, round(p / 100 * len(orden) + 0.5) - 1))]
 
 
 def mib(texto):
+    """Convierte un tamaño de `docker stats` ("512MiB", "1.2GiB", "300kB"...) a MiB."""
     numero, unidad = re.match(r"([\d.]+)\s*([KMG]i?B|B)", texto.strip()).groups()
     return float(numero) * {"B": 1 / 2**20, "KiB": 1 / 1024, "kB": 1 / 1024, "MiB": 1, "MB": 1,
                             "GiB": 1024, "GB": 1024}[unidad]
 
 
 def main():
+    """Imprime, por nivel de usuarios, las tablas de latencias, envíos/min y uso de CPU/memoria."""
+    # Agrupa los CSV por nivel: "40u_c1.csv" -> nivel 40, corrida 1.
     carpeta = Path(sys.argv[1])
     corridas = defaultdict(list)
     for archivo in sorted(carpeta.glob("*u_c[0-9].csv")):
@@ -39,6 +44,7 @@ def main():
         juntas = defaultdict(list)
         por_corrida = []
         ventanas = []
+        # Junta las filas de la fase medida de todas las corridas del nivel.
         for archivo in corridas[nivel]:
             filas = [f for f in csv.DictReader(open(archivo)) if f["fase"] == "medicion"]
             ts = [float(f["ts"]) for f in filas]
@@ -49,6 +55,7 @@ def main():
             for f in filas:
                 juntas[f["endpoint"]].append(f)
 
+        # Tabla de latencias por endpoint (las tres corridas juntas).
         print(f"{'endpoint':<30} {'n':>6} {'p50':>8} {'p95':>8} {'p99':>8} {'2xx':>6} {'4xx':>5} {'5xx/0':>6}")
         for endpoint, fs in sorted(juntas.items()):
             ms = [float(f["ms"]) for f in fs]
@@ -73,6 +80,7 @@ def main():
                     partes.append(f"{nombre} {percentil(ms, 50):.0f}/{percentil(ms, 95):.0f}/{percentil(ms, 99):.0f}")
             print(f"  {archivo.stem:<8} " + " · ".join(partes))
 
+        # CPU y memoria de docker stats, solo dentro de la ventana medida de cada corrida.
         cpu, mem = defaultdict(list), defaultdict(list)
         for archivo, desde, hasta in ventanas:
             stats = carpeta / f"{archivo.stem}_stats.csv"

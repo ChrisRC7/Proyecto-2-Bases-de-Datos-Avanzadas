@@ -7,6 +7,7 @@
 set -u
 cd "$(dirname "$0")/.."
 salida=evidence/I4_aislamiento_$(date +%Y%m%d-%H%M).txt
+# Servicios propios de la plataforma que se revisan.
 SERVICIOS="gateway registro sesion historial analitica"
 
 puede_importar() {  # $1 servicio, $2 módulo

@@ -5,6 +5,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, field_validator, model_validator
 
+# Tipos de tarea válidos por modalidad y motivos de rechazo (los mismos que en el registro).
 TIPOS_POR_MODALIDAD = {
     "texto": {"span"},
     "imagen": {"bbox", "poligono"},
@@ -15,6 +16,7 @@ MOTIVOS = {"ETIQUETA_INCORRECTA", "GEOMETRIA_IMPRECISA", "OBJETO_OMITIDO", "INST
 
 
 def _iso(t: datetime | None) -> str | None:
+    """Fecha a texto ISO-8601 UTC con milisegundos y "Z"; None se queda None."""
     if t is None:
         return None
     t = t.astimezone(timezone.utc)
@@ -22,6 +24,8 @@ def _iso(t: datetime | None) -> str | None:
 
 
 class Evento(BaseModel):
+    """Una fila del lago tal como la manda el gateway. Rechaza campos desconocidos."""
+
     model_config = ConfigDict(extra="forbid")
 
     event_id: UUID
@@ -45,11 +49,13 @@ class Evento(BaseModel):
     @field_validator("ts", "tomada_ts")
     @classmethod
     def con_zona(cls, t: datetime | None) -> datetime | None:
+        """Asegura que las fechas tengan zona horaria."""
         # Sin zona se toma como UTC (todas las fechas del proyecto son UTC).
         return t.replace(tzinfo=timezone.utc) if t is not None and t.tzinfo is None else t
 
     @model_validator(mode="after")
     def coherente(self):
+        """Reglas entre campos: tipo acorde a la modalidad, motivo en rechazos y números positivos."""
         if self.tipo_tarea not in TIPOS_POR_MODALIDAD[self.modalidad]:
             raise ValueError(f"tipo_tarea '{self.tipo_tarea}' no corresponde a '{self.modalidad}'")
         if self.estado == "rechazada" and self.motivo_rechazo not in MOTIVOS:

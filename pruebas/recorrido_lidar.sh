@@ -5,6 +5,7 @@
 set -u
 cd "$(dirname "$0")/.."
 salida=evidence/I2_recorrido_lidar_$(date +%Y%m%d-%H%M).txt
+# Encabezado, recorrido y código de salida; todo se guarda en el archivo de evidencia.
 {
   echo "# I.2 recorrido LiDAR · $(date -u +%FT%TZ) · commit $(git rev-parse --short HEAD)"
   echo "Máquina: $(grep -m1 'model name' /proc/cpuinfo | cut -d: -f2 | xargs) · $(nproc) CPU · $(free -g | awk '/Mem:/ {print $2}') GiB"

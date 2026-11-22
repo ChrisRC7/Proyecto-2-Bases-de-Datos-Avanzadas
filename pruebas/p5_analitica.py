@@ -21,6 +21,7 @@ import time
 import urllib.error
 import urllib.request
 
+# Destino de las consultas, archivo con los resultados esperados y tolerancia para decimales.
 URL = os.getenv("ANALITICA_URL", "http://analitica:8004")
 RUTA_Q = "/q/{n}?conjunto={conjunto}"
 ESPERADO = "/srv/dataset/historico/esperado_prueba.json"
@@ -28,6 +29,7 @@ TOLERANCIA = 1e-3
 
 
 def get(ruta: str, timeout: float = 900):
+    """GET a URL+ruta; devuelve (status, JSON) también en errores HTTP."""
     try:
         with urllib.request.urlopen(URL + ruta, timeout=timeout) as r:
             return r.status, json.loads(r.read())
@@ -36,12 +38,14 @@ def get(ruta: str, timeout: float = 900):
 
 
 def igual(a, b) -> bool:
+    """Compara dos valores; los decimales se comparan con TOLERANCIA."""
     if isinstance(a, float) or isinstance(b, float):
         return abs(float(a) - float(b)) <= TOLERANCIA
     return a == b
 
 
 def validar() -> bool:
+    """Ejecuta Q1–Q5 sobre el conjunto prueba y compara con esperado_prueba.json; True si todo coincide."""
     esperado = json.load(open(ESPERADO))
     todo_bien = True
     print("\n## Validación contra conjunto=prueba (esperado calculado a mano)")
@@ -53,6 +57,7 @@ def validar() -> bool:
             ok = len(filas) == len(esp) and all(
                 all(igual(f[k], e[k]) for k in e) for f, e in zip(filas, esp))
         else:
+            # Las demás se comparan sin importar el orden, indexando por sus dos primeras columnas.
             clave = lambda f: tuple(str(f[k]) for k in list(esp[0])[:2])  # noqa: E731
             por_clave = {clave(f): f for f in filas}
             ok = len(filas) == len(esp) and all(
@@ -68,6 +73,7 @@ def validar() -> bool:
 
 
 def planes(prefijo: str) -> None:
+    """Guarda en archivos de texto el plan físico de Q1 y Q3 del conjunto principal."""
     for n in (1, 3):
         status, d = get(f"/plan/{n}?conjunto=principal")
         with open(f"{prefijo}_plan_q{n}.txt", "w") as f:
@@ -77,6 +83,7 @@ def planes(prefijo: str) -> None:
 
 
 def tiempos(config: str, conjuntos: list[str], reps: int, ruta_csv: str) -> None:
+    """Mide `reps` ejecuciones de cada consulta y conjunto; agrega filas al CSV e imprime una tabla."""
     nuevo = not os.path.exists(ruta_csv)
     with open(ruta_csv, "a", newline="") as f:
         w = csv.DictWriter(f, fieldnames=["ts", "config", "conjunto", "consulta", "rep", "ms", "ms_cliente",
@@ -109,6 +116,7 @@ def tiempos(config: str, conjuntos: list[str], reps: int, ruta_csv: str) -> None
 
 
 def main() -> int:
+    """Configura el destino (directo o por gateway), valida, mide tiempos y guarda planes según los flags."""
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--config", required=True, help="etiqueta, p. ej. 1worker / 2workers")
     ap.add_argument("--csv", help="sin --csv solo valida (y guarda planes)")

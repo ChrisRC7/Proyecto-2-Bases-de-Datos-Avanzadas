@@ -1,0 +1,1261 @@
+===== 0a docker compose down -v · 04:15:59 · docker compose down -v
+ Container proyecto2-mongo-init-1 Stopping 
+ Container proyecto2-gateway-1 Stopping 
+ Container proyecto2-mongo-init-1 Stopped 
+ Container proyecto2-mongo-init-1 Removing 
+ Container proyecto2-mongo-init-1 Removed 
+ Container proyecto2-mongo2-1 Stopping 
+ Container proyecto2-mongo3-1 Stopping 
+ Container proyecto2-mongo1-1 Stopping 
+ Container proyecto2-gateway-1 Stopped 
+ Container proyecto2-gateway-1 Removing 
+ Container proyecto2-mongo3-1 Stopped 
+ Container proyecto2-mongo3-1 Removing 
+ Container proyecto2-mongo2-1 Stopped 
+ Container proyecto2-mongo2-1 Removing 
+ Container proyecto2-mongo1-1 Stopped 
+ Container proyecto2-mongo1-1 Removing 
+ Container proyecto2-mongo3-1 Removed 
+ Container proyecto2-gateway-1 Removed 
+ Container proyecto2-registro-1 Stopping 
+ Container proyecto2-sesion-1 Stopping 
+ Container proyecto2-analitica-1 Stopping 
+ Container proyecto2-historial-1 Stopping 
+ Container proyecto2-mongo1-1 Removed 
+ Container proyecto2-mongo2-1 Removed 
+ Container proyecto2-historial-1 Stopped 
+ Container proyecto2-historial-1 Removing 
+ Container proyecto2-registro-1 Stopped 
+ Container proyecto2-registro-1 Removing 
+ Container proyecto2-sesion-1 Stopped 
+ Container proyecto2-sesion-1 Removing 
+ Container proyecto2-historial-1 Removed 
+ Container proyecto2-cola-eventos-1 Stopping 
+ Container proyecto2-registro-1 Removed 
+ Container proyecto2-sesion-1 Removed 
+ Container proyecto2-valkey-1 Stopping 
+ Container proyecto2-analitica-1 Stopped 
+ Container proyecto2-analitica-1 Removing 
+ Container proyecto2-valkey-1 Stopped 
+ Container proyecto2-valkey-1 Removing 
+ Container proyecto2-analitica-1 Removed 
+ Container proyecto2-spark-worker-1 Stopping 
+ Container proyecto2-valkey-1 Removed 
+ Container proyecto2-cola-eventos-1 Stopped 
+ Container proyecto2-cola-eventos-1 Removing 
+ Container proyecto2-cola-eventos-1 Removed 
+ Container proyecto2-spark-worker-1 Stopped 
+ Container proyecto2-spark-worker-1 Removing 
+ Container proyecto2-spark-worker-1 Removed 
+ Container proyecto2-spark-master-1 Stopping 
+ Container proyecto2-spark-master-1 Stopped 
+ Container proyecto2-spark-master-1 Removing 
+ Container proyecto2-spark-master-1 Removed 
+ Volume proyecto2_cola-eventos Removing 
+ Volume proyecto2_mongo3 Removing 
+ Volume proyecto2_mongo2 Removing 
+ Volume proyecto2_eventos_gateway Removing 
+ Network proyecto2_borde Removing 
+ Network proyecto2_valkey Removing 
+ Network proyecto2_interna Removing 
+ Network proyecto2_mongo Removing 
+ Network proyecto2_spark Removing 
+ Network proyecto2_cola Removing 
+ Volume proyecto2_cola-eventos Removed 
+ Volume proyecto2_mongo1 Removing 
+ Volume proyecto2_valkey_sesion Removing 
+ Volume proyecto2_mongo3 Removed 
+ Volume proyecto2_eventos_gateway Removed 
+ Volume proyecto2_mongo2 Removed 
+ Volume proyecto2_valkey_sesion Removed 
+ Volume proyecto2_mongo1 Removed 
+ Network proyecto2_interna Removed 
+ Network proyecto2_borde Removed 
+ Network proyecto2_valkey Removed 
+ Network proyecto2_spark Removed 
+ Network proyecto2_mongo Removed 
+ Network proyecto2_cola Removed 
+===== 0b docker compose up -d --build · 04:19:23 · docker compose up -d --build
+ Image proyecto2-gateway Building 
+ Image proyecto2-analitica Building 
+ Image proyecto2-historial Building 
+ Image proyecto2-registro Building 
+ Image proyecto2-sesion Building 
+#1 [internal] load local bake definitions
+#1 reading from stdin 2.74kB done
+#1 DONE 0.0s
+
+#2 [gateway internal] load build definition from Dockerfile
+#2 transferring dockerfile: 255B done
+#2 DONE 0.0s
+
+#3 [historial internal] load build definition from Dockerfile
+#3 transferring dockerfile: 255B done
+#3 DONE 0.0s
+
+#4 [analitica internal] load build definition from Dockerfile
+#4 transferring dockerfile: 619B done
+#4 DONE 0.1s
+
+#5 [sesion internal] load build definition from Dockerfile
+#5 transferring dockerfile: 255B done
+#5 DONE 0.1s
+
+#6 [registro internal] load build definition from Dockerfile
+#6 transferring dockerfile: 255B done
+#6 DONE 0.1s
+
+#7 [sesion internal] load metadata for docker.io/library/python:3.12-slim
+#7 DONE 0.1s
+
+#8 [analitica internal] load metadata for docker.io/apache/spark:3.5.1-python3
+#8 DONE 0.1s
+
+#9 [historial internal] load .dockerignore
+#9 transferring context: 2B done
+#9 DONE 0.0s
+
+#10 [gateway internal] load .dockerignore
+#10 transferring context: 2B done
+#10 DONE 0.0s
+
+#11 [sesion internal] load .dockerignore
+#11 transferring context: 2B done
+#11 DONE 0.1s
+
+#12 [registro internal] load .dockerignore
+#12 transferring context: 2B done
+#12 DONE 0.1s
+
+#13 [sesion 1/5] FROM docker.io/library/python:3.12-slim@sha256:aa943ce411423c7582288f18707ff66eddcbaeb510502d747a72aeb34f30d159
+#13 resolve docker.io/library/python:3.12-slim@sha256:aa943ce411423c7582288f18707ff66eddcbaeb510502d747a72aeb34f30d159
+#13 resolve docker.io/library/python:3.12-slim@sha256:aa943ce411423c7582288f18707ff66eddcbaeb510502d747a72aeb34f30d159 0.1s done
+#13 DONE 0.1s
+
+#14 [analitica internal] load .dockerignore
+#14 transferring context: 2B done
+#14 DONE 0.1s
+
+#15 [historial internal] load build context
+#15 transferring context: 288B done
+#15 DONE 0.1s
+
+#16 [analitica 1/5] FROM docker.io/apache/spark:3.5.1-python3@sha256:b49e3b73ce385c1693cc3294ec4b5b3882e9fa9bd5fc599d4c79198abc49cc94
+#16 resolve docker.io/apache/spark:3.5.1-python3@sha256:b49e3b73ce385c1693cc3294ec4b5b3882e9fa9bd5fc599d4c79198abc49cc94 0.0s done
+#16 DONE 0.0s
+
+#17 [gateway internal] load build context
+#17 transferring context: 889B 0.0s done
+#17 DONE 0.1s
+
+#18 [analitica internal] load build context
+#18 transferring context: 191B done
+#18 DONE 0.1s
+
+#19 [sesion internal] load build context
+#19 transferring context: 678B done
+#19 DONE 0.1s
+
+#20 [registro internal] load build context
+#20 transferring context: 219B done
+#20 DONE 0.1s
+
+#21 [historial 2/5] WORKDIR /srv
+#21 CACHED
+
+#22 [historial 4/5] RUN pip install --no-cache-dir -r requirements.txt
+#22 CACHED
+
+#23 [historial 3/5] COPY requirements.txt .
+#23 CACHED
+
+#24 [historial 5/5] COPY app ./app
+#24 CACHED
+
+#25 [analitica 2/5] WORKDIR /srv
+#25 CACHED
+
+#26 [analitica 4/5] RUN pip install --no-cache-dir -r requirements.txt && ln -sf /usr/bin/python3 /usr/local/bin/python
+#26 CACHED
+
+#27 [analitica 3/5] COPY requirements.txt .
+#27 CACHED
+
+#28 [analitica 5/5] COPY app ./app
+#28 CACHED
+
+#29 [registro 3/5] COPY requirements.txt .
+#29 CACHED
+
+#30 [registro 4/5] RUN pip install --no-cache-dir -r requirements.txt
+#30 CACHED
+
+#31 [registro 5/5] COPY app ./app
+#31 CACHED
+
+#32 [sesion 3/5] COPY requirements.txt .
+#32 CACHED
+
+#33 [sesion 4/5] RUN pip install --no-cache-dir -r requirements.txt
+#33 CACHED
+
+#34 [sesion 5/5] COPY app ./app
+#34 CACHED
+
+#35 [gateway 3/5] COPY requirements.txt .
+#35 CACHED
+
+#36 [gateway 4/5] RUN pip install --no-cache-dir -r requirements.txt
+#36 CACHED
+
+#21 [sesion 2/5] WORKDIR /srv
+#21 CACHED
+
+#37 [gateway 5/5] COPY app ./app
+#37 CACHED
+
+#38 [registro] exporting to image
+#38 exporting layers done
+#38 exporting manifest sha256:4e3134297fc5a33f0d87f0d26de6ff22b21bf9718f4deb57f77f283b2a063ffa done
+#38 exporting config sha256:7f9ff79f325f11d0f18d586189864ad8219c0ac8ac4715d575c9ce5f21f16b10 0.0s done
+#38 exporting attestation manifest sha256:0c3f3a1d26319cf08da76de9566196cc2b76bbbc2ace0548d03791a3c6619d5c
+#38 exporting attestation manifest sha256:0c3f3a1d26319cf08da76de9566196cc2b76bbbc2ace0548d03791a3c6619d5c 0.1s done
+#38 exporting manifest list sha256:61881807229f55ff2a30a21e66865e16a0f020fcb96eb77e4dbb197a033693d0
+#38 exporting manifest list sha256:61881807229f55ff2a30a21e66865e16a0f020fcb96eb77e4dbb197a033693d0 0.1s done
+#38 naming to docker.io/library/proyecto2-registro:latest 0.0s done
+#38 unpacking to docker.io/library/proyecto2-registro:latest
+#38 unpacking to docker.io/library/proyecto2-registro:latest 0.0s done
+#38 DONE 0.4s
+
+#39 [historial] exporting to image
+#39 exporting layers done
+#39 exporting manifest sha256:16332e2a19eb303b1b79e2f991e10dd97d366849b9615e9a89f8cc3392f36a7d done
+#39 exporting config sha256:23b1c3414eeea4143d152218fd8543482f106919618ca0116cc609c4e21e6507 0.0s done
+#39 exporting attestation manifest sha256:afef42567fc8ee0cd583ea58f79408b3db96a6e83e5256eb67afac8ca0a5bd27 0.1s done
+#39 exporting manifest list sha256:190e226ababde5cbd2643d3aee618222b3bd3d13c7be5ed6768008311fafdfa7 0.1s done
+#39 naming to docker.io/library/proyecto2-historial:latest 0.0s done
+#39 unpacking to docker.io/library/proyecto2-historial:latest 0.1s done
+#39 DONE 0.4s
+
+#40 [gateway] exporting to image
+#40 exporting layers done
+#40 exporting manifest sha256:874bd6e3be39bba94d783ed8a3366d4c9a2f2602f643d838e3ec9466d5ca96b6 0.0s done
+#40 exporting config sha256:8c054d95ac78fa1f19508e55d243358d3259026b01baa1d84b872b528d934758 0.0s done
+#40 exporting attestation manifest sha256:a66f706424479a025d0bc401579219843ac7a0874edec2ace1cbae1f930d36b5 0.1s done
+#40 exporting manifest list sha256:7e943461dd67945ef723434c87b9bea929295e567cfcda5d44a9bc71429dd8d6 0.1s done
+#40 naming to docker.io/library/proyecto2-gateway:latest 0.0s done
+#40 unpacking to docker.io/library/proyecto2-gateway:latest 0.0s done
+#40 DONE 0.4s
+
+#41 [sesion] exporting to image
+#41 exporting layers done
+#41 exporting manifest sha256:173d607c447b7485eb65835112d937d06b711ef0fb7220480052a78235b08b86 0.0s done
+#41 exporting config sha256:cf3b1bdac30769ed3724509b863475b4acc6298c44d8fd2b64a870116fd68a54 0.0s done
+#41 exporting attestation manifest sha256:ef8356f3d945db22c911f470d610db29cdcbe42f640af79f22bddaf4fa0b12fb 0.1s done
+#41 exporting manifest list sha256:b30572394a77536415b1164ebc0ed2e6c8964e499f2d7e16e41f5cfbd63e1df8 0.1s done
+#41 naming to docker.io/library/proyecto2-sesion:latest 0.0s done
+#41 unpacking to docker.io/library/proyecto2-sesion:latest 0.0s done
+#41 DONE 0.4s
+
+#42 [analitica] exporting to image
+#42 exporting layers 0.0s done
+#42 exporting manifest sha256:0cc428326178b4b01fa607529400ff774846dc63943e53fe72a52f19d801538f 0.0s done
+#42 exporting config sha256:127456bedab397a49360af2e631c5e272c565466d8e64ea53c116329fc03703f 0.0s done
+#42 exporting attestation manifest sha256:b60bdf0d089c9ebabcd8995b8cca5a0e88abdf821200d88bdf68b7591baa2d05 0.1s done
+#42 exporting manifest list sha256:1a9c2cd61d6719c3a502e3088a82444e026793e4d44cb52084343468d46cca68 0.1s done
+#42 naming to docker.io/library/proyecto2-analitica:latest 0.0s done
+#42 unpacking to docker.io/library/proyecto2-analitica:latest 0.1s done
+#42 DONE 0.5s
+
+#43 [historial] resolving provenance for metadata file
+#43 ...
+
+#44 [gateway] resolving provenance for metadata file
+#44 DONE 0.1s
+
+#45 [registro] resolving provenance for metadata file
+#45 DONE 0.2s
+
+#46 [sesion] resolving provenance for metadata file
+#46 DONE 0.2s
+
+#47 [analitica] resolving provenance for metadata file
+#47 DONE 0.0s
+
+#43 [historial] resolving provenance for metadata file
+#43 DONE 0.3s
+ Image proyecto2-gateway Built 
+ Image proyecto2-historial Built 
+ Image proyecto2-sesion Built 
+ Image proyecto2-analitica Built 
+ Image proyecto2-registro Built 
+ Network proyecto2_interna Creating 
+ Network proyecto2_valkey Creating 
+ Network proyecto2_valkey Creating 
+ Network proyecto2_borde Creating 
+ Network proyecto2_borde Creating 
+ Network proyecto2_mongo Creating 
+ Network proyecto2_mongo Creating 
+ Network proyecto2_cola Creating 
+ Network proyecto2_cola Creating 
+ Volume proyecto2_cola-eventos Creating 
+ Volume proyecto2_cola-eventos Creating 
+ Network proyecto2_spark Creating 
+ Volume proyecto2_mongo1 Creating 
+ Network proyecto2_spark Creating 
+ Volume proyecto2_mongo3 Creating 
+ Volume proyecto2_mongo3 Creating 
+ Network proyecto2_interna Creating 
+ Volume proyecto2_valkey_sesion Creating 
+ Volume proyecto2_valkey_sesion Creating 
+ Volume proyecto2_mongo2 Creating 
+ Volume proyecto2_mongo2 Creating 
+ Volume proyecto2_eventos_gateway Creating 
+ Volume proyecto2_mongo1 Creating 
+ Volume proyecto2_eventos_gateway Creating 
+ Volume proyecto2_cola-eventos Created 
+ Volume proyecto2_cola-eventos Created 
+ Volume proyecto2_valkey_sesion Created 
+ Volume proyecto2_valkey_sesion Created 
+ Volume proyecto2_eventos_gateway Created 
+ Volume proyecto2_eventos_gateway Created 
+ Volume proyecto2_mongo3 Created 
+ Volume proyecto2_mongo3 Created 
+ Volume proyecto2_mongo2 Created 
+ Volume proyecto2_mongo2 Created 
+ Volume proyecto2_mongo1 Created 
+ Volume proyecto2_mongo1 Created 
+ Network proyecto2_valkey Created 
+ Network proyecto2_valkey Created 
+ Container proyecto2-valkey-1 Creating 
+ Network proyecto2_borde Created 
+ Network proyecto2_borde Created 
+ Network proyecto2_interna Created 
+ Network proyecto2_interna Created 
+ Container proyecto2-valkey-1 Created 
+ Container proyecto2-sesion-1 Creating 
+ Network proyecto2_spark Created 
+ Network proyecto2_spark Created 
+ Container proyecto2-spark-master-1 Creating 
+ Container proyecto2-sesion-1 Created 
+ Network proyecto2_cola Created 
+ Network proyecto2_cola Created 
+ Container proyecto2-cola-eventos-1 Creating 
+ Container proyecto2-spark-master-1 Created 
+ Container proyecto2-spark-worker-1 Creating 
+ Network proyecto2_mongo Created 
+ Network proyecto2_mongo Created 
+ Container proyecto2-mongo2-1 Creating 
+ Container proyecto2-mongo1-1 Creating 
+ Container proyecto2-registro-1 Creating 
+ Container proyecto2-mongo3-1 Creating 
+ Container proyecto2-cola-eventos-1 Created 
+ Container proyecto2-historial-1 Creating 
+ Container proyecto2-spark-worker-1 Created 
+ Container proyecto2-analitica-1 Creating 
+ Container proyecto2-mongo2-1 Created 
+ Container proyecto2-registro-1 Created 
+ Container proyecto2-mongo3-1 Created 
+ Container proyecto2-historial-1 Created 
+ Container proyecto2-mongo1-1 Created 
+ Container proyecto2-mongo-init-1 Creating 
+ Container proyecto2-analitica-1 Created 
+ Container proyecto2-gateway-1 Creating 
+ Container proyecto2-mongo-init-1 Created 
+ Container proyecto2-gateway-1 Created 
+ Container proyecto2-registro-1 Starting 
+ Container proyecto2-mongo1-1 Starting 
+ Container proyecto2-valkey-1 Starting 
+ Container proyecto2-mongo3-1 Starting 
+ Container proyecto2-spark-master-1 Starting 
+ Container proyecto2-cola-eventos-1 Starting 
+ Container proyecto2-mongo2-1 Starting 
+ Container proyecto2-registro-1 Started 
+ Container proyecto2-mongo1-1 Started 
+ Container proyecto2-valkey-1 Started 
+ Container proyecto2-valkey-1 Waiting 
+ Container proyecto2-mongo3-1 Started 
+ Container proyecto2-spark-master-1 Started 
+ Container proyecto2-spark-worker-1 Starting 
+ Container proyecto2-spark-worker-1 Started 
+ Container proyecto2-analitica-1 Starting 
+ Container proyecto2-valkey-1 Healthy 
+ Container proyecto2-sesion-1 Starting 
+ Container proyecto2-cola-eventos-1 Started 
+ Container proyecto2-historial-1 Starting 
+ Container proyecto2-mongo2-1 Started 
+ Container proyecto2-mongo3-1 Waiting 
+ Container proyecto2-mongo1-1 Waiting 
+ Container proyecto2-mongo2-1 Waiting 
+ Container proyecto2-analitica-1 Started 
+ Container proyecto2-mongo1-1 Healthy 
+ Container proyecto2-sesion-1 Started 
+ Container proyecto2-historial-1 Started 
+ Container proyecto2-gateway-1 Starting 
+ Container proyecto2-gateway-1 Started 
+ Container proyecto2-mongo3-1 Healthy 
+ Container proyecto2-mongo2-1 Healthy 
+ Container proyecto2-mongo-init-1 Starting 
+ Container proyecto2-mongo-init-1 Started 
+===== 1a carga de MongoDB (dataset) · 04:20:07 · dataset
+ Container proyecto2-dataset-run-b9a385cf096a Creating 
+ Container proyecto2-dataset-run-b9a385cf096a Created 
+Semilla 2026 · carga con w=majority en 8.6 s
+  clientes         60
+  anotadores      300
+  proyectos       120
+  batches         600
+  tareas        60000
+  tareas por modalidad: {'imagen': 18000, 'lidar': 12000, 'texto': 18000, 'video': 12000}
+  tareas por tipo:      {'bbox': 12720, 'bbox_video': 12000, 'cuboide_3d': 12000, 'poligono': 5280, 'span': 18000}
+  anotadores: 270 anotadores + 30 revisores en 30 equipos
+  proyectos cerrados (solo historial, en ids.json): 60
+  proyecto LiDAR de ejemplo: 18da990c-9704-464a-b54b-82d3b6e57418 (LiDAR urbano 2026)
+  ids para el histórico: /srv/dataset/salida/ids.json
+===== 1b lago principal (dataset-historico) · 04:20:19 · historico
+ Container proyecto2-dataset-historico-run-2cdaad119350 Creating 
+ Container proyecto2-dataset-historico-run-2cdaad119350 Created 
+  conjunto               principal
+  carpeta                /datalake/eventos
+  semilla                2026
+  ids                    /srv/dataset/salida/ids.json
+  desde                  2025-10-01T00:00:00+00:00
+  hasta                  2026-10-01T00:00:00+00:00
+  meses                  12
+  proyectos              60
+  tareas                 100000
+  tareas_aprobadas       99942
+  eventos                808703
+  eventos_por_estado     {'abierta': 229726, 'anotada': 183779, 'aprobada': 99942, 'en_revision': 183727, 'liberada': 27744, 'rechazada': 83785}
+  duplicados_inyectados  1634
+  filas_en_archivos      810337
+  archivos               115
+  segundos               19.8
+===== 1c conjunto de prueba · 04:20:40 · historico python -m dataset.historico.prueba
+ Container proyecto2-dataset-historico-run-5c78db769354 Creating 
+ Container proyecto2-dataset-historico-run-5c78db769354 Created 
+  eventos_prueba/mes=2026-06/part-prueba-001.parquet  8 filas
+  eventos_prueba/mes=2026-07/part-prueba-001.parquet  8 filas
+  eventos_prueba/mes=2026-09/part-prueba-001.parquet  26 filas
+  eventos_prueba/mes=2026-09/part-prueba-001-reentrega.parquet  1 filas
+  total: 42 eventos + 1 duplicado(s) de event_id
+===== 1e reinicio de la analítica (lee los conjuntos nuevos) · 04:20:42 · docker compose restart analitica
+ Container proyecto2-analitica-1 Restarting 
+ Container proyecto2-analitica-1 Started 
+===== A4 rutas de A · 04:21:16 · python3 pruebas/a4_rutas_gateway.py
+== A4.1 proyectos y lotes
+OK    POST /proyectos cliente inexistente          esperado 404 obtenido 404  {"error": "cliente_no_existe", "detalle": "f5aa49e1-752a-4557-8099-9a0df70c82df"}
+OK    POST /proyectos sin taxonomía                esperado 422 obtenido 422  {"error": "validacion", "detalle": [{"type": "too_short", "loc": ["body", "taxonomia"], "msg": "List should have at least 1 item after validation, not
+OK    POST /proyectos                              esperado 201 obtenido 201  {"proyecto_id": "6a4d5f79-eaad-4012-af6e-69754fd949f9"}
+OK    POST /proyectos/{id}/lotes mime de imagen    esperado 422 obtenido 422  {"error": "lote_invalido", "detalle": [{"tarea": 0, "error": "mime 'image/png' no corresponde a 'lidar'"}]}
+OK    POST /proyectos/{id}/lotes proyecto inexistente esperado 404 obtenido 404  {"error": "proyecto_no_existe", "detalle": "f66352e2-6151-480e-9c00-fdd1055d612d"}
+OK    POST /proyectos/{id}/lotes                   esperado 201 obtenido 201  {"batch_id": "cb5cc55f-4d5f-44ca-a5c9-2985e87b37bd", "tareas": 2}
+== A4.2 revisión: aprobar
+OK    POST /tareas/siguiente                       esperado 200 obtenido 200  {"tarea": {"tarea_id": "e9602fce-badf-441a-a44d-1674e2dbe919", "proyecto_id": "6a4d5f79-eaad-4012-af6e-69754fd949f9", "modalidad": "lidar", "tipo_tare
+OK    POST /tareas/{id}/enviar                     esperado 200 obtenido 200  {"estado": "anotada", "version": 2, "event_id": "aa947356-8583-4954-88e9-2e49b67e67a2"}
+OK    revision aprobar sin empezar                 esperado 409 obtenido 409  {"error": "transicion_invalida", "detalle": {"accion": "aprobar", "estado": "anotada", "version": 2}}
+OK    revision empezar por un anotador             esperado 422 obtenido 422  {"error": "actor_no_es_revisor", "detalle": "adbafed0-b600-460c-bbdc-fd55304374b3"}
+OK    revision empezar                             esperado 200 obtenido 200  {"estado": "en_revision", "version": 3, "event_id": "8347dfe9-2f41-4ff4-9e01-b7b578a10a6f"}
+OK    revision empezar otra vez                    esperado 409 obtenido 409  {"error": "transicion_invalida", "detalle": {"accion": "empezar_revision", "estado": "en_revision", "version": 3}}
+OK    revision aprobar                             esperado 200 obtenido 200  {"estado": "aprobada", "version": 4, "event_id": "f7ef3656-0692-4eb9-8bd6-d7dec11f19b6"}
+== A4.2 revisión: rechazar
+OK    POST /tareas/siguiente                       esperado 200 obtenido 200  {"tarea": {"tarea_id": "a2146733-4c3c-4359-b994-6fb80e34105d", "proyecto_id": "6a4d5f79-eaad-4012-af6e-69754fd949f9", "modalidad": "lidar", "tipo_tare
+OK    POST /tareas/{id}/enviar                     esperado 200 obtenido 200  {"estado": "anotada", "version": 2, "event_id": "301aafe5-268f-4e55-851d-c6b24442afec"}
+OK    revision empezar                             esperado 200 obtenido 200  {"estado": "en_revision", "version": 3, "event_id": "0f0d8e06-3889-4a23-b3c5-ef3efc5f08f9"}
+OK    revision rechazar sin motivo                 esperado 422 obtenido 422  {"error": "validacion", "detalle": [{"type": "value_error", "loc": ["body"], "msg": "Value error, 'rechazar' requiere un motivo", "input": {"accion": 
+OK    revision rechazar motivo inventado           esperado 422 obtenido 422  {"error": "validacion", "detalle": [{"type": "literal_error", "loc": ["body", "motivo"], "msg": "Input should be 'ETIQUETA_INCORRECTA', 'GEOMETRIA_IMP
+OK    revision rechazar                            esperado 200 obtenido 200  {"estado": "disponible", "version": 4, "event_id": "9e38c78d-90a3-4ffb-b3da-a032acc7755b"}
+OK    revision rechazar otra vez                   esperado 409 obtenido 409  {"error": "transicion_invalida", "detalle": {"accion": "rechazar", "estado": "disponible", "version": 4}}
+OK    revision tarea inexistente                   esperado 404 obtenido 404  {"error": "tarea_no_existe", "detalle": "c312c6cb-b966-4f2b-a66c-c3fc55b41afd"}
+OK    la rechazada se vuelve a ofrecer             esperado 200 obtenido 200  {"tarea": {"tarea_id": "a2146733-4c3c-4359-b994-6fb80e34105d", "proyecto_id": "6a4d5f79-eaad-4012-af6e-69754fd949f9", "modalidad": "lidar", "tipo_tare
+OK    POST /tareas/{id}/liberar                    esperado 200 obtenido 200  {"estado": "disponible"}
+OK    la liberada se vuelve a ofrecer              esperado 200 obtenido 200  {"tarea": {"tarea_id": "a2146733-4c3c-4359-b994-6fb80e34105d", "proyecto_id": "6a4d5f79-eaad-4012-af6e-69754fd949f9", "modalidad": "lidar", "tipo_tare
+OK    POST /tareas/{id}/liberar otra vez           esperado 200 obtenido 200  {"estado": "disponible"}
+== A4.1 exportar
+OK    GET /proyectos/{id}/exportar                 esperado 200 obtenido 200  {"tareas": [{"tarea_id": "e9602fce-badf-441a-a44d-1674e2dbe919", "batch_id": "cb5cc55f-4d5f-44ca-a5c9-2985e87b37bd", "modalidad": "lidar", "tipo_tarea
+      exportadas ['e9602fce-badf-441a-a44d-1674e2dbe919'] (se esperaba solo e9602fce-badf-441a-a44d-1674e2dbe919), siguiente_cursor None
+OK    GET /proyectos/{id}/exportar inexistente     esperado 404 obtenido 404  {"error": "proyecto_no_existe", "detalle": "cd5d3780-25a0-496b-a9c3-d61bf3e598b4"}
+
+proyecto 6a4d5f79-eaad-4012-af6e-69754fd949f9 · aprobada e9602fce-badf-441a-a44d-1674e2dbe919 · rechazada a2146733-4c3c-4359-b994-6fb80e34105d
+FALLAS: 0
+===== P1 rutas y sesiones (B5.1) · 04:21:18 · python3 pruebas/b51_sesiones_gateway.py
+ANOTADOR=adbafed0-b600-460c-bbdc-fd55304374b3
+OK | Crear proyecto aislado: HTTP 201
+OK | Crear tarea aislada: HTTP 201
+OK | Asignar tarea: HTTP 200
+PROYECTO=0401ea35-935d-4550-939c-50956bd3ea56
+TAREA=72e52ab2-13cf-47da-9d99-3bcf9861110b
+OK | Borrador con token incorrecto: HTTP 409
+OK | Guardar borrador: HTTP 200
+OK | Latido con token incorrecto: HTTP 409
+OK | Latido valido: HTTP 200
+OK | Recuperar sesion: HTTP 200
+OK | Tarea, token y borrador coinciden
+B5_1_SESIONES_OK
+LIMPIEZA | Liberar tarea: HTTP 200 {'estado': 'disponible'}
+===== P1 /salud y puertos · 04:21:18 · bash pruebas/p1_salud.sh
+# P1 /salud y puertos · 2026-11-22T04:21:18Z · commit 1b387ae
+
+## Normal
+HTTP 200 · operativo · mensajes_valkey=True · registro operativo (valkey+directa; valkey operativo) · sesion operativo (directa; valkey -) · historial operativo (valkey+directa; valkey operativo) · analitica operativo (valkey+directa; valkey operativo)
+
+## Degradado: historial parado (docker compose stop historial)
+inmediato: HTTP 200 · degradado · mensajes_valkey=True · registro operativo (valkey+directa; valkey operativo) · sesion operativo (directa; valkey -) · historial caido (valkey+directa; valkey operativo) · analitica operativo (valkey+directa; valkey operativo)
+a los 16 s (mensajes de Valkey vencidos, TTL 15 s): HTTP 200 · degradado · mensajes_valkey=True · registro operativo (valkey+directa; valkey operativo) · sesion operativo (directa; valkey -) · historial caido (valkey+directa; valkey caido) · analitica operativo (valkey+directa; valkey operativo)
+recuperado: HTTP 200 · operativo · mensajes_valkey=True · registro operativo (valkey+directa; valkey operativo) · sesion operativo (directa; valkey -) · historial operativo (valkey+directa; valkey operativo) · analitica operativo (valkey+directa; valkey operativo)
+
+## Degradado: analítica parada (docker compose stop analitica)
+inmediato: HTTP 200 · degradado · mensajes_valkey=True · registro operativo (valkey+directa; valkey operativo) · sesion operativo (directa; valkey -) · historial operativo (valkey+directa; valkey operativo) · analitica caido (valkey+directa; valkey operativo)
+a los 16 s (mensajes de Valkey vencidos, TTL 15 s): HTTP 200 · degradado · mensajes_valkey=True · registro operativo (valkey+directa; valkey operativo) · sesion operativo (directa; valkey -) · historial operativo (valkey+directa; valkey operativo) · analitica caido (valkey+directa; valkey caido)
+recuperado: HTTP 200 · operativo · mensajes_valkey=True · registro operativo (valkey+directa; valkey operativo) · sesion operativo (directa; valkey -) · historial operativo (valkey+directa; valkey operativo) · analitica operativo (valkey+directa; valkey operativo)
+
+## Caído: Valkey de sesión parado (docker compose stop valkey)
+inmediato: HTTP 200 · caido · mensajes_valkey=False · registro operativo (directa; valkey -) · sesion caido (directa; valkey -) · historial operativo (directa; valkey -) · analitica operativo (directa; valkey -)
+a los 16 s (mensajes de Valkey vencidos, TTL 15 s): HTTP 200 · caido · mensajes_valkey=False · registro operativo (directa; valkey -) · sesion caido (directa; valkey -) · historial operativo (directa; valkey -) · analitica operativo (directa; valkey -)
+recuperado: HTTP 200 · operativo · mensajes_valkey=True · registro operativo (valkey+directa; valkey operativo) · sesion operativo (directa; valkey -) · historial operativo (valkey+directa; valkey operativo) · analitica operativo (valkey+directa; valkey operativo)
+
+## Caído: MongoDB sin mayoría (dos nodos parados) (docker compose stop mongo2 mongo3)
+inmediato: HTTP 200 · operativo · mensajes_valkey=True · registro operativo (valkey+directa; valkey operativo) · sesion operativo (directa; valkey -) · historial operativo (valkey+directa; valkey operativo) · analitica operativo (valkey+directa; valkey operativo)
+a los 16 s (mensajes de Valkey vencidos, TTL 15 s): HTTP 200 · caido · mensajes_valkey=True · registro caido (valkey+directa; valkey caido) · sesion operativo (directa; valkey -) · historial operativo (valkey+directa; valkey operativo) · analitica operativo (valkey+directa; valkey operativo)
+recuperado: HTTP 200 · operativo · mensajes_valkey=True · registro operativo (valkey+directa; valkey operativo) · sesion operativo (directa; valkey -) · historial operativo (valkey+directa; valkey operativo) · analitica operativo (valkey+directa; valkey operativo)
+
+## Puertos publicados al anfitrión
+analitica	(ninguno)
+cola-eventos	(ninguno)
+gateway	0.0.0.0:8000->8000/tcp, [::]:8000->8000/tcp
+historial	(ninguno)
+mongo1	(ninguno)
+mongo2	(ninguno)
+mongo3	(ninguno)
+registro	(ninguno)
+sesion	(ninguno)
+spark-master	(ninguno)
+spark-worker	(ninguno)
+valkey	(ninguno)
+
+Escuchando en el anfitrión (ss): 0.0.0.0:8000 [::]:8000 
+===== P2 50 contra 10 · 04:23:42 · p2
+ Container proyecto2-simulador-run-0f1ffb2fe59c Creating 
+ Container proyecto2-simulador-run-0f1ffb2fe59c Created 
+Modo gateway (http://gateway:8000) · proyecto b742e3da-a669-4d27-8897-7f97e291764a con 10 tareas libres · 50 anotadores distintos
+Las 50 salieron en una ventana de 152.0 ms
+Respuestas: {200: 10, 204: 40} · latencia p50=1303.2 ms max=1510.0 ms
+Enviar con token ajeno: {409: 10} · primer envío: {200: 10} · segundo envío: {409: 10}
+OK:   10 asignaciones (200)
+OK:   40 sin tarea (204)
+OK:   ninguna tarea con dos anotadores
+OK:   enviar con token ajeno -> 409
+OK:   primer envío -> 200
+OK:   segundo envío de una tarea ya enviada -> 409
+OK:   exportación: 10 aprobadas, cada una con el anotador que la tomó
+===== P3 interrupción · 04:23:50 · python3 pruebas/b52_interrupcion_gateway.py
+ASIGNACION_OK tarea=56e0dd3e-e06d-43f1-86ca-66a760d880a1
+BORRADOR_GUARDADO_OK
+INTERRUPCION_SIMULADA
+RESPUESTA_RECUPERACION={"tarea": {"tarea_id": "56e0dd3e-e06d-43f1-86ca-66a760d880a1", "proyecto_id": "97f2cf7b-009e-4b15-a3c9-c3ce8d2b9536", "etapa": "anotando"}, "token": "4e82623b-7283-43ee-b8f0-389723d56e0b", "borrador": {"contenido": {"etiquetas": ["lidar#ciclista"], "origen": "b52_interrupcion_automatica", "marcador": "recuperacion_borrador"}, "guardado_en": "2026-11-22T04:23:50.401000+00:00"}}
+RECUPERACION_EN_0.038_SEGUNDOS
+B5_2_INTERRUPCION_OK
+LIMPIEZA_HTTP_200={'estado': 'disponible'}
+===== P3 persistencia con reinicio de Valkey · 04:23:50 · python3 pruebas/b52_persistencia_gateway.py
+ASIGNACION_OK
+BORRADOR_GUARDADO_OK
+REINICIANDO_VALKEY...
+ Container proyecto2-valkey-1 Restarting 
+ Container proyecto2-valkey-1 Started 
+VALKEY_REINICIADO_OK
+RESPUESTA_RECUPERACION={"tarea": {"tarea_id": "09e88a62-19dd-48d2-ba64-5cd87adc1781", "proyecto_id": "71c14021-44c5-4ac2-9b70-a96a080ad8d4", "etapa": "anotando"}, "token": "a7bec64a-2dee-49bd-8a8a-cd021db2d5de", "borrador": {"contenido": {"etiquetas": ["lidar#ciclista"], "origen": "b52_persistencia_aof", "marcador": "sobrevive_reinicio_valkey"}, "guardado_en": "2026-11-22T04:23:50.897000+00:00"}}
+TOKEN_CONSERVADO_OK
+CONTENIDO_CONSERVADO_OK
+B5_2_PERSISTENCIA_AOF_OK
+LIMPIEZA_HTTP_200={'estado': 'disponible'}
+===== P3 vencimiento del lock · 04:23:55 · python3 pruebas/b52_vencimiento_gateway.py
+A_ASIGNADO_OK
+EXCLUSIVIDAD_ANTES_VENCIMIENTO_OK
+ESPERANDO_VENCIMIENTO_122.9_SEGUNDOS
+REASIGNACION_TRAS_VENCIMIENTO_OK
+TOKENS_DIFERENTES_OK
+TOKEN_A_RECHAZADO_HTTP_409
+TOKEN_B_VALIDO_OK
+B5_2_VENCIMIENTO_EXCLUSIVIDAD_OK
+LIMPIEZA_B_HTTP_200={'estado': 'disponible'}
+LIMPIEZA_A_HTTP_409={'error': 'transicion_invalida', 'detalle': {'accion': 'liberar', 'estado': 'disponible', 'version': 3}}
+===== P3 renovación del plazo en MongoDB · 04:25:59 · python3 pruebas/b52_renovacion_registro.py
+ASIGNADA tarea=6d5e0270-e275-4ba9-b688-115c5a0b3207 vence_en=2026-11-22T04:27:59.709Z
+t= 10.0s latido 200 · registro_renovado=False · otro anotador 204
+t= 20.1s latido 200 · registro_renovado=False · otro anotador 204
+t= 30.2s latido 200 · registro_renovado=False · otro anotador 204
+t= 40.2s latido 200 · registro_renovado=False · otro anotador 204
+t= 50.2s latido 200 · registro_renovado=False · otro anotador 204
+t= 60.3s latido 200 · registro_renovado=True · otro anotador 204
+t= 70.4s latido 200 · registro_renovado=False · otro anotador 204
+t= 80.4s latido 200 · registro_renovado=False · otro anotador 204
+t= 90.9s latido 200 · registro_renovado=False · otro anotador 204
+t=100.9s latido 200 · registro_renovado=False · otro anotador 204
+t=111.0s latido 200 · registro_renovado=False · otro anotador 204
+t=121.0s latido 200 · registro_renovado=True · otro anotador 204
+t=131.0s latido 200 · registro_renovado=False · otro anotador 204
+t=141.1s latido 200 · registro_renovado=False · otro anotador 204
+t=151.1s latido 200 · registro_renovado=False · otro anotador 204
+RENOVACIONES_EN_REGISTRO=2 (escritura solo con menos de 60 s de plazo)
+ENVIO_TRAS_150_S_HTTP_200
+B5_2_RENOVACION_REGISTRO_OK
+===== P3 borradores huérfanos · 04:28:31 · huerfanos
+ proyecto2-sesion-1 Copying pruebas/prueba_borradores_huerfanos.py to proyecto2-sesion-1:/tmp/h.py
+ proyecto2-sesion-1 Copied pruebas/prueba_borradores_huerfanos.py to proyecto2-sesion-1:/tmp/h.py
+OK | Otro anotador puede trabajar
+OK | Borrador anterior archivado
+OK | Limpieza con token nuevo
+OK | Mismo anotador conserva su borrador
+OK | Token actualizado permite limpieza
+OK | Token invalido no modifica el borrador
+REASIGNACION_BORRADORES_OK
+OK | Claves temporales eliminadas
+===== P8 Valkey y sesión (B5.3) · 04:28:32 · python3 pruebas/b53_fallo_valkey.py
+ASIGNACION_OK
+BORRADOR_GUARDADO_OK
+LATIDO_1_HTTP_200
+LATIDO_2_HTTP_200
+LATIDO_3_HTTP_200
+LATIDO_4_HTTP_200
+FALLO_INYECTADO_REINICIO_VALKEY
+ Container proyecto2-valkey-1 Restarting 
+LATIDO_5_HTTP_503
+LATIDO_6_HTTP_503
+ Container proyecto2-valkey-1 Started 
+RTO_OBSERVADO_SEGUNDOS=0.680
+RPO_OBSERVADO=sin_perdida_del_borrador_confirmado
+ANTIGUEDAD_BORRADOR_SEGUNDOS=1.691
+LATIDOS_REGISTRADOS=6
+SESION_Y_TOKEN_RECUPERADOS_OK
+B5_3_P8_OK
+LIMPIEZA_HTTP_200={'estado': 'disponible'}
+===== I.2 recorrido LiDAR · 04:28:34 · bash pruebas/recorrido_lidar.sh
+# I.2 recorrido LiDAR · 2026-11-22T04:28:34Z · commit 1b387ae
+Máquina: Intel(R) Core(TM) i7-6500U CPU @ 2.50GHz · 4 CPU · 11 GiB
+
+/salud: operativo {'registro': 'operativo', 'sesion': 'operativo', 'historial': 'operativo', 'analitica': 'operativo'}
+Q1 antes (hoy, lidar): 11
+proyecto 14b53188-4e8b-4957-b2e7-862c268990a2 (1 tarea cuboide_3d, taxonomía con 4 etiquetas)
+
+OK  POST /tareas/siguiente                                    200 (    99 ms)  asignación exclusiva + lock + sesión
+      tarea c89bc5e6-bb2b-48d3-917c-b4c662b30793 · vence_en 2026-11-22T04:31:05.176Z · etiquetas ['lidar#peaton', 'lidar#vehiculo', 'lidar#ciclista', 'lidar#signal']
+OK  POST /tareas/siguiente                                    204 (    64 ms)  otro anotador: no hay más tareas en el proyecto
+OK  PUT  /tareas/c89bc5e6-bb2b-48d3-917c-b4c662b30793/borrador 200 (    50 ms)  borrador 1 (primera idea: peatón)
+OK  PUT  /tareas/c89bc5e6-bb2b-48d3-917c-b4c662b30793/borrador 200 (    18 ms)  borrador 2 (corrige: un skater es ciclista)
+OK  POST /sesiones/latido                                     200 (    23 ms)  latido
+OK  POST /sesiones/recuperar                                  200 (    14 ms)  recuperar sesión interrumpida
+      borrador recuperado: ['lidar#ciclista'] guardado 2026-11-22T04:29:07.380000+00:00
+OK  POST /tareas/c89bc5e6-bb2b-48d3-917c-b4c662b30793/enviar  200 (    86 ms)  enviar (MongoDB confirma)
+OK  POST /tareas/c89bc5e6-bb2b-48d3-917c-b4c662b30793/enviar  409 (     7 ms)  segundo envío de la misma tarea
+OK  POST /tareas/c89bc5e6-bb2b-48d3-917c-b4c662b30793/revision 200 (   105 ms)  revisión: empezar
+OK  POST /tareas/c89bc5e6-bb2b-48d3-917c-b4c662b30793/revision 200 (    63 ms)  revisión: aprobar
+OK  GET  /proyectos/14b53188-4e8b-4957-b2e7-862c268990a2/exportar 200 (     9 ms)  exportar aprobadas
+      exportada con etiquetas ['lidar#ciclista']
+
+Q1 después (hoy, lidar): 12 · visible 10.9 s después del 200 de aprobar
+RECORRIDO_LIDAR_OK
+EXIT_CODE=0
+===== I.4 aislamiento modular · 04:29:21 · bash pruebas/i4_aislamiento.sh
+# I.4 aislamiento modular · 2026-11-22T04:29:21Z · commit 1b387ae
+
+## 1. Puertos publicados al anfitrión (solo el gateway, 8000)
+analitica	(ninguno)
+cola-eventos	(ninguno)
+gateway	0.0.0.0:8000->8000/tcp, [::]:8000->8000/tcp
+historial	(ninguno)
+mongo1	(ninguno)
+mongo2	(ninguno)
+mongo3	(ninguno)
+registro	(ninguno)
+sesion	(ninguno)
+spark-master	(ninguno)
+spark-worker	(ninguno)
+valkey	(ninguno)
+
+## 2. Redes de cada contenedor
+gateway        borde interna 
+registro       interna mongo 
+sesion         interna valkey 
+historial      cola interna 
+analitica      interna spark 
+mongo1         mongo 
+mongo2         mongo 
+mongo3         mongo 
+valkey         valkey 
+cola-eventos   cola 
+spark-master   spark 
+spark-worker   spark 
+simulador      borde
+
+## 3. Variables de conexión de cada servicio (qué motor conoce)
+gateway: ANALITICA_URL=http://analitica:8004 HISTORIAL_URL=http://historial:8003 REGISTRO_URL=http://registro:8001 SESION_URL=http://sesion:8002 
+registro: MONGO_URI=mongodb://mongo1:27017,mongo2:27017,mongo3:27017/?replicaSet=rs0 SESION_URL=http://sesion:8002 
+sesion: VALKEY_URL=redis://valkey:6379/0 
+historial: COLA_HOST=cola-eventos SESION_URL=http://sesion:8002 
+analitica: SESION_URL=http://sesion:8002 SPARK_TGZ_ASC_URL=https://archive.apache.org/dist/spark/spark-3.5.1/spark-3.5.1-bin-hadoop3.tgz.asc SPARK_TGZ_URL=https://archive.apache.org/dist/spark/spark-3.5.1/spark-3.5.1-bin-hadoop3.tgz 
+
+## 4. Bibliotecas de cliente instaladas (pymongo = MongoDB, valkey = Valkey, pyarrow = Parquet)
+servicio   pymongo  valkey   pyarrow  pyspark 
+gateway    no       no       no       no      
+registro   sí      no       no       no      
+sesion     no       sí      no       no      
+historial  no       sí      sí      no      
+analitica  no       no       no       sí     
+
+## 5. A qué motores llega cada servicio por la red (resolución DNS dentro de la red de Docker)
+(«no» = el nombre ni siquiera existe en sus redes: no hay camino para conectarse)
+servicio   mongo1  valkey  cola-eventos  spark-master  gateway 
+gateway    no      no      no            no            sí     
+registro   sí     no      no            no            sí     
+sesion     no      sí     no            no            sí     
+historial  no      no      sí           no            sí     
+analitica  no      no      no            sí           sí     
+simulador: gateway sí · mongo1 no · valkey no · registro no · sesion no · historial no · analitica no · 
+
+## 6. Lago Parquet: quién lo monta y cómo
+historial: /datalake rw=true
+analitica: /datalake rw=false
+spark-worker: /datalake rw=false
+analitica escribiendo en /datalake: no puede (solo lectura)
+
+## 7. Menciones en el código de un servicio al motor de otro (deben ser solo comentarios)
+registro → Valkey:
+  servicios/registro/app/esquemas.py:10:# "renovar" no cambia el estado: corre asignacion.vence_en junto con el lock de Valkey (latido/borrador).
+  servicios/registro/app/main.py:1:"""Servicio registro — única fuente de verdad del estado de las tareas (MongoDB, nunca Valkey).
+  servicios/registro/app/main.py:24:LOCK_SEGUNDOS = int(os.getenv("LOCK_SEGUNDOS", "120"))  # igual que el lock de Valkey
+sesion → MongoDB:
+  servicios/sesion/app/prueba_pendientes_b26.py:25:    # Simulamos el resultado del gateway ante Mongo 503.
+analitica → MongoDB / Valkey / historial: 0 líneas
+sesion → estados de una tarea (disponible/anotada/en_revision/aprobada), sin pruebas: 0 líneas
+simulador → bibliotecas: httpx==0.28.1 
+===== C4.9 Q1–Q5 por el gateway · 04:29:46 · bash pruebas/c49_analitica_gateway.sh
+# C4.9 analítica por el gateway · 2026-11-22T04:29:46Z · commit 1b387ae
+analítica operativa según GET /salud del gateway
+
+## 1 y 2. Validación (conjunto=prueba) y tiempos (principal, 4 ejecuciones) por el gateway
+analitica: {"master": "spark://spark-master:7077", "master_alcanzable": true, "sesion_spark": true, "arranque_ms": 8872.0, "error": null, "ejecutores": 1, "nucleos": 2}
+
+## Validación contra conjunto=prueba (esperado calculado a mano)
+q1: OK · status 200 · 4 filas · 2664.6 ms
+  obtenido: [{"dia": "2026-09-01", "modalidad": "texto", "aprobadas": 2}, {"dia": "2026-09-04", "modalidad": "texto", "aprobadas": 1}, {"dia": "2026-09-11", "modalidad": "lidar", "aprobadas": 1}, {"dia": "2026-09-30", "modalidad": "imagen", "aprobadas": 1}]
+q2: OK · status 200 · 4 filas · 3755.5 ms
+  obtenido: [{"equipo_id": "e0000000-0000-4000-8000-000000000001", "mes": "2026-07", "aprobadas": 1, "revisadas": 2, "proporcion": 0.5}, {"equipo_id": "e0000000-0000-4000-8000-000000000001", "mes": "2026-09", "aprobadas": 3, "revisadas": 3, "proporcion": 1.0}, {"equipo_id": "e0000000-0000-4000-8000-000000000002", "mes": "2026-06", "aprobadas": 1, "revisadas": 2, "proporcion": 0.5}, {"equipo_id": "e0000000-0000-4000-8000-000000000002", "mes": "2026-09", "aprobadas": 2, "revisadas": 3, "proporcion": 0.6667}]
+q3: OK · status 200 · 3 filas · 3146.0 ms
+  obtenido: [{"modalidad": "lidar", "tipo_tarea": "cuboide_3d", "anotadas": 1, "media_s": 3600.0, "p95_s": 3600.0}, {"modalidad": "imagen", "tipo_tarea": "bbox", "anotadas": 5, "media_s": 1404.0, "p95_s": 1800.0}, {"modalidad": "texto", "tipo_tarea": "span", "anotadas": 4, "media_s": 975.0, "p95_s": 1800.0}]
+q4: OK · status 200 · 3 filas · 2646.2 ms
+  obtenido: [{"cliente_id": "c0000000-0000-4000-8000-000000000002", "proyecto_id": "90000000-0000-4000-8000-000000000003", "rechazadas": 2, "revisadas": 5, "proporcion": 0.4}, {"cliente_id": "c0000000-0000-4000-8000-000000000001", "proyecto_id": "90000000-0000-4000-8000-000000000001", "rechazadas": 1, "revisadas": 4, "proporcion": 0.25}, {"cliente_id": "c0000000-0000-4000-8000-000000000001", "proyecto_id": "90000000-0000-4000-8000-000000000002", "rechazadas": 0, "revisadas": 1, "proporcion": 0.0}]
+q5: OK · status 200 · 2 filas · 1703.7 ms
+  obtenido: [{"cliente_id": "c0000000-0000-4000-8000-000000000001", "aprobadas": 4, "p50_h": 5.0, "p95_h": 28.0, "incumplen_sla": 1, "pct_incumple_sla": 25.0}, {"cliente_id": "c0000000-0000-4000-8000-000000000002", "aprobadas": 3, "p50_h": 3.0, "p95_h": 4.0, "incumplen_sla": 0, "pct_incumple_sla": 0.0}]
+
+## Tiempos · gateway · 4 ejecuciones por consulta (ms medidos por la analítica)
+| conjunto | consulta | 1ª ejecución | siguientes: mediana | mín | máx | filas |
+|---|---|---:|---:|---:|---:|---:|
+| principal | q1 | 4167 | 2464 | 2368 | 3207 | 153 |
+| principal | q2 | 5044 | 3161 | 1935 | 3352 | 364 |
+| principal | q3 | 5976 | 2638 | 2248 | 3211 | 5 |
+| principal | q4 | 4059 | 2751 | 2482 | 3803 | 63 |
+| principal | q5 | 4056 | 2707 | 2131 | 2886 | 60 |
+
+ms_cliente - ms (red + gateway + serialización): n=20 mediana 221 ms, mín 100, máx 506
+
+## 3. Errores
+GET /analitica/q9 → 422 0.002179s {"error":"validacion","detalle":[{"type":"literal_error","loc":["path","consulta"],"msg":"Input should be 'q1', 'q2', 'q3', 'q4' or 'q5'","input":"q9","ctx":{"e
+GET /analitica/q1?conjunto=otro → 422 0.004600s {"error":"validacion","detalle":[{"type":"literal_error","loc":["query","conjunto"],"msg":"Input should be 'principal', 'grande' or 'prueba'","input":"otro","ct
+conjunto=prueba sin Parquet (carpeta movida) → 404 0.022916s {"error":"conjunto_no_existe","detalle":"/datalake/eventos_prueba no tiene archivos Parquet"}
+conjunto=prueba restaurado → 200 0.735577s {"consulta":"q4","conjunto":"prueba","parametros":{},"filas":[{"cliente_id":"c0000000-0000-4000-8000-000000000002","proyecto_id":"90000000-0000-4000-8000-000000
+analítica detenida: GET /analitica/q1 → 503 0.006049s {"error":"servicio_no_disponible","detalle":{"servicio":"analitica","mensaje":"Error de comunicación: ConnectError"}}
+analítica detenida: GET /salud → 200 degradado {'registro': 'operativo', 'sesion': 'operativo', 'historial': 'operativo', 'analitica': 'caido'}
+analítica operativa otra vez: GET /analitica/q4?conjunto=prueba → 200 23.520759s {"consulta":"q4","conjunto":"prueba","parametros":{},"filas":[{"cliente_id":"c0000000-0000-4000-8000-000000000002","proyecto_id":"90000000-0000-4000-8000-000000
+===== P4 historial por el gateway · 04:32:08 · bash pruebas/p4_gateway.sh
+# P4 por el gateway · 2026-11-22T04:32:08Z · commit 1b387ae
+Máquina: Intel(R) Core(TM) i7-6500U CPU @ 2.50GHz · 4 CPU · 11 GiB
+
+## 0. Estado conocido
+Semilla 2026 · carga con w=majority en 5.8 s
+  tareas        60000
+  eventos                808703
+  duplicados_inyectados  1634
+  archivos               115
+OK
+historial y analítica listos; eventos pendientes en el gateway: 0
+
+## 1. Frescura (HTTP 200 del gateway -> fila visible en Q1 por GET /analitica/q1)
+{"modo": "via_gateway", "rep": 1, "tarea_id": "5c8c17b6-a967-4916-8d2a-cb88b96c0240", "event_id": "587ce21b-3301-4fbd-9924-c8394e119f84", "t_200": 1795322006.69, "t_inicio_consulta_que_lo_vio": 1795322015.36, "t_visible": 1795322018.982, "segundos_hasta_visible": 12.29, "segundos_hasta_consulta_que_lo_vio": 8.67, "consultas_q1": 3, "ms_q1_media": 3775.6}
+{"modo": "via_gateway", "rep": 2, "tarea_id": "b2297a1d-43d3-4acd-ad59-166a5677cd38", "event_id": "4e3fafc4-385e-4f47-9691-ccbad2be0d95", "t_200": 1795322021.239, "t_inicio_consulta_que_lo_vio": 1795322026.99, "t_visible": 1795322029.548, "segundos_hasta_visible": 8.31, "segundos_hasta_consulta_que_lo_vio": 5.75, "consultas_q1": 4, "ms_q1_media": 1820.0}
+{"modo": "via_gateway", "rep": 3, "tarea_id": "76f1e944-7bf1-45f7-981d-bb018b3592a5", "event_id": "8596ea3f-bb69-42df-bd36-90080b620869", "t_200": 1795322031.222, "t_inicio_consulta_que_lo_vio": 1795322036.371, "t_visible": 1795322038.093, "segundos_hasta_visible": 6.87, "segundos_hasta_consulta_que_lo_vio": 5.15, "consultas_q1": 4, "ms_q1_media": 1505.0}
+{"modo": "via_gateway", "rep": 4, "tarea_id": "d0d52c67-ce81-4ef5-8e1e-9051990c82e9", "event_id": "56e40aa8-637b-4940-b36f-5d327ed55c4e", "t_200": 1795322039.609, "t_inicio_consulta_que_lo_vio": 1795322045.447, "t_visible": 1795322046.849, "segundos_hasta_visible": 7.24, "segundos_hasta_consulta_que_lo_vio": 5.84, "consultas_q1": 5, "ms_q1_media": 1264.2}
+{"modo": "via_gateway", "rep": 5, "tarea_id": "6bbebbb8-d391-48a7-a0a2-1cf1eb0e2e1f", "event_id": "faa89c1c-51c6-4948-802f-0670a7332e67", "t_200": 1795322049.039, "t_inicio_consulta_que_lo_vio": 1795322055.371, "t_visible": 1795322056.374, "segundos_hasta_visible": 7.34, "segundos_hasta_consulta_que_lo_vio": 6.33, "consultas_q1": 5, "ms_q1_media": 1292.8}
+via_gateway: n=5 min=6.87 mediana=7.34 max=12.29 s
+
+## 2. Fila rechazada en Parquet vs disponible en MongoDB, segundo envío y Q4
+Q4 antes (proyecto LiDAR de ejemplo): {"cliente_id": "f38b2ffc-80a4-4f5a-91c9-bc701e7ea419", "proyecto_id": "18da990c-9704-464a-b54b-82d3b6e57418", "rechazadas": 0, "revisadas": 5, "proporcion": 0.0}
+gateway respondió al rechazo: {"estado": "disponible", "version": 4, "event_id": "0613180a-070a-405f-8e6f-899b53c00efb"}
+segundo envío con el token viejo: 409 {"error": "conflicto_lock", "detalle": "El lock está ocupado, venció o el token no coincide"}
+
+Parquet (filas de la tarea desde el inicio de la prueba, 5.4 s después del 200):
+   {"event_id": "832bfe8f-a440-4ab1-a3f5-58f840db11b8", "ts": "2026-11-22 04:34:22.191000+00:00", "tarea_id": "ba0b2c68-68b7-4bbb-946c-d28a5a9aadef", "estado": "abierta", "version": 1, "motivo_rechazo": null, "anotador_id": "adbafed0-b600-460c-bbdc-fd55304374b3", "revisor_id": null, "micro_lote_id": "1795322062251-0_1795322062372-0", "mes": "2026-11"}
+   {"event_id": "773f63ef-d4a9-4404-acc9-923a219b0b1c", "ts": "2026-11-22 04:34:22.258000+00:00", "tarea_id": "ba0b2c68-68b7-4bbb-946c-d28a5a9aadef", "estado": "anotada", "version": 2, "motivo_rechazo": null, "anotador_id": "adbafed0-b600-460c-bbdc-fd55304374b3", "revisor_id": null, "micro_lote_id": "1795322062251-0_1795322062372-0", "mes": "2026-11"}
+   {"event_id": "fc3e61a7-d869-4ce3-8367-91e9869870b4", "ts": "2026-11-22 04:34:22.323000+00:00", "tarea_id": "ba0b2c68-68b7-4bbb-946c-d28a5a9aadef", "estado": "en_revision", "version": 3, "motivo_rechazo": null, "anotador_id": "adbafed0-b600-460c-bbdc-fd55304374b3", "revisor_id": "a40eecb5-c134-479b-9e3b-7dd373aa881e", "micro_lote_id": "1795322062251-0_1795322062372-0", "mes": "2026-11"}
+   {"event_id": "0613180a-070a-405f-8e6f-899b53c00efb", "ts": "2026-11-22 04:34:22.344000+00:00", "tarea_id": "ba0b2c68-68b7-4bbb-946c-d28a5a9aadef", "estado": "rechazada", "version": 4, "motivo_rechazo": "GEOMETRIA_IMPRECISA", "anotador_id": "adbafed0-b600-460c-bbdc-fd55304374b3", "revisor_id": "a40eecb5-c134-479b-9e3b-7dd373aa881e", "micro_lote_id": "1795322062251-0_1795322062372-0", "mes": "2026-11"}
+filas: 4 · estados: ['abierta', 'anotada', 'en_revision', 'rechazada'] · event_id repetidos: 0
+
+MongoDB (registro): {"_id": "ba0b2c68-68b7-4bbb-946c-d28a5a9aadef", "estado": "disponible", "version": 4, "asignacion": null, "ultima_revision": {"revisor_id": "a40eecb5-c134-479b-9e3b-7dd373aa881e", "resultado": "rechazada", "motivo": "GEOMETRIA_IMPRECISA", "en": "2026-11-22 04:34:22.344000+00:00"}, "ultimo_evento_id": "0613180a-070a-405f-8e6f-899b53c00efb"}
+ultimo_evento_id == event_id de la fila rechazada: True
+
+Q4 después: {"cliente_id": "f38b2ffc-80a4-4f5a-91c9-bc701e7ea419", "proyecto_id": "18da990c-9704-464a-b54b-82d3b6e57418", "rechazadas": 1, "revisadas": 6, "proporcion": 0.1667}
+rechazadas en Q4: 0 -> 1 (se esperaba 1)
+
+## 3. Spark leyendo en bucle mientras el simulador escribe por el gateway; reprocesar un micro-lote
+inicio del simulador: 1795322095.742
+http://gateway:8000 · 9 anotadores + 1 revisores · 0 s de calentamiento + 60 s medidos
+endpoint                            n      p50      p95      p99    2xx   4xx  5xx/0
+POST /tareas/siguiente            274    113.4   1014.5   4444.2    261     0     13
+POST /tareas/{id}/enviar          261    197.3   1009.3  10010.6    253     0      8
+POST /tareas/{id}/revision        127     69.9    342.8   2131.9    124     0      3
+envíos confirmados: 253 en 60 s = 253.0 envíos/min
+fin del simulador: 1795322160.360 · pendientes en el gateway: 0
+lector: 42 vueltas, 0 con error, filas de 810361 a 811005, 0 veces bajó la cuenta, 2907 ms por vuelta
+POST /reprocesar: 200 {"micro_lote_id": "1795322155842-0_1795322159311-0", "filas": 40, "archivos": [{"archivo": "eventos/mes=2026-11/part-1795322155842-0_1795322159311-0.parquet", "filas": 40}], "reprocesado_en": 1795322203292}
+micro-lote 1795322155842-0_1795322159311-0 (40 eventos)
+  /datalake/eventos/mes=2026-11/part-1795322155842-0_1795322159311-0.parquet: sha256 866938fbde018dd9 -> 866938fbde018dd9 · mtime cambió: True
+archivos .parquet en eventos/: 132 -> 132
+filas en el lago con esos event_id: 40 -> 40 (eventos del micro-lote: 40)
+
+## 4. Caída del historial en medio de la carga del simulador
+docker kill historial: 1795322220.512 · pendientes en el gateway: 21
+pendientes en el gateway con el historial caído (15 s): 252
+GET /salud del gateway: degradado {'registro': 'operativo', 'sesion': 'operativo', 'historial': 'caido', 'analitica': 'operativo'}
+historial healthy: 1795322250.596
+http://gateway:8000 · 9 anotadores + 1 revisores · 0 s de calentamiento + 45 s medidos
+endpoint                            n      p50      p95      p99    2xx   4xx  5xx/0
+POST /tareas/siguiente            253     67.1    446.3   1109.3    250     0      3
+POST /tareas/{id}/enviar          250    118.7   1010.6   2566.5    244     0      6
+POST /tareas/{id}/revision        110     43.8    455.7   1109.2    109     0      1
+envíos confirmados: 244 en 45 s = 325.3 envíos/min
+pendientes en el gateway al final: 0
+{"ts": "2026-11-22T04:37:21.661529+00:00", "nivel": "INFO", "servicio": "historial", "msg": "recuperacion", "tmp_huerfanos": [], "reclamados": 49, "micro_lotes_rehechos": [], "pendientes_publicados": 49}
+
+Respuestas 200 del simulador contra eventos distintos en el lago (pruebas/p6_lago.py):
+corrida                             respuestas 200  sin respuesta  eventos en el lago  atraso p50 / p95 / máx. (s)
+P4_gateway_20261121-2232/10u_c1           638            4            644         3.0 /  45.1 /   47.5
+P4_gateway_20261121-2232/10u_c2           603            0            603         7.9 /  35.2 /   36.5
+===== C2.6 compactación del mes actual · 04:39:08 · bash pruebas/c26_compactacion.sh
+# C2.6 compactación de mes=2026-11 (conjunto principal) · 2026-11-22T04:39:08Z · commit 1b387ae
+
+## Antes
+mes=2026-11: 24 archivos, 0.24 MB, 1271 filas, 1271 event_id distintos
+  part-1795322006450-0_1795322006700-0.parquet, part-1795322021114-0_1795322021243-0.parquet, part-1795322031044-0_1795322031225-0.parquet ...
+q1: 154 filas, 1394.3 ms
+q2: 361 filas, 2950.2 ms
+q3: 5 filas, 5685.0 ms
+q4: 62 filas, 2528.0 ms
+q5: 60 filas, 3466.1 ms
+
+## Simulación (sin --ejecutar)
+mes                    2026-11
+archivos               24
+filas                  1271
+filas_sin_duplicados   1271
+duplicados_quitados    0
+destino                eventos/mes=2026-11/part-compacto-20261122T043927.parquet
+accion                 simulacion (usar --ejecutar)
+
+## Compactación
+mes                    2026-11
+archivos               24
+filas                  1271
+filas_sin_duplicados   1271
+duplicados_quitados    0
+destino                eventos/mes=2026-11/part-compacto-20261122T043927.parquet
+accion                 compactado
+tiempo: 0.79 s
+
+## Después
+mes=2026-11: 1 archivos, 0.09 MB, 1271 filas, 1271 event_id distintos
+  part-compacto-20261122T043927.parquet
+q1: 154 filas, 743.8 ms
+q2: 361 filas, 1627.3 ms
+q3: 5 filas, 2012.9 ms
+q4: 62 filas, 1915.8 ms
+q5: 60 filas, 1874.1 ms
+q1: igual antes y después
+q2: igual antes y después
+q3: igual antes y después
+q4: igual antes y después
+q5: igual antes y después
+===== P5 analítica (1 y 2 workers, principal y grande) · 04:39:37 · bash pruebas/p5_analitica.sh
+# P5 analítica · 2026-11-22T04:39:37Z · commit 1b387ae · REPS=6
+
+## Conjuntos
+eventos: "eventos": 808703, 116 archivos, 47M
+eventos_grande: "eventos": 10107232, 271 archivos, 553M
+eventos_prueba: 4 archivos (42 eventos + 1 duplicado)
+
+## 1 worker
+analitica: {"master": "spark://spark-master:7077", "master_alcanzable": true, "sesion_spark": true, "arranque_ms": 10197.9, "error": null, "ejecutores": 1, "nucleos": 2}
+
+## Validación contra conjunto=prueba (esperado calculado a mano)
+q1: OK · status 200 · 4 filas · 11384.3 ms
+  obtenido: [{"dia": "2026-09-01", "modalidad": "texto", "aprobadas": 2}, {"dia": "2026-09-04", "modalidad": "texto", "aprobadas": 1}, {"dia": "2026-09-11", "modalidad": "lidar", "aprobadas": 1}, {"dia": "2026-09-30", "modalidad": "imagen", "aprobadas": 1}]
+q2: OK · status 200 · 4 filas · 2345.4 ms
+  obtenido: [{"equipo_id": "e0000000-0000-4000-8000-000000000001", "mes": "2026-07", "aprobadas": 1, "revisadas": 2, "proporcion": 0.5}, {"equipo_id": "e0000000-0000-4000-8000-000000000001", "mes": "2026-09", "aprobadas": 3, "revisadas": 3, "proporcion": 1.0}, {"equipo_id": "e0000000-0000-4000-8000-000000000002", "mes": "2026-06", "aprobadas": 1, "revisadas": 2, "proporcion": 0.5}, {"equipo_id": "e0000000-0000-4000-8000-000000000002", "mes": "2026-09", "aprobadas": 2, "revisadas": 3, "proporcion": 0.6667}]
+q3: OK · status 200 · 3 filas · 3998.0 ms
+  obtenido: [{"modalidad": "lidar", "tipo_tarea": "cuboide_3d", "anotadas": 1, "media_s": 3600.0, "p95_s": 3600.0}, {"modalidad": "imagen", "tipo_tarea": "bbox", "anotadas": 5, "media_s": 1404.0, "p95_s": 1800.0}, {"modalidad": "texto", "tipo_tarea": "span", "anotadas": 4, "media_s": 975.0, "p95_s": 1800.0}]
+q4: OK · status 200 · 3 filas · 1468.2 ms
+  obtenido: [{"cliente_id": "c0000000-0000-4000-8000-000000000002", "proyecto_id": "90000000-0000-4000-8000-000000000003", "rechazadas": 2, "revisadas": 5, "proporcion": 0.4}, {"cliente_id": "c0000000-0000-4000-8000-000000000001", "proyecto_id": "90000000-0000-4000-8000-000000000001", "rechazadas": 1, "revisadas": 4, "proporcion": 0.25}, {"cliente_id": "c0000000-0000-4000-8000-000000000001", "proyecto_id": "90000000-0000-4000-8000-000000000002", "rechazadas": 0, "revisadas": 1, "proporcion": 0.0}]
+q5: OK · status 200 · 2 filas · 2603.0 ms
+  obtenido: [{"cliente_id": "c0000000-0000-4000-8000-000000000001", "aprobadas": 4, "p50_h": 5.0, "p95_h": 28.0, "incumplen_sla": 1, "pct_incumple_sla": 25.0}, {"cliente_id": "c0000000-0000-4000-8000-000000000002", "aprobadas": 3, "p50_h": 3.0, "p95_h": 4.0, "incumplen_sla": 0, "pct_incumple_sla": 0.0}]
+
+## Tiempos · 1worker · 6 ejecuciones por consulta (ms medidos por la analítica)
+| conjunto | consulta | 1ª ejecución | siguientes: mediana | mín | máx | filas |
+|---|---|---:|---:|---:|---:|---:|
+| principal | q1 | 3015 | 2134 | 1464 | 2816 | 154 |
+| principal | q2 | 3363 | 2337 | 1741 | 3133 | 361 |
+| principal | q3 | 2764 | 2428 | 1434 | 2565 | 5 |
+| principal | q4 | 1776 | 1992 | 1560 | 2703 | 62 |
+| principal | q5 | 2496 | 1804 | 1467 | 2208 | 60 |
+| grande | q1 | 5370 | 3565 | 2949 | 3853 | 362 |
+| grande | q2 | 10143 | 10033 | 9842 | 10302 | 360 |
+| grande | q3 | 11283 | 10946 | 10600 | 11092 | 5 |
+| grande | q4 | 9607 | 9888 | 9836 | 11729 | 60 |
+| grande | q5 | 9246 | 8199 | 7646 | 8370 | 60 |
+plan q1: /srv/evidence/P5_analitica_20261121-2239_plan_q1.txt
+plan q3: /srv/evidence/P5_analitica_20261121-2239_plan_q3.txt
+
+## 2 workers
+analitica: {"master": "spark://spark-master:7077", "master_alcanzable": true, "sesion_spark": true, "arranque_ms": 7944.4, "error": null, "ejecutores": 2, "nucleos": 4}
+
+## Tiempos · 2workers · 6 ejecuciones por consulta (ms medidos por la analítica)
+| conjunto | consulta | 1ª ejecución | siguientes: mediana | mín | máx | filas |
+|---|---|---:|---:|---:|---:|---:|
+| principal | q1 | 18468 | 3160 | 2711 | 4627 | 154 |
+| principal | q2 | 5722 | 2844 | 2415 | 3797 | 361 |
+| principal | q3 | 7353 | 2778 | 1820 | 4126 | 5 |
+| principal | q4 | 3381 | 2239 | 1476 | 2438 | 62 |
+| principal | q5 | 3663 | 2218 | 1624 | 3261 | 60 |
+| grande | q1 | 6501 | 4265 | 3883 | 5495 | 362 |
+| grande | q2 | 9017 | 9670 | 8004 | 17756 | 360 |
+| grande | q3 | 14362 | 10838 | 10585 | 12901 | 5 |
+| grande | q4 | 8757 | 8988 | 8101 | 9915 | 60 |
+| grande | q5 | 10884 | 9096 | 8287 | 9985 | 60 |
+
+## docker stats al terminar
+NAME                         CPU %     MEM USAGE / LIMIT
+proyecto2-spark-worker-2-1   0.36%     1.653GiB / 11.57GiB
+proyecto2-analitica-1        0.41%     779.8MiB / 11.57GiB
+proyecto2-spark-worker-1     0.16%     1.811GiB / 11.57GiB
+proyecto2-spark-master-1     0.07%     299.4MiB / 11.57GiB
+
+spark-worker-2 apagado (estado base: 1 worker)
+pruebas/p5_analitica.sh: línea 54: EOF inesperado mientras se buscaba un «'» coincidente
+===== P8 MongoDB: secundario · 04:54:31 · bash pruebas/p8_mongo.sh secundario
+# P8 MongoDB · secundario · sonda vía gateway · 2026-11-22T04:54:31Z · commit 1b387ae
+
+## Precondición
+Semilla 2026 · carga con w=majority en 7.1 s
+  tareas        60000
+2026-11-22T04:54:40Z
+conjunto: rs0  term: 2  consultado en: mongo1:27017
+mongo1:27017  PRIMARY                 health=1  optime=2026-11-22T04:54:39.000Z
+mongo2:27017  SECONDARY               health=1  optime=2026-11-22T04:54:39.000Z
+mongo3:27017  SECONDARY               health=1  optime=2026-11-22T04:54:39.000Z
+primario: mongo1 · secundarios: mongo2 mongo3 · se detiene: mongo2
+
+## Sonda (cambios de estado)
+-- falla: docker compose kill mongo2 · marca 1795323292.079664040 (2026-11-22T04:54:52.080Z)
+-- estado durante la falla:
+2026-11-22T04:55:07Z
+conjunto: rs0  term: 2  consultado en: mongo1:27017
+mongo1:27017  PRIMARY                 health=1  optime=2026-11-22T04:55:07.000Z
+mongo2:27017  (not reachable/healthy) health=0  optime=-
+mongo3:27017  SECONDARY               health=1  optime=2026-11-22T04:55:07.000Z
+-- recuperación: docker compose start mongo2 · 1795323308.606279446 (2026-11-22T04:55:08.608Z)
+04:54:44.880 asignar: ok
+
+## Después (conjunto restaurado)
+2026-11-22T04:55:32Z
+conjunto: rs0  term: 2  consultado en: mongo1:27017
+mongo1:27017  PRIMARY                 health=1  optime=2026-11-22T04:55:29.000Z
+mongo2:27017  SECONDARY               health=1  optime=2026-11-22T04:55:29.000Z
+mongo3:27017  SECONDARY               health=1  optime=2026-11-22T04:55:29.000Z
+
+## Verificación contra MongoDB
+filas: 206 · envíos: 103 · asignaciones con error: 0
+envíos confirmados (200): 103 · presentes en MongoDB: 103
+RPO (confirmados perdidos): 0
+confirmados con la versión esperada (aplicados una sola vez): 103 de 103
+envíos con error: 0 · de esos SÍ quedaron escritos: 0 · no escritos: 0
+asignaciones con error que SÍ quedaron escritas (tarea abierta a nombre de la sonda): 0
+
+marca de la falla: 1795323292.080
+último envío 200 antes de la falla: {'ts': '1795323291.656', 'op': 'enviar', 'tarea_id': '2addfc9e-d3fd-4ad1-b957-7d690d9f9e3a', 'version': '2', 'status': '200', 'error': '', 'ms': '169.2'}
+sin errores después de la marca: la escritura no se interrumpió (no aplica RTO)
+primer envío 200 después de la marca: {'ts': '1795323292.516', 'op': 'enviar', 'tarea_id': '6df05ff6-7153-44d6-9d4d-d268a3c38146', 'version': '2', 'status': '200', 'error': '', 'ms': '140.0'}
+nodos encendidos de nuevo 16.5 s después de la falla
+===== P8 MongoDB: primario · 04:55:34 · bash pruebas/p8_mongo.sh primario
+# P8 MongoDB · primario · sonda vía gateway · 2026-11-22T04:55:34Z · commit 1b387ae
+
+## Precondición
+Semilla 2026 · carga con w=majority en 6.3 s
+  tareas        60000
+2026-11-22T04:55:43Z
+conjunto: rs0  term: 2  consultado en: mongo1:27017
+mongo1:27017  PRIMARY                 health=1  optime=2026-11-22T04:55:42.000Z
+mongo2:27017  SECONDARY               health=1  optime=2026-11-22T04:55:42.000Z
+mongo3:27017  SECONDARY               health=1  optime=2026-11-22T04:55:42.000Z
+primario: mongo1 · secundarios: mongo2 mongo3 · se detiene: mongo1
+
+## Sonda (cambios de estado)
+-- falla: docker compose kill mongo1 · marca 1795323354.446256539 (2026-11-22T04:55:54.447Z)
+-- estado durante la falla:
+2026-11-22T04:56:09Z
+conjunto: rs0  term: 3  consultado en: mongo2:27017
+mongo1:27017  (not reachable/healthy) health=0  optime=-
+mongo2:27017  PRIMARY                 health=1  optime=2026-11-22T04:56:10.000Z
+mongo3:27017  SECONDARY               health=1  optime=2026-11-22T04:56:08.000Z
+-- recuperación: docker compose start mongo1 · 1795323386.021879202 (2026-11-22T04:56:26.024Z)
+04:55:46.879 asignar: ok
+04:55:55.366 asignar: error 503 servicio_no_disponible(registro)
+04:56:04.530 asignar: ok
+
+## Después (conjunto restaurado)
+2026-11-22T04:56:50Z
+conjunto: rs0  term: 3  consultado en: mongo1:27017
+mongo1:27017  SECONDARY               health=1  optime=2026-11-22T04:56:46.000Z
+mongo2:27017  PRIMARY                 health=1  optime=2026-11-22T04:56:46.000Z
+mongo3:27017  SECONDARY               health=1  optime=2026-11-22T04:56:46.000Z
+
+## Verificación contra MongoDB
+filas: 290 · envíos: 141 · asignaciones con error: 8
+envíos confirmados (200): 141 · presentes en MongoDB: 141
+RPO (confirmados perdidos): 0
+confirmados con la versión esperada (aplicados una sola vez): 141 de 141
+envíos con error: 0 · de esos SÍ quedaron escritos: 0 · no escritos: 0
+asignaciones con error que SÍ quedaron escritas (tarea abierta a nombre de la sonda): 1
+
+marca de la falla: 1795323354.446
+último envío 200 antes de la falla: {'ts': '1795323354.157', 'op': 'enviar', 'tarea_id': 'da258b4c-91f7-467f-97fe-ddd23c582cfa', 'version': '2', 'status': '200', 'error': '', 'ms': '115.4'}
+primer error: {'ts': '1795323355.366', 'op': 'asignar', 'tarea_id': '', 'version': '', 'status': '503', 'error': 'servicio_no_disponible(registro)', 'ms': '1008.7'}
+último error: {'ts': '1795323363.814', 'op': 'asignar', 'tarea_id': '', 'version': '', 'status': '503', 'error': 'servicio_no_disponible(registro)', 'ms': '1006.6'}
+errores después de la marca: 8 (503 servicio_no_disponible(registro))
+primer envío 200 después del último error: {'ts': '1795323364.610', 'op': 'enviar', 'tarea_id': '679f6d37-ea96-4943-aa2f-997e005a56f0', 'version': '2', 'status': '200', 'error': '', 'ms': '79.3'}
+RTO = 1795323364.610 - 1795323354.446 = 10.164 s
+nodos encendidos de nuevo 31.6 s después de la falla
+===== P8 MongoDB: sin mayoría · 04:56:53 · bash pruebas/p8_mongo.sh sin-mayoria
+# P8 MongoDB · sin-mayoria · sonda vía gateway · 2026-11-22T04:56:53Z · commit 1b387ae
+
+## Precondición
+Semilla 2026 · carga con w=majority en 6.2 s
+  tareas        60000
+2026-11-22T04:57:00Z
+conjunto: rs0  term: 3  consultado en: mongo1:27017
+mongo1:27017  SECONDARY               health=1  optime=2026-11-22T04:57:00.000Z
+mongo2:27017  PRIMARY                 health=1  optime=2026-11-22T04:57:00.000Z
+mongo3:27017  SECONDARY               health=1  optime=2026-11-22T04:57:00.000Z
+primario: mongo2 · secundarios: mongo1 mongo3 · se detiene: mongo1 mongo3
+
+## Sonda (cambios de estado)
+-- falla: docker compose kill mongo1 mongo3 · marca 1795323432.007130176 (2026-11-22T04:57:12.008Z)
+-- estado durante la falla:
+2026-11-22T04:57:27Z
+conjunto: rs0  term: 3  consultado en: mongo2:27017
+mongo1:27017  (not reachable/healthy) health=0  optime=-
+mongo2:27017  SECONDARY               health=1  optime=2026-11-22T04:57:21.000Z
+mongo3:27017  (not reachable/healthy) health=0  optime=-
+-- recuperación: docker compose start mongo1 mongo3 · 1795323453.639813316 (2026-11-22T04:57:33.641Z)
+04:57:04.326 asignar: ok
+04:57:12.797 enviar: error 503 servicio_no_disponible(registro)
+04:57:42.596 asignar: ok
+04:58:10.640 asignar: error 503 servicio_no_disponible(registro)
+04:58:20.763 asignar: ok
+
+## Después (conjunto restaurado)
+2026-11-22T04:58:35Z
+conjunto: rs0  term: 4  consultado en: mongo1:27017
+mongo1:27017  SECONDARY               health=1  optime=2026-11-22T04:58:34.000Z
+mongo2:27017  PRIMARY                 health=1  optime=2026-11-22T04:58:34.000Z
+mongo3:27017  SECONDARY               health=1  optime=2026-11-22T04:58:34.000Z
+
+## Verificación contra MongoDB
+filas: 326 · envíos: 147 · asignaciones con error: 32
+envíos confirmados (200): 146 · presentes en MongoDB: 146
+RPO (confirmados perdidos): 0
+confirmados con la versión esperada (aplicados una sola vez): 146 de 146
+envíos con error: 1 · de esos SÍ quedaron escritos: 1 · no escritos: 0
+asignaciones con error que SÍ quedaron escritas (tarea abierta a nombre de la sonda): 17
+
+marca de la falla: 1795323432.007
+último envío 200 antes de la falla: {'ts': '1795323431.536', 'op': 'enviar', 'tarea_id': 'da258b4c-91f7-467f-97fe-ddd23c582cfa', 'version': '2', 'status': '200', 'error': '', 'ms': '69.2'}
+primer error: {'ts': '1795323432.797', 'op': 'enviar', 'tarea_id': '083c6c60-4542-4610-a369-2541f06188d9', 'version': '2', 'status': '503', 'error': 'servicio_no_disponible(registro)', 'ms': '1019.7'}
+último error: {'ts': '1795323500.283', 'op': 'asignar', 'tarea_id': '', 'version': '', 'status': '503', 'error': 'servicio_no_disponible(registro)', 'ms': '1005.8'}
+errores después de la marca: 33 (503 servicio_no_disponible(registro))
+primer envío 200 después del último error: {'ts': '1795323500.859', 'op': 'enviar', 'tarea_id': 'ebf2d96d-5ca7-4270-b965-35ebf3037f5f', 'version': '2', 'status': '200', 'error': '', 'ms': '94.1'}
+RTO = 1795323500.859 - 1795323432.007 = 68.852 s
+desde que se encendieron los nodos (1795323453.640) hasta ese envío: 47.219 s
+nodos encendidos de nuevo 21.6 s después de la falla
+===== P6 carga (10, 40, 100 usuarios) · 04:58:38 · bash pruebas/p6_carga.sh
+P6 · niveles: 10 40 100 · 2026-11-21 22:58:38 CST · commit 1b387ae
+Gateway: sh -c uvicorn app.main:app --host 0.0.0.0 --port ${PUERTO} 
+Máquina: Intel(R) Core(TM) i7-6500U CPU @ 2.50GHz · 4 CPU y 11 GiB visibles en WSL 2
+== 10 usuarios, corrida 1 (22:58:38)
+Semilla 2026 · carga con w=majority en 5.9 s
+http://gateway:8000 · 9 anotadores + 1 revisores · 30 s de calentamiento + 90 s medidos
+endpoint                            n      p50      p95      p99    2xx   4xx  5xx/0
+POST /tareas/siguiente            499     64.8    392.4   1809.4    499     0      0
+POST /tareas/{id}/enviar          508    121.3    838.3   1321.7    503     0      5
+POST /tareas/{id}/revision        219     45.6    343.1   1078.9    219     0      0
+envíos confirmados: 503 en 90 s = 335.3 envíos/min
+== 10 usuarios, corrida 2 (23:00:53)
+Semilla 2026 · carga con w=majority en 6.6 s
+http://gateway:8000 · 9 anotadores + 1 revisores · 30 s de calentamiento + 90 s medidos
+endpoint                            n      p50      p95      p99    2xx   4xx  5xx/0
+POST /tareas/siguiente            522     57.1    223.0    685.5    522     0      0
+POST /tareas/{id}/enviar          530    115.1    602.5   2077.7    529     0      1
+POST /tareas/{id}/revision        231     38.5    250.3    830.5    231     0      0
+envíos confirmados: 529 en 90 s = 352.7 envíos/min
+== 10 usuarios, corrida 3 (23:03:11)
+Semilla 2026 · carga con w=majority en 9.9 s
+http://gateway:8000 · 9 anotadores + 1 revisores · 30 s de calentamiento + 90 s medidos
+endpoint                            n      p50      p95      p99    2xx   4xx  5xx/0
+POST /tareas/siguiente            507     60.3    281.8   1021.3    507     0      0
+POST /tareas/{id}/enviar          516    123.0    779.7   1288.2    509     0      7
+POST /tareas/{id}/revision        233     46.3    225.2    914.0    232     0      1
+envíos confirmados: 509 en 90 s = 339.3 envíos/min
+== 40 usuarios, corrida 1 (23:05:28)
+Semilla 2026 · carga con w=majority en 6.3 s
+http://gateway:8000 · 36 anotadores + 4 revisores · 30 s de calentamiento + 90 s medidos
+endpoint                            n      p50      p95      p99    2xx   4xx  5xx/0
+POST /tareas/siguiente            936    531.2   1820.3   3811.3    935     0      1
+POST /tareas/{id}/enviar          962   1194.9   4432.1   7217.2    956     0      6
+POST /tareas/{id}/revision        509    234.7   1245.2   2456.8    507     0      2
+envíos confirmados: 956 en 90 s = 637.3 envíos/min
+== 40 usuarios, corrida 2 (23:07:41)
+Semilla 2026 · carga con w=majority en 6.4 s
+http://gateway:8000 · 36 anotadores + 4 revisores · 30 s de calentamiento + 90 s medidos
+endpoint                            n      p50      p95      p99    2xx   4xx  5xx/0
+POST /tareas/siguiente            993    515.2   1276.2   3315.1    948     0     45
+POST /tareas/{id}/enviar          978   1226.1   3590.4   9443.6    959     0     19
+POST /tareas/{id}/revision        503    270.4   1083.3   3309.0    499     0      4
+envíos confirmados: 959 en 90 s = 639.3 envíos/min
+== 40 usuarios, corrida 3 (23:10:02)
+Semilla 2026 · carga con w=majority en 7.7 s
+http://gateway:8000 · 36 anotadores + 4 revisores · 30 s de calentamiento + 90 s medidos
+endpoint                            n      p50      p95      p99    2xx   4xx  5xx/0
+POST /tareas/siguiente            983    472.4   1764.2   9804.3    946     0     37
+POST /tareas/{id}/enviar          966    871.7   6866.6  10010.6    934     0     32
+POST /tareas/{id}/revision        526    201.0   1006.5   7006.8    519     0      7
+envíos confirmados: 934 en 90 s = 622.7 envíos/min
+== 100 usuarios, corrida 1 (23:12:34)
+Semilla 2026 · carga con w=majority en 6.3 s
+http://gateway:8000 · 90 anotadores + 10 revisores · 30 s de calentamiento + 90 s medidos
+endpoint                            n      p50      p95      p99    2xx   4xx  5xx/0
+POST /tareas/siguiente            974   2368.3   6192.0  10011.0    761     0    213
+POST /tareas/{id}/enviar          825   4924.7  10011.3  10013.2    680     0    145
+POST /tareas/{id}/revision        716    610.2   3960.2  10010.4    670     0     46
+envíos confirmados: 680 en 90 s = 453.3 envíos/min
+== 100 usuarios, corrida 2 (23:14:50)
+Semilla 2026 · carga con w=majority en 6.7 s
+http://gateway:8000 · 90 anotadores + 10 revisores · 30 s de calentamiento + 90 s medidos
+endpoint                            n      p50      p95      p99    2xx   4xx  5xx/0
+POST /tareas/siguiente            918   2569.4   6253.2  10010.9    800     0    118
+POST /tareas/{id}/enviar          863   4749.9  10011.5  10015.1    722     0    141
+POST /tareas/{id}/revision        681    603.5   4257.1  10010.6    671     0     10
+envíos confirmados: 722 en 90 s = 481.3 envíos/min
+== 100 usuarios, corrida 3 (23:17:22)
+Semilla 2026 · carga con w=majority en 6.1 s
+http://gateway:8000 · 90 anotadores + 10 revisores · 30 s de calentamiento + 90 s medidos
+endpoint                            n      p50      p95      p99    2xx   4xx  5xx/0
+POST /tareas/siguiente            895   2443.2   5745.1   8896.7    876     0     19
+POST /tareas/{id}/enviar          957   4692.9  10010.4  10013.0    884     0     73
+POST /tareas/{id}/revision        813    607.2   1730.2   4873.1    807     0      6
+envíos confirmados: 884 en 90 s = 589.3 envíos/min
+
+=== 10 usuarios virtuales (3 corridas de 90 s medidos)
+endpoint                            n      p50      p95      p99    2xx   4xx  5xx/0
+POST /tareas/siguiente           1528     61.1    276.6   1023.6   1528     0      0
+POST /tareas/{id}/enviar         1554    118.7    764.2   1567.1   1541     0     13
+POST /tareas/{id}/revision        683     43.5    243.9    990.5    682     0      1
+por corrida: peticiones · envíos 200 · envíos/min · errores 5xx o sin respuesta
+  10u_c1     1226 ·   503 ·   335.3 · 5
+  10u_c2     1283 ·   529 ·   352.7 · 1
+  10u_c3     1256 ·   509 ·   339.3 · 8
+envíos/min: media 342.4, mín. 335.3, máx. 352.7
+p50 / p95 / p99 por corrida (ms):
+  10u_c1   siguiente 65/392/1809 · enviar 121/838/1322 · revision 46/343/1079
+  10u_c2   siguiente 57/223/685 · enviar 115/603/2078 · revision 38/250/830
+  10u_c3   siguiente 60/282/1021 · enviar 123/780/1288 · revision 46/225/914
+docker stats en la ventana medida (CPU en % de un núcleo; memoria en MiB):
+  contenedor       muestras  CPU media  CPU máx.  mem máx.
+  gateway               130       31.7      60.7        46
+  mongo2                130       25.5     101.0       558
+  mongo3                130       23.9      98.3       546
+  mongo1                130       23.2     102.5       518
+  sesion                130       11.0      33.6        47
+  registro              130        8.5      28.6        53
+  historial             130        5.9      27.5        47
+  analitica             130        2.8      80.2       790
+  simulador             126        2.2       3.8        28
+  valkey                130        2.0       7.5         9
+  cola-eventos          130        1.8       7.0        13
+  spark-master          130        1.2       6.5       307
+  spark-worker          130        0.2       0.4      1843
+
+=== 40 usuarios virtuales (3 corridas de 90 s medidos)
+endpoint                            n      p50      p95      p99    2xx   4xx  5xx/0
+POST /tareas/siguiente           2912    509.6   1639.3   6266.5   2829     0     83
+POST /tareas/{id}/enviar         2906   1076.8   4348.4   9689.8   2849     0     57
+POST /tareas/{id}/revision       1538    230.3   1105.5   3864.5   1525     0     13
+por corrida: peticiones · envíos 200 · envíos/min · errores 5xx o sin respuesta
+  40u_c1     2407 ·   956 ·   637.3 · 9
+  40u_c2     2474 ·   959 ·   639.3 · 68
+  40u_c3     2475 ·   934 ·   622.7 · 76
+envíos/min: media 633.1, mín. 622.7, máx. 639.3
+p50 / p95 / p99 por corrida (ms):
+  40u_c1   siguiente 531/1820/3811 · enviar 1195/4432/7217 · revision 235/1245/2457
+  40u_c2   siguiente 515/1276/3315 · enviar 1226/3590/9444 · revision 270/1083/3309
+  40u_c3   siguiente 472/1764/9804 · enviar 872/6867/10011 · revision 201/1007/7007
+docker stats en la ventana medida (CPU en % de un núcleo; memoria en MiB):
+  contenedor       muestras  CPU media  CPU máx.  mem máx.
+  gateway               133       66.1     127.9        63
+  mongo2                133       31.1     100.5       596
+  mongo3                133       27.9     100.1       561
+  mongo1                133       24.4     100.2       549
+  sesion                133       20.4      49.1        49
+  registro              133       14.7      41.3        54
+  simulador             130        4.9       8.9        57
+  historial             133        4.8      26.1        51
+  valkey                133        2.6      10.5         9
+  cola-eventos          133        1.9      10.7        18
+  analitica             133        1.8      19.8       793
+  spark-master          133        1.2       5.9       308
+  spark-worker          133        0.2       1.7      1843
+
+=== 100 usuarios virtuales (3 corridas de 90 s medidos)
+endpoint                            n      p50      p95      p99    2xx   4xx  5xx/0
+POST /tareas/siguiente           2787   2472.6   6056.5  10010.9   2437     0    350
+POST /tareas/{id}/enviar         2645   4772.8  10011.1  10013.5   2286     0    359
+POST /tareas/{id}/revision       2210    609.7   3505.1   6718.9   2148     0     62
+por corrida: peticiones · envíos 200 · envíos/min · errores 5xx o sin respuesta
+  100u_c1    2515 ·   680 ·   453.3 · 404
+  100u_c2    2462 ·   722 ·   481.3 · 269
+  100u_c3    2665 ·   884 ·   589.3 · 98
+envíos/min: media 508.0, mín. 453.3, máx. 589.3
+p50 / p95 / p99 por corrida (ms):
+  100u_c1  siguiente 2368/6192/10011 · enviar 4925/10011/10013 · revision 610/3960/10010
+  100u_c2  siguiente 2569/6253/10011 · enviar 4750/10012/10015 · revision 604/4257/10011
+  100u_c3  siguiente 2443/5745/8897 · enviar 4693/10010/10013 · revision 607/1730/4873
+docker stats en la ventana medida (CPU en % de un núcleo; memoria en MiB):
+  contenedor       muestras  CPU media  CPU máx.  mem máx.
+  gateway               137       79.7     122.0        71
+  mongo2                137       31.3     103.6       594
+  mongo3                137       24.6     102.5       560
+  mongo1                137       22.2     100.7       560
+  sesion                137       18.1      39.5        49
+  registro              137       14.8      61.9        62
+  simulador             134        5.0      12.8       112
+  historial             137        3.4      25.4        57
+  analitica             137        2.4      21.5       789
+  valkey                137        2.4       9.2         6
+  cola-eventos          137        1.8      14.8        26
+  spark-master          137        1.3       9.6       310
+  spark-worker          137        0.2       5.1      1846

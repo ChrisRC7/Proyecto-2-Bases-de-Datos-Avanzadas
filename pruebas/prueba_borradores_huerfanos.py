@@ -1,26 +1,35 @@
 
-"""Pruebas de reasignacion segura de borradores en Valkey."""
+"""Pruebas de reasignacion segura de borradores en Valkey.
+
+Comprueba preparar_para_asignacion: si la tarea pasa a otro anotador, el borrador anterior se
+archiva (con TTL) y no se le muestra; si vuelve al mismo anotador, lo recupera con el token
+nuevo; y con un token sin lock no se toca nada. Corre dentro del contenedor de sesión.
+"""
 
 from uuid import uuid4
 
 from app import borradores, locks
 
 
+# Conexión a Valkey y lista de tareas creadas (para limpiarlas al final).
 cliente = locks.cliente
 tareas = []
 
 
 def nuevo_id():
+    """UUID aleatorio como texto."""
     return str(uuid4())
 
 
 def preparar_tarea():
+    """Id de tarea nuevo, registrado para la limpieza final."""
     tarea = nuevo_id()
     tareas.append(tarea)
     return tarea
 
 
 def prueba_otro_anotador():
+    """El borrador de A se archiva cuando la tarea se asigna a B, y B empieza sin borrador."""
     tarea = preparar_tarea()
     anterior, nuevo = nuevo_id(), nuevo_id()
     token_anterior, token_nuevo = nuevo_id(), nuevo_id()
@@ -58,6 +67,7 @@ def prueba_otro_anotador():
 
 
 def prueba_mismo_anotador():
+    """Si la tarea vuelve al mismo anotador, recupera su borrador con el token nuevo."""
     tarea = preparar_tarea()
     anotador = nuevo_id()
     token_anterior, token_nuevo = nuevo_id(), nuevo_id()
@@ -84,6 +94,7 @@ def prueba_mismo_anotador():
 
 
 def prueba_token_invalido():
+    """Un token sin el lock no puede modificar ni archivar el borrador."""
     tarea = preparar_tarea()
     anotador = nuevo_id()
     token_valido, token_falso = nuevo_id(), nuevo_id()
@@ -105,6 +116,7 @@ def prueba_token_invalido():
 
 
 def limpiar():
+    """Borra locks, borradores y archivos de todas las tareas de la prueba."""
     for tarea in tareas:
         claves = [
             f"lock:tarea:{tarea}",

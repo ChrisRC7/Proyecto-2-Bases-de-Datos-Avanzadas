@@ -1,5 +1,12 @@
 
-"""B5.3 (P8): reinicio de Valkey durante actividad y medicion RTO/RPO."""
+"""B5.3 (P8): reinicio de Valkey durante actividad y medicion RTO/RPO.
+
+Toma una tarea, guarda un borrador y mientras un hilo manda latidos cada 0,3 s reinicia
+Valkey. Mide el RTO (desde el reinicio hasta recuperar sesión y borrador) y comprueba el RPO
+(el borrador confirmado no se perdió).
+
+    python3 pruebas/b53_fallo_valkey.py
+"""
 
 import json
 import subprocess
@@ -10,12 +17,14 @@ import urllib.request
 from datetime import datetime, timezone
 from proyecto_prueba import crear_proyecto
 
+# Gateway en el host, anotador fijo y proyecto propio de una sola tarea.
 GATEWAY = "http://localhost:8000"
 ANOTADOR = "adbafed0-b600-460c-bbdc-fd55304374b3"
 PROYECTO = crear_proyecto("b53")  # una sola tarea: la primera asignación es esa
 
 
 def pedir(metodo, ruta, cuerpo=None, timeout=3):
+    """Petición al gateway como ANOTADOR con timeout corto; devuelve (status, JSON)."""
     datos = None if cuerpo is None else json.dumps(cuerpo).encode("utf-8")
     peticion = urllib.request.Request(
         GATEWAY + ruta,
@@ -36,12 +45,14 @@ def pedir(metodo, ruta, cuerpo=None, timeout=3):
 
 
 def main():
+    """Ejecuta el reinicio con actividad y reporta RTO, RPO y los latidos fallidos."""
     token = None
     tarea = None
     detener = threading.Event()
     muestras = []
 
     def actividad():
+        """Hilo: manda latidos cada 0,3 s y guarda (instante, resultado) de cada uno."""
         numero = 0
         while not detener.is_set():
             numero += 1

@@ -9,12 +9,14 @@
 set -u
 cd "$(dirname "$0")/.."
 
+# Parámetros (se pueden cambiar con variables de entorno) y prefijo de la evidencia.
 reps=${REPS:-6}
 conjuntos=${CONJUNTOS:-principal,grande}
 base=evidence/P5_analitica_$(date +%Y%m%d-%H%M)
 
+# Corre pruebas/p5_analitica.py dentro del contenedor dataset.
 corre() { docker compose --profile datos run --rm -T -v ./pruebas:/srv/pruebas dataset python /srv/pruebas/p5_analitica.py "$@" 2>&1 | grep -v '^ Container'; }
-ejecutores() {
+ejecutores() {  # cuántos ejecutores de Spark tiene registrados la analítica (0 si no responde)
   docker compose exec -T analitica python3 -c "import json,urllib.request; print(json.load(urllib.request.urlopen('http://localhost:8004/salud', timeout=3))['spark'].get('ejecutores', 0))" 2>/dev/null || echo 0
 }
 espera_ejecutores() {  # hasta que la SparkSession nueva tenga n ejecutores registrados

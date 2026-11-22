@@ -19,11 +19,13 @@ from pyspark.sql import functions as F
 
 
 def main() -> None:
+    """Lee el lago en bucle durante --segundos e imprime una línea CSV por vuelta."""
     ap = argparse.ArgumentParser()
     ap.add_argument("--segundos", type=float, default=120)
     ap.add_argument("--ruta", default="file:///datalake/eventos")
     args = ap.parse_args()
 
+    # Spark local con 2 núcleos, sin interfaz web y en UTC.
     spark = (SparkSession.builder.master("local[2]").appName("p4-lector")
              .config("spark.ui.enabled", "false")
              .config("spark.sql.session.timeZone", "UTC")
@@ -31,12 +33,14 @@ def main() -> None:
              .config("spark.sql.sources.partitionColumnTypeInference.enabled", "false")
              .getOrCreate())
     spark.sparkContext.setLogLevel("ERROR")
+    # Encabezado del CSV.
     print("ts,vuelta,filas,event_id_distintos,archivos,ms,error", flush=True)
     fin, vuelta = time.time() + args.segundos, 0
     while time.time() < fin:
         vuelta += 1
         t0 = time.time()
         try:
+            # Lectura completa: cuenta filas y event_id distintos y anota cuántos archivos vio.
             df = spark.read.parquet(args.ruta)
             r = df.agg(F.count("*"), F.countDistinct("event_id")).first()
             fila, problema = (r[0], r[1], len(df.inputFiles())), ""

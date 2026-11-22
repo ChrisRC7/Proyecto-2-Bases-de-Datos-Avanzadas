@@ -1,5 +1,11 @@
 
-"""Pruebas HTTP de borradores recuperables - B2.4."""
+"""Pruebas HTTP de borradores recuperables - B2.4.
+
+Se corre dentro del contenedor de sesión (el servicio escucha en localhost:8002) y
+verifica: guardar borrador con lock, rechazo de token incorrecto, recuperación del
+borrador al abrir/recuperar la sesión y que otro anotador sin lock no lo pueda leer.
+Imprime B2.4_HTTP_OK si todo pasa.
+"""
 
 import json
 import urllib.error
@@ -8,6 +14,7 @@ import uuid
 
 from app import borradores, locks, sesiones
 
+# Identificadores únicos para no chocar con datos de otras corridas.
 identificador = uuid.uuid4().hex
 tarea = f"prueba-b24-{identificador}"
 anotador = f"anotador-b24-{identificador}"
@@ -15,10 +22,12 @@ otro_anotador = f"otro-b24-{identificador}"
 proyecto = f"proyecto-b24-{identificador}"
 token = f"token-b24-{identificador}"
 
+# URL del servicio de sesión vista desde su propio contenedor.
 base = "http://localhost:8002"
 
 
 def peticion(ruta, metodo, cuerpo):
+    """Envía `cuerpo` como JSON a la ruta y devuelve (status, cuerpo JSON), también en errores HTTP."""
     datos = json.dumps(cuerpo).encode("utf-8")
     solicitud = urllib.request.Request(
         f"{base}{ruta}",
@@ -35,6 +44,7 @@ def peticion(ruta, metodo, cuerpo):
 
 
 def sesion(anotador_id, accion, token_sesion=token, **campos):
+    """Atajo para POST /sesiones/{anotador_id} con la acción y campos dados."""
     return peticion(
         f"/sesiones/{anotador_id}",
         "POST",
@@ -118,6 +128,7 @@ try:
     print("B2.4_HTTP_OK")
 
 finally:
+    # Limpieza: borra borrador, lock y sesiones creadas por la prueba.
     locks.cliente.delete(f"borrador:{tarea}", f"lock:tarea:{tarea}")
     for usuario in (anotador, otro_anotador):
         datos = sesiones.consultar(usuario)

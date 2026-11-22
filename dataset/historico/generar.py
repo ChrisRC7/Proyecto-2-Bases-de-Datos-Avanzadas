@@ -53,6 +53,10 @@ S = 1000
 
 
 def cargar_ids(semilla: int) -> tuple[dict, str]:
+    """Lee dataset/salida/ids.json o, si no existe, recalcula los ids con la misma semilla.
+
+    Devuelve (ids, de dónde salieron).
+    """
     if IDS.exists():
         return json.loads(IDS.read_text()), str(IDS)
     from dataset.generar import generar, ids  # mismos ids que la carga de MongoDB
@@ -60,6 +64,7 @@ def cargar_ids(semilla: int) -> tuple[dict, str]:
 
 
 def meses() -> list[tuple[int, str]]:
+    """Lista de (inicio del mes en epoch ms, "AAAA-MM") desde INICIO hasta FIN."""
     inicio, salida = INICIO, []
     while inicio < FIN:
         salida.append((int(inicio.timestamp() * 1000), f"{inicio:%Y-%m}"))
@@ -68,13 +73,22 @@ def meses() -> list[tuple[int, str]]:
 
 
 def generar(conjunto: str, tareas: int, semilla: int, tareas_por_archivo: int, duplicados: float) -> dict:
+    """Simula el ciclo de vida de `tareas` tareas de proyectos cerrados y escribe sus eventos al lago.
+
+    Cada tarea pasa por abierta -> (liberada / plazo vencido)* -> anotada -> en_revision ->
+    rechazada (vuelve a empezar) o aprobada. `duplicados` es la fracción de filas que se
+    reescribe en un archivo "-reentrega" para probar la deduplicación por event_id.
+    Devuelve un resumen con los conteos.
+    """
     rng = random.Random(semilla)
     ids, origen = cargar_ids(semilla)
 
     def nuevo_id() -> str:
+        """UUID v4 reproducible."""
         return str(uuid.UUID(int=rng.getrandbits(128), version=4))
 
     def lognormal(mediana: float, sigma: float) -> float:
+        """Valor aleatorio lognormal con la mediana dada (duraciones realistas, con cola larga)."""
         return mediana * math.exp(rng.gauss(0, sigma))
 
     anotadores = [a for a in ids["anotadores"] if a["rol"] == "anotador"]
@@ -85,6 +99,7 @@ def generar(conjunto: str, tareas: int, semilla: int, tareas_por_archivo: int, d
     limites = meses()
     inicios_mes = [m for m, _ in limites]
 
+    # Cada proyecto cerrado recibe una ventana de actividad y su propia probabilidad de rechazo.
     proyectos = []
     for p in ids["proyectos_cerrados"]:
         desde = inicio_ms + int(rng.uniform(0, 240) * 24 * H)
@@ -99,6 +114,7 @@ def generar(conjunto: str, tareas: int, semilla: int, tareas_por_archivo: int, d
     archivo_n = 0
 
     def volcar():
+        """Escribe al lago las filas acumuladas (un archivo por mes) y las de reentrega, y vacía los buffers."""
         nonlocal archivos, archivo_n, filas_dup
         mlid = f"hist-{conjunto}-s{semilla}-{archivo_n:03d}"
         for mes, c in sorted(cols.items()):
@@ -113,6 +129,7 @@ def generar(conjunto: str, tareas: int, semilla: int, tareas_por_archivo: int, d
         dups.clear()
         archivo_n += 1
 
+    # Reparte las tareas lo más parejo posible entre los proyectos.
     por_proyecto = [tareas // len(proyectos) + (1 if i < tareas % len(proyectos) else 0)
                     for i in range(len(proyectos))]
     n = 0
@@ -129,6 +146,7 @@ def generar(conjunto: str, tareas: int, semilla: int, tareas_por_archivo: int, d
             estado_vivo = {"version": 0}
 
             def emitir(ts: int, estado: str, anotador: dict, tomada: int, revisor=None, motivo=None) -> bool:
+                """Agrega una fila (evento) de la tarea al buffer del mes; False si ya pasó FIN."""
                 if ts >= fin_ms:
                     return False  # la tarea queda a medias al cierre del histórico
                 estado_vivo["version"] += 1
@@ -146,6 +164,7 @@ def generar(conjunto: str, tareas: int, semilla: int, tareas_por_archivo: int, d
                 conteo[estado] += 1
                 return True
 
+            # Instante en que la tarea se toma por primera vez, dentro de la ventana del proyecto.
             t = p["desde"] + int(rng.random() * (p["hasta"] - p["desde"]))
             terminada = False
             for ciclo in range(MAX_CICLOS):
@@ -169,6 +188,7 @@ def generar(conjunto: str, tareas: int, semilla: int, tareas_por_archivo: int, d
                         break
                 if not la_envia:
                     break
+                # Anotación, espera en cola de revisión y revisión.
                 t += int(lognormal(ANOTACION_S[tipo], 0.5) * S)
                 if not emitir(t, "anotada", anotador, tomada):
                     break
@@ -187,6 +207,7 @@ def generar(conjunto: str, tareas: int, semilla: int, tareas_por_archivo: int, d
                 break
             tareas_terminadas += terminada
             n += 1
+            # Cada `tareas_por_archivo` tareas se escribe un micro-lote al lago.
             if n % tareas_por_archivo == 0:
                 volcar()
     if cols:
@@ -201,6 +222,7 @@ def generar(conjunto: str, tareas: int, semilla: int, tareas_por_archivo: int, d
 
 
 def main() -> None:
+    """Lee los argumentos, genera el conjunto e imprime/guarda el resumen."""
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--conjunto", choices=["principal", "grande"], default="principal")
     ap.add_argument("--tareas", type=int, help="100 000 en principal; ~1 250 000 para ~10M en grande")

@@ -1,5 +1,11 @@
 
-"""B3.3: publicación durable de eventos hacia Historial."""
+"""B3.3: publicación durable de eventos hacia Historial.
+
+Cada evento que devuelve el registro se guarda primero en una tabla SQLite local
+(volumen del gateway) y después una tarea en segundo plano lo envía al historial. Si el
+historial está caído, el evento se queda en SQLite y se reintenta con espera exponencial
+(máx. 60 s). Así un evento confirmado por MongoDB no se pierde aunque el historial falle.
+"""
 
 import asyncio
 import json
@@ -13,6 +19,7 @@ from uuid import UUID
 from app.cliente_interno import ServicioNoDisponible, solicitar
 from app.comun import log
 
+# Archivo SQLite con los eventos pendientes de entregar.
 DB_PATH = Path(os.getenv(
     "EVENTOS_PENDIENTES_DB",
     "/srv/pendientes/eventos.sqlite3",
@@ -20,6 +27,8 @@ DB_PATH = Path(os.getenv(
 
 LOTE = 50  # eventos por pasada (y por POST a historial)
 
+# _aviso: despierta al trabajador cuando llega un evento nuevo.
+# _trabajador: tarea asyncio que envía los pendientes.
 _aviso = None
 _trabajador = None
 
@@ -43,6 +52,11 @@ def _conexion():
 
 
 def _inicializar():
+    """Crea la tabla `pendientes` (si no existe) y activa el modo WAL.
+
+    Columnas: event_id, contenido (JSON), intentos fallidos y `siguiente` (epoch en que
+    toca volver a intentar).
+    """
     with _conexion() as db:
         # WAL: leer no bloquea a quien escribe y cada commit hace un solo fsync
         # (unos 10 ms en el volumen de Docker frente a ~22 ms con el journal por defecto).
@@ -58,6 +72,10 @@ def _inicializar():
 
 
 def _guardar(evento):
+    """Inserta el evento en pendientes (si ya estaba con el mismo contenido, no hace nada).
+
+    Lanza ValueError si el mismo event_id ya existe con otro contenido. Devuelve el event_id.
+    """
     identificador = str(UUID(str(evento["event_id"])))
     contenido = json.dumps(evento, ensure_ascii=False)
 
@@ -84,6 +102,7 @@ def _guardar(evento):
 
 
 def _pendientes():
+    """Hasta LOTE eventos cuyo próximo intento ya llegó, del más atrasado al más reciente."""
     with _conexion() as db:
         return db.execute(
             """
@@ -106,6 +125,7 @@ def _cerrar_pasada(entregados, fallidos):
             "DELETE FROM pendientes WHERE event_id = ?",
             [(identificador,) for identificador in entregados],
         )
+        # Espera exponencial: 2, 4, 8, ... segundos, con tope de 60 s.
         db.executemany(
             """
             UPDATE pendientes
@@ -120,6 +140,7 @@ def _cerrar_pasada(entregados, fallidos):
 
 
 def _contar():
+    """Cantidad total de eventos pendientes (para /salud)."""
     with _conexion() as db:
         return db.execute(
             "SELECT COUNT(*) FROM pendientes"
@@ -131,7 +152,10 @@ async def publicar_evento(evento: dict) -> dict:
     if not isinstance(evento, dict) or "event_id" not in evento:
         raise ValueError("El evento necesita un event_id")
 
+    # SQLite es bloqueante: se ejecuta en un hilo para no frenar el event loop.
     identificador = await asyncio.to_thread(_guardar, evento)
+
+    # Despierta al trabajador para que lo envíe ya.
 
     if _aviso is not None:
         _aviso.set()
@@ -175,9 +199,11 @@ async def despachar_pendientes():
             extra={"datos": {"cantidad": len(filas), "causa": exc.detalle}},
         )
 
+    # 202: historial aceptó toda la lista.
     if status == 202:
         entregados = [identificador for identificador, _, _ in filas]
 
+    # Historial respondió pero no aceptó la lista: se prueba evento por evento.
     elif status is not None:
         for identificador, contenido, intentos in filas:
             try:
@@ -208,6 +234,7 @@ async def despachar_pendientes():
 
 
 async def _procesar_cola():
+    """Bucle del trabajador: despacha pendientes y espera un aviso o 2 s entre pasadas."""
     while True:
         try:
             tomados = await despachar_pendientes()
@@ -226,6 +253,7 @@ async def _procesar_cola():
 
 
 async def iniciar_publicador():
+    """Prepara SQLite y lanza el trabajador en segundo plano (al arrancar el gateway)."""
     global _aviso, _trabajador
 
     await asyncio.to_thread(_inicializar)
@@ -234,6 +262,7 @@ async def iniciar_publicador():
 
 
 async def detener_publicador():
+    """Cancela el trabajador y espera a que termine (al apagar el gateway)."""
     global _trabajador, _aviso
 
     if _trabajador is not None:
@@ -248,4 +277,5 @@ async def detener_publicador():
 
 
 async def contar_pendientes():
+    """Versión asíncrona de _contar."""
     return await asyncio.to_thread(_contar)

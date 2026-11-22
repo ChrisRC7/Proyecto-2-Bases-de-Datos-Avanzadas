@@ -13,10 +13,11 @@
 set -u
 cd "$(dirname "$0")/.."
 
+# Carpeta de evidencia y su ruta dentro de los contenedores.
 base=evidence/P4_gateway_$(date +%Y%m%d-%H%M)
 mkdir -p "$base"
 prefijo=/srv/$base/p4
-fase() {
+fase() {  # corre una fase de pruebas/p4_historial.py en el contenedor dataset (lago en solo lectura)
   docker compose --profile datos run --rm -T -v ./pruebas:/srv/pruebas -v ./datalake:/datalake:ro dataset \
     python /srv/pruebas/p4_historial.py "$@" --prefijo "$prefijo" 2>&1 | grep -v '^ Container'
 }
@@ -25,21 +26,21 @@ simulador() {  # $1 = archivo CSV dentro de $base; resto = argumentos del simula
   docker compose --profile carga run --rm -T simulador python -m simulador.simular \
     --usuarios 10 --calentamiento 0 --csv "/srv/$base/$csv" "$@" 2>&1 | grep -v '^ Container' | tail -6
 }
-sano() {
+sano() {  # espera hasta 60 s a que el contenedor del servicio $1 esté healthy
   for _ in $(seq 1 60); do
     [ "$(docker inspect -f '{{.State.Health.Status}}' "$(docker compose ps -q "$1")" 2>/dev/null)" = healthy ] && return 0
     sleep 1
   done
   return 1
 }
-spark_listo() {
+spark_listo() {  # espera hasta 180 s a que el gateway reporte la analítica operativa
   for _ in $(seq 1 90); do
     curl -s localhost:8000/salud | python3 -c "import json,sys; sys.exit(json.load(sys.stdin)['capas']['analitica']['estado'] != 'operativo')" 2>/dev/null && return 0
     sleep 2
   done
   return 1
 }
-pendientes_gateway() {
+pendientes_gateway() {  # eventos que el gateway todavía no entregó al historial (tabla SQLite)
   docker compose exec -T gateway python -c "import sqlite3; print(sqlite3.connect('/srv/pendientes/eventos.sqlite3').execute('select count(*) from pendientes').fetchone()[0])"
 }
 limpiar_valkey() {  # no toca salud:* (mensajes de las capas)
@@ -57,6 +58,7 @@ limpiar_valkey() {  # no toca salud:* (mensajes de las capas)
   sano registro && sano historial && sano gateway
   docker compose --profile datos run --rm dataset 2>&1 | grep -E 'Semilla|tareas  '
   docker compose --profile datos run --rm dataset-historico 2>&1 | grep -E ' (eventos|archivos|duplicados_inyectados) '
+  # Vacía la cola de eventos y las llaves de sesión para empezar desde un estado conocido.
   docker compose exec -T cola-eventos valkey-cli FLUSHALL
   limpiar_valkey
   docker compose restart historial analitica >/dev/null 2>&1
@@ -72,12 +74,13 @@ limpiar_valkey() {  # no toca salud:* (mensajes de las capas)
   limpiar_valkey
   docker compose run --rm --no-deps -T -v ./pruebas:/srv/pruebas analitica \
     python3 /srv/pruebas/p4_lector.py --segundos 120 2>/dev/null > "$base/lector.csv" &
-  lector=$!
+  lector=$!  # PID del lector en segundo plano
   sleep 25  # vueltas de referencia antes de escribir
   echo "inicio del simulador: $(date +%s.%N | cut -c1-14)"
   simulador 10u_c1.csv --duracion 60
   echo "fin del simulador: $(date +%s.%N | cut -c1-14) · pendientes en el gateway: $(pendientes_gateway)"
   wait "$lector"
+  # Resume el CSV del lector: vueltas, errores, rango de filas y si alguna vez bajó la cuenta.
   awk -F, 'NR > 1 { n++; if ($7 != "") e++; else { if (min == "" || $3 < min) min = $3; if ($3 > max) max = $3;
                     if (prev != "" && $3 < prev) baja++; prev = $3; ms += $6 } }
            END { printf "lector: %d vueltas, %d con error, filas de %d a %d, %d veces bajó la cuenta, %.0f ms por vuelta\n",
@@ -87,7 +90,7 @@ limpiar_valkey() {  # no toca salud:* (mensajes de las capas)
   echo; echo "## 4. Caída del historial en medio de la carga del simulador"
   limpiar_valkey
   simulador 10u_c2.csv --duracion 45 > "$base/sim_caida.txt" &
-  sim=$!
+  sim=$!  # PID del simulador en segundo plano
   sleep 15
   echo "docker kill historial: $(date +%s.%N | cut -c1-14) · pendientes en el gateway: $(pendientes_gateway)"
   docker compose kill historial >/dev/null 2>&1
@@ -98,6 +101,7 @@ limpiar_valkey() {  # no toca salud:* (mensajes de las capas)
   sano historial && echo "historial healthy: $(date +%s.%N | cut -c1-14)"
   wait "$sim"
   cat "$base/sim_caida.txt"
+  # Espera (hasta 2 min) a que el gateway entregue todo lo que guardó.
   for _ in $(seq 1 60); do [ "$(pendientes_gateway)" = 0 ] && break; sleep 2; done
   echo "pendientes en el gateway al final: $(pendientes_gateway)"
   docker compose exec -T historial python -c "import urllib.request; urllib.request.urlopen(urllib.request.Request('http://localhost:8003/flush', method='POST'), timeout=30)"

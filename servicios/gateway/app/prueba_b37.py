@@ -1,5 +1,11 @@
 
-"""B3.7: pruebas simuladas de liberar y recuperar sesion."""
+"""B3.7: pruebas simuladas de liberar y recuperar sesion.
+
+Se ejecuta dentro del contenedor del gateway:
+    docker compose exec -T gateway python -m app.prueba_b37
+No necesita los demás servicios: las llamadas internas se reemplazan con mocks.
+Imprime una línea OK por cada caso y una marca final si todo pasa.
+"""
 
 import asyncio
 from unittest.mock import AsyncMock, patch
@@ -12,6 +18,7 @@ from app.cliente_interno import ServicioNoDisponible
 
 
 def respuesta(codigo, datos):
+    """Construye una httpx.Response falsa con ese código y cuerpo JSON (para los mocks)."""
     return httpx.Response(
         codigo,
         json=datos,
@@ -20,10 +27,12 @@ def respuesta(codigo, datos):
 
 
 async def pruebas():
+    """Llama a las rutas reales del gateway (ASGI en memoria) con los servicios internos simulados."""
     tarea = str(uuid4())
     anotador = str(uuid4())
     token = str(uuid4())
 
+    # Transporte que manda las peticiones directo a la app FastAPI, sin red.
     transporte = httpx.ASGITransport(app=main.app)
 
     async with httpx.AsyncClient(

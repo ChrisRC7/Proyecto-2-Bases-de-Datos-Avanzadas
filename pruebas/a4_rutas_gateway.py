@@ -14,14 +14,17 @@ import urllib.error
 import urllib.request
 import uuid
 
+# Gateway, ids del dataset y geometría válida para las tareas LiDAR.
 URL = os.getenv("GATEWAY_URL", "http://localhost:8000")
 IDS = os.getenv("IDS_JSON", "dataset/salida/ids.json")
 GEOMETRIA = {"tipo": "cuboide_3d", "centro": [1.2, 3.4, 0.5], "dimensiones": [0.6, 1.8, 1.7], "yaw": 0.3}
 
+# Contador global de casos que no dieron el código esperado.
 fallas = 0
 
 
 def llamar(metodo: str, ruta: str, cuerpo=None, anotador=None):
+    """Petición JSON al gateway; devuelve (status, cuerpo)."""
     datos = json.dumps(cuerpo).encode() if cuerpo is not None else None
     cabeceras = {"Content-Type": "application/json"}
     if anotador:
@@ -37,6 +40,7 @@ def llamar(metodo: str, ruta: str, cuerpo=None, anotador=None):
 
 
 def caso(nombre: str, esperado: int, metodo: str, ruta: str, cuerpo=None, anotador=None):
+    """Ejecuta un caso, imprime OK/FALLA según el código y devuelve el cuerpo de la respuesta."""
     global fallas
     status, datos = llamar(metodo, ruta, cuerpo, anotador)
     ok = status == esperado
@@ -47,6 +51,7 @@ def caso(nombre: str, esperado: int, metodo: str, ruta: str, cuerpo=None, anotad
 
 
 def main():
+    """Recorre los casos de proyectos, lotes, revisión y exportación; sale con 1 si algo falló."""
     ids = json.load(open(IDS))
     cliente = ids["clientes"][0]
     anotador = next(a["id"] for a in ids["anotadores"] if a["rol"] == "anotador")
@@ -67,6 +72,7 @@ def main():
     proyecto_id = caso("POST /proyectos", 201, "POST", "/proyectos", proyecto)["proyecto_id"]
 
     def tarea(n: int, mime: str = "application/x-pcd") -> dict:
+        """Tarea LiDAR de ejemplo número n (el mime se puede cambiar para provocar un 422)."""
         return {"tipo_tarea": "cuboide_3d", "prioridad": 5,
                 "archivo": {"uri": f"s3://datos/lidar/a4-{n}.pcd", "sha256": f"{n:064x}", "bytes": 4823112,
                             "mime": mime, "meta": {"min": 0.0, "max": 120.5, "puntos": 120000}}}
@@ -79,6 +85,7 @@ def main():
          {"tareas": [tarea(1), tarea(2)]})
 
     def anotar_y_enviar() -> str:
+        """Toma la siguiente tarea del proyecto, la envía y devuelve su id."""
         datos = caso("POST /tareas/siguiente", 200, "POST", "/tareas/siguiente",
                      {"proyecto_id": proyecto_id}, anotador)
         tarea_id, token = datos["tarea"]["tarea_id"], datos["token"]

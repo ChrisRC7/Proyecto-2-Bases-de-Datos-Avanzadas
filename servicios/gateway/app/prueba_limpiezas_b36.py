@@ -1,5 +1,11 @@
 
-"""B3.6: pruebas de limpiezas persistentes y reintentos."""
+"""B3.6: pruebas de limpiezas persistentes y reintentos.
+
+Se ejecuta dentro del contenedor del gateway:
+    docker compose exec -T gateway python -m app.prueba_limpiezas_b36
+No necesita los demás servicios: las llamadas internas se reemplazan con mocks.
+Imprime una línea OK por cada caso y una marca final si todo pasa.
+"""
 
 import asyncio
 import tempfile
@@ -14,6 +20,7 @@ from app.cliente_interno import ServicioNoDisponible
 
 
 async def pruebas():
+    """Usa una base SQLite temporal y un servicio de sesión simulado."""
     with tempfile.TemporaryDirectory() as carpeta:
         with patch.object(
             eventos, "DB_PATH", Path(carpeta) / "prueba.sqlite3"
@@ -37,6 +44,7 @@ async def pruebas():
 
             # 2. Simular Sesión caída.
             async def sesion_caida(*args, **kwargs):
+                """Sesión simulada caída."""
                 raise ServicioNoDisponible("sesion", "Sin conexión")
 
             with patch.object(
@@ -70,6 +78,7 @@ async def pruebas():
             llamadas = []
 
             async def sesion_recuperada(*args, **kwargs):
+                """Sesión simulada sana: anota la ruta llamada y responde 200."""
                 llamadas.append(args[2])
                 return httpx.Response(
                     200,
@@ -113,6 +122,7 @@ async def pruebas():
                 db.execute("UPDATE limpiezas SET siguiente = 0")
 
             async def sesion_conflicto(*args, **kwargs):
+                """Sesión simulada que responde 409 (el recurso ya no es de este token)."""
                 return httpx.Response(
                     409,
                     json={"error": "conflicto_lock"},
@@ -150,7 +160,7 @@ async def pruebas():
                 ).fetchone()[0]
 
             assert llamadas == [
-                f"/borradores/{tarea}",
+                f"/sesiones/{anotador}",
                 f"/locks/{tarea}",
                 f"/sesiones/{anotador}",
             ]

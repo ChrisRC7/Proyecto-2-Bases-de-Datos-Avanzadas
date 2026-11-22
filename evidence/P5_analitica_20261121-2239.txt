@@ -1,0 +1,63 @@
+# P5 analítica · 2026-11-22T04:39:37Z · commit 1b387ae · REPS=6
+
+## Conjuntos
+eventos: "eventos": 808703, 116 archivos, 47M
+eventos_grande: "eventos": 10107232, 271 archivos, 553M
+eventos_prueba: 4 archivos (42 eventos + 1 duplicado)
+
+## 1 worker
+analitica: {"master": "spark://spark-master:7077", "master_alcanzable": true, "sesion_spark": true, "arranque_ms": 10197.9, "error": null, "ejecutores": 1, "nucleos": 2}
+
+## Validación contra conjunto=prueba (esperado calculado a mano)
+q1: OK · status 200 · 4 filas · 11384.3 ms
+  obtenido: [{"dia": "2026-09-01", "modalidad": "texto", "aprobadas": 2}, {"dia": "2026-09-04", "modalidad": "texto", "aprobadas": 1}, {"dia": "2026-09-11", "modalidad": "lidar", "aprobadas": 1}, {"dia": "2026-09-30", "modalidad": "imagen", "aprobadas": 1}]
+q2: OK · status 200 · 4 filas · 2345.4 ms
+  obtenido: [{"equipo_id": "e0000000-0000-4000-8000-000000000001", "mes": "2026-07", "aprobadas": 1, "revisadas": 2, "proporcion": 0.5}, {"equipo_id": "e0000000-0000-4000-8000-000000000001", "mes": "2026-09", "aprobadas": 3, "revisadas": 3, "proporcion": 1.0}, {"equipo_id": "e0000000-0000-4000-8000-000000000002", "mes": "2026-06", "aprobadas": 1, "revisadas": 2, "proporcion": 0.5}, {"equipo_id": "e0000000-0000-4000-8000-000000000002", "mes": "2026-09", "aprobadas": 2, "revisadas": 3, "proporcion": 0.6667}]
+q3: OK · status 200 · 3 filas · 3998.0 ms
+  obtenido: [{"modalidad": "lidar", "tipo_tarea": "cuboide_3d", "anotadas": 1, "media_s": 3600.0, "p95_s": 3600.0}, {"modalidad": "imagen", "tipo_tarea": "bbox", "anotadas": 5, "media_s": 1404.0, "p95_s": 1800.0}, {"modalidad": "texto", "tipo_tarea": "span", "anotadas": 4, "media_s": 975.0, "p95_s": 1800.0}]
+q4: OK · status 200 · 3 filas · 1468.2 ms
+  obtenido: [{"cliente_id": "c0000000-0000-4000-8000-000000000002", "proyecto_id": "90000000-0000-4000-8000-000000000003", "rechazadas": 2, "revisadas": 5, "proporcion": 0.4}, {"cliente_id": "c0000000-0000-4000-8000-000000000001", "proyecto_id": "90000000-0000-4000-8000-000000000001", "rechazadas": 1, "revisadas": 4, "proporcion": 0.25}, {"cliente_id": "c0000000-0000-4000-8000-000000000001", "proyecto_id": "90000000-0000-4000-8000-000000000002", "rechazadas": 0, "revisadas": 1, "proporcion": 0.0}]
+q5: OK · status 200 · 2 filas · 2603.0 ms
+  obtenido: [{"cliente_id": "c0000000-0000-4000-8000-000000000001", "aprobadas": 4, "p50_h": 5.0, "p95_h": 28.0, "incumplen_sla": 1, "pct_incumple_sla": 25.0}, {"cliente_id": "c0000000-0000-4000-8000-000000000002", "aprobadas": 3, "p50_h": 3.0, "p95_h": 4.0, "incumplen_sla": 0, "pct_incumple_sla": 0.0}]
+
+## Tiempos · 1worker · 6 ejecuciones por consulta (ms medidos por la analítica)
+| conjunto | consulta | 1ª ejecución | siguientes: mediana | mín | máx | filas |
+|---|---|---:|---:|---:|---:|---:|
+| principal | q1 | 3015 | 2134 | 1464 | 2816 | 154 |
+| principal | q2 | 3363 | 2337 | 1741 | 3133 | 361 |
+| principal | q3 | 2764 | 2428 | 1434 | 2565 | 5 |
+| principal | q4 | 1776 | 1992 | 1560 | 2703 | 62 |
+| principal | q5 | 2496 | 1804 | 1467 | 2208 | 60 |
+| grande | q1 | 5370 | 3565 | 2949 | 3853 | 362 |
+| grande | q2 | 10143 | 10033 | 9842 | 10302 | 360 |
+| grande | q3 | 11283 | 10946 | 10600 | 11092 | 5 |
+| grande | q4 | 9607 | 9888 | 9836 | 11729 | 60 |
+| grande | q5 | 9246 | 8199 | 7646 | 8370 | 60 |
+plan q1: /srv/evidence/P5_analitica_20261121-2239_plan_q1.txt
+plan q3: /srv/evidence/P5_analitica_20261121-2239_plan_q3.txt
+
+## 2 workers
+analitica: {"master": "spark://spark-master:7077", "master_alcanzable": true, "sesion_spark": true, "arranque_ms": 7944.4, "error": null, "ejecutores": 2, "nucleos": 4}
+
+## Tiempos · 2workers · 6 ejecuciones por consulta (ms medidos por la analítica)
+| conjunto | consulta | 1ª ejecución | siguientes: mediana | mín | máx | filas |
+|---|---|---:|---:|---:|---:|---:|
+| principal | q1 | 18468 | 3160 | 2711 | 4627 | 154 |
+| principal | q2 | 5722 | 2844 | 2415 | 3797 | 361 |
+| principal | q3 | 7353 | 2778 | 1820 | 4126 | 5 |
+| principal | q4 | 3381 | 2239 | 1476 | 2438 | 62 |
+| principal | q5 | 3663 | 2218 | 1624 | 3261 | 60 |
+| grande | q1 | 6501 | 4265 | 3883 | 5495 | 362 |
+| grande | q2 | 9017 | 9670 | 8004 | 17756 | 360 |
+| grande | q3 | 14362 | 10838 | 10585 | 12901 | 5 |
+| grande | q4 | 8757 | 8988 | 8101 | 9915 | 60 |
+| grande | q5 | 10884 | 9096 | 8287 | 9985 | 60 |
+
+## docker stats al terminar
+NAME                         CPU %     MEM USAGE / LIMIT
+proyecto2-spark-worker-2-1   0.36%     1.653GiB / 11.57GiB
+proyecto2-analitica-1        0.41%     779.8MiB / 11.57GiB
+proyecto2-spark-worker-1     0.16%     1.811GiB / 11.57GiB
+proyecto2-spark-master-1     0.07%     299.4MiB / 11.57GiB
+
+spark-worker-2 apagado (estado base: 1 worker)

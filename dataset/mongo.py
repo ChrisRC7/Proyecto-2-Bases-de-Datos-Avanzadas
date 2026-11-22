@@ -4,6 +4,7 @@ import os
 from pymongo import ASCENDING, DESCENDING, MongoClient
 from pymongo.database import Database
 
+# Dirección del replica set y nombre de la base que se llena.
 MONGO_URI = os.getenv("MONGO_URI", "mongodb://mongo1:27017,mongo2:27017,mongo3:27017/?replicaSet=rs0")
 MONGO_DB = os.getenv("MONGO_DB", "plataforma")
 
@@ -23,14 +24,17 @@ INDICES = {
 
 
 def conectar() -> Database:
+    """Devuelve la base `plataforma` con write concern mayoritario."""
     return MongoClient(MONGO_URI, w="majority", tz_aware=True)[MONGO_DB]
 
 
 def crear_indices(bd: Database) -> list[str]:
+    """Crea los índices de INDICES (idempotente) y devuelve sus nombres."""
     return [bd[col].create_index(claves) for col, lista in INDICES.items() for claves in lista]
 
 
 def insertar_por_lotes(coleccion, docs: list[dict], lote: int = 5000) -> int:
+    """Inserta los documentos en bloques de `lote` (sin orden) y devuelve cuántos entraron."""
     total = 0
     for i in range(0, len(docs), lote):
         total += len(coleccion.insert_many(docs[i:i + lote], ordered=False).inserted_ids)

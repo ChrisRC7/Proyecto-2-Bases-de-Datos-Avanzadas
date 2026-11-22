@@ -1,8 +1,13 @@
 
-"""B4.2: borradores periodicos del simulador."""
+"""B4.2: borradores periodicos del simulador.
+
+Versión de pruebas/ de simulador/b42.py (sin medición): guarda un borrador y envía un latido
+cada `intervalo` segundos durante `duracion` segundos.
+"""
 
 import time
 
+# Segundos entre cada borrador + latido.
 INTERVALO_BORRADOR = 2.0
 
 
@@ -16,6 +21,10 @@ def guardar_periodicamente(
     intervalo=INTERVALO_BORRADOR,
     interrumpir=False,
 ):
+    """Guarda borradores y latidos periódicamente; devuelve estado y cantidad de borradores.
+
+    estado: "completado" o "interrumpido" si terminó bien; "error"/"error_latido" si falló.
+    """
     inicio = time.monotonic()
     siguiente = inicio + intervalo
     guardados = 0
@@ -24,8 +33,11 @@ def guardar_periodicamente(
         ahora = time.monotonic()
         fin = inicio + duracion
 
+        # Terminó el tiempo de trabajo.
         if ahora >= fin:
             break
+
+        # Aún no toca guardar: duerme hasta el próximo guardado.
 
         if ahora < siguiente:
             time.sleep(min(siguiente - ahora, fin - ahora))
@@ -50,6 +62,7 @@ def guardar_periodicamente(
 
         guardados += 1
 
+        # Latido: renueva el lock y el plazo de la asignación.
         latido = cliente.post(
             "/sesiones/latido",
             headers={"X-Anotador-Id": str(anotador_id)},
@@ -73,6 +86,7 @@ def guardar_periodicamente(
 
 
 def recuperar(cliente, anotador_id):
+    """POST /sesiones/recuperar del anotador; devuelve (status, JSON)."""
     respuesta = cliente.post(
         "/sesiones/recuperar",
         headers={"X-Anotador-Id": str(anotador_id)},

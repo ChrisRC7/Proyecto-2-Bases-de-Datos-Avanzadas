@@ -29,6 +29,7 @@ from pathlib import Path
 import pyarrow.dataset as ds
 from pymongo import MongoClient
 
+# Direcciones de los servicios, de MongoDB (solo para verificar), ids del dataset y lago montado.
 REGISTRO = os.getenv("REGISTRO_URL", "http://registro:8001")
 HISTORIAL = os.getenv("HISTORIAL_URL", "http://historial:8003")
 ANALITICA = os.getenv("ANALITICA_URL", "http://analitica:8004")
@@ -40,6 +41,7 @@ GEOMETRIA = {"tipo": "cuboide_3d", "centro": [1.2, 3.4, 0.5], "dimensiones": [0.
 
 
 def http(base: str, metodo: str, ruta: str, cuerpo=None, timeout: float = 600, anotador: str | None = None):
+    """Petición JSON a base+ruta; devuelve (status, cuerpo) también en errores HTTP."""
     cabeceras = {"Content-Type": "application/json"}
     if anotador:
         cabeceras["X-Anotador-Id"] = anotador
@@ -55,12 +57,14 @@ def http(base: str, metodo: str, ruta: str, cuerpo=None, timeout: float = 600, a
 
 
 def publicar(evento: dict) -> dict:
+    """POST del evento (o lista) al historial; exige 202."""
     s, r = http(HISTORIAL, "POST", "/eventos", evento)
     assert s == 202, (s, r)
     return r
 
 
 def actores():
+    """(proyecto LiDAR de ejemplo, primer anotador, primer revisor) según ids.json."""
     ids = json.load(open(IDS))
     anotador = next(a["id"] for a in ids["anotadores"] if a["rol"] == "anotador")
     revisor = next(a["id"] for a in ids["anotadores"] if a["rol"] == "revisor")
@@ -84,6 +88,7 @@ def recorrido(final: str) -> dict:
         {"accion": "aprobar", "actor_id": revisor} if final == "aprobar"
         else {"accion": "rechazar", "actor_id": revisor, "motivo": "GEOMETRIA_IMPRECISA"},
     ]
+    # Cada transición que responde 200 se publica en el historial, igual que haría el gateway.
     for paso in pasos:
         s, r = http(REGISTRO, "POST", f"/tareas/{tarea['tarea_id']}/transicion", paso)
         assert s == 200, (paso["accion"], s, r)
@@ -124,6 +129,7 @@ def event_id_final(r: dict) -> str:
 
 
 def consulta(n: int, gateway: bool) -> dict:
+    """Ejecuta Qn sobre el conjunto principal (por gateway o directo a la analítica)."""
     s, d = (http(GATEWAY, "GET", f"/analitica/q{n}?conjunto=principal") if gateway
             else http(ANALITICA, "GET", f"/q/{n}?conjunto=principal"))
     assert s == 200, (s, d)
@@ -139,6 +145,7 @@ def aprobadas_hoy(gateway: bool = False) -> tuple[int, float]:
 
 
 def filas_lago(event_ids: list[str], conjunto: str = "eventos"):
+    """Lee del lago (con pyarrow, no Spark) las filas cuyos event_id estén en la lista."""
     t = ds.dataset(LAGO / conjunto, format="parquet", partitioning="hive").to_table(
         filter=ds.field("event_id").isin(event_ids),
         columns=["event_id", "ts", "tarea_id", "estado", "version", "motivo_rechazo", "anotador_id",
@@ -157,6 +164,7 @@ def filas_tarea(tarea_id: str, desde: float) -> list[dict]:
 
 
 def frescura(args) -> None:
+    """Mide cuántos segundos pasan entre el 200 de aprobar y que Q1 cuente la aprobación."""
     filas = []
     # Por el gateway no hay /flush: el evento pasa por la cola del gateway y espera el cierre del micro-lote.
     modos = ("via_gateway",) if args.gateway else ("espera_micro_lote", "con_flush")
@@ -166,6 +174,7 @@ def frescura(args) -> None:
             r = recorrido_gateway("aprobar") if args.gateway else recorrido("aprobar")
             if modo == "con_flush":
                 http(HISTORIAL, "POST", "/flush")
+            # Consulta Q1 sin pausa hasta que aparezca la aprobación nueva.
             consultas, ms_q1 = 0, []
             while True:
                 t_consulta = time.time()
@@ -183,6 +192,7 @@ def frescura(args) -> None:
                     "consultas_q1": consultas, "ms_q1_media": round(sum(ms_q1) / len(ms_q1), 1)}
             filas.append(fila)
             print(json.dumps(fila))
+    # Guarda las repeticiones en CSV e imprime mínimo, mediana y máximo por modo.
     with open(f"{args.prefijo}_frescura.csv", "w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=list(filas[0]))
         w.writeheader()
@@ -193,6 +203,7 @@ def frescura(args) -> None:
 
 
 def fila_q4(proyecto: str) -> dict | None:
+    """Fila de Q4 (rechazadas/revisadas) del proyecto, pedida por el gateway."""
     return next((x for x in consulta(4, True)["filas"] if x["proyecto_id"] == proyecto), None)
 
 
@@ -206,6 +217,7 @@ def rechazo_gateway(args) -> None:
     tarea_id = r["tarea"]["tarea_id"]
     print("gateway respondió al rechazo:", json.dumps(r["respuesta_final"]))
 
+    # Un envío con el token de la asignación ya rechazada debe fallar.
     s, d = http(GATEWAY, "POST", f"/tareas/{tarea_id}/enviar",
                 {"token": r["token"], "anotacion": {"etiquetas": ["lidar#peaton"], "geometria": GEOMETRIA}},
                 anotador=anotador)
@@ -222,6 +234,7 @@ def rechazo_gateway(args) -> None:
         print("  ", json.dumps(fila, default=str))
     repetidos = len(filas) - len({f["event_id"] for f in filas})
     print(f"filas: {len(filas)} · estados: {[f['estado'] for f in filas]} · event_id repetidos: {repetidos}")
+    # En MongoDB la tarea debe estar de nuevo "disponible" y sin asignación.
     tarea = MongoClient(MONGO_URI, tz_aware=True).plataforma.tareas.find_one(
         {"_id": tarea_id}, {"estado": 1, "version": 1, "asignacion": 1, "ultima_revision": 1, "ultimo_evento_id": 1})
     print("\nMongoDB (registro):", json.dumps(tarea, default=str))
@@ -237,6 +250,7 @@ def rechazo_gateway(args) -> None:
 
 
 def rechazo(args) -> None:
+    """Rechazo en modo directo: fila en el lago, estado en MongoDB, idempotencia y Q4."""
     if args.gateway:
         return rechazo_gateway(args)
     r = recorrido("rechazar")
@@ -266,10 +280,12 @@ def rechazo(args) -> None:
 
 
 def sha(ruta: Path) -> str:
+    """Primeros 16 caracteres del SHA-256 del archivo (para ver si cambió su contenido)."""
     return hashlib.sha256(ruta.read_bytes()).hexdigest()[:16]
 
 
 def reprocesar(args) -> None:
+    """Reprocesa el último micro-lote y comprueba que no aparecen archivos ni filas nuevas."""
     s, d = http(HISTORIAL, "GET", "/micro-lotes?ultimos=1")
     ml = d["micro_lotes"][0]
     archivos = [LAGO / a["archivo"] for a in ml["archivos"]]
@@ -299,6 +315,7 @@ def sinteticos(n: int) -> list[dict]:
 
 
 def carga(args) -> None:
+    """Envía --eventos eventos sintéticos en bloques de 250 y cuenta micro-lotes y filas publicados."""
     s, d = http(HISTORIAL, "GET", "/micro-lotes?ultimos=500")
     previos = {m["micro_lote_id"] for m in d["micro_lotes"]}
     t0 = time.time()
@@ -314,6 +331,7 @@ def carga(args) -> None:
 
 
 def caida_antes(args) -> None:
+    """Antes de matar el historial: publica eventos y guarda sus ids para revisarlos después."""
     eventos = sinteticos(args.eventos)
     publicar(eventos)
     Path(f"{args.prefijo}_caida_ids.txt").write_text("\n".join(e["event_id"] for e in eventos))
@@ -322,6 +340,7 @@ def caida_antes(args) -> None:
 
 
 def caida_despues(args) -> None:
+    """Después de reiniciar el historial: verifica que no se perdió ni repitió ningún evento."""
     ids = Path(f"{args.prefijo}_caida_ids.txt").read_text().split()
     s, f = http(HISTORIAL, "POST", "/flush")
     filas = filas_lago(ids)
@@ -338,6 +357,7 @@ def caida_despues(args) -> None:
 
 
 def main() -> None:
+    """Lee la fase y los parámetros y ejecuta la función correspondiente."""
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("fase", choices=["frescura", "rechazo", "reprocesar", "carga", "caida-antes", "caida-despues"])
     ap.add_argument("--prefijo", required=True)

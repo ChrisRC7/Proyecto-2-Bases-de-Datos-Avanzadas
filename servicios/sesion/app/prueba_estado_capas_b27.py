@@ -1,5 +1,10 @@
 
-"""Pruebas HTTP de mensajes de salud - B2.7."""
+"""Pruebas HTTP de mensajes de salud - B2.7.
+
+Publica el estado de una capa ficticia y comprueba el hash `salud:{servicio}` en Valkey,
+su TTL de 15 s, la consulta por HTTP, la renovación del TTL al republicar y que la capa
+desaparece al expirar. Imprime B2.7_ESTADO_CAPAS_OK si todo pasa.
+"""
 
 import json
 import time
@@ -8,12 +13,14 @@ import uuid
 
 from app import estado_capas
 
+# Nombre de capa único para esta corrida y su llave en Valkey.
 servicio = f"prueba-b27-{uuid.uuid4().hex}"
 llave = f"salud:{servicio}"
 base = "http://localhost:8002"
 
 
 def consultar():
+    """GET /estado-capas; exige HTTP 200 y devuelve el JSON."""
     with urllib.request.urlopen(
         f"{base}/estado-capas", timeout=5
     ) as respuesta:
@@ -77,4 +84,5 @@ try:
     print("B2.7_ESTADO_CAPAS_OK")
 
 finally:
+    # Limpieza: borra la llave de salud de la capa de prueba.
     estado_capas.cliente.delete(llave)

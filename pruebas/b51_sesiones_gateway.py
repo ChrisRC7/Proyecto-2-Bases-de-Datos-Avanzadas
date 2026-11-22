@@ -1,5 +1,12 @@
 
-"""B5.1: borradores, latidos y recuperacion desde Gateway real."""
+"""B5.1: borradores, latidos y recuperacion desde Gateway real.
+
+Crea un proyecto aislado de una tarea, se la asigna a un anotador sin sesión activa y comprueba
+por el gateway: borrador y latido con token falso (409) y válido (200), y recuperación de la
+sesión con la misma tarea, token y borrador. Al final libera la tarea.
+
+    python3 pruebas/b51_sesiones_gateway.py
+"""
 
 import json
 import os
@@ -9,12 +16,14 @@ import urllib.request
 from pathlib import Path
 
 
+# Gateway en el host y ruta a ids.json dentro del repo.
 GATEWAY = os.getenv("GATEWAY_URL", "http://localhost:8000")
 RAIZ = Path(__file__).resolve().parents[1]
 IDS = RAIZ / "dataset" / "salida" / "ids.json"
 
 
 def llamar(metodo, ruta, cuerpo=None, anotador=None):
+    """Petición JSON al gateway; devuelve (status, cuerpo) también en errores HTTP."""
     datos = (
         json.dumps(cuerpo).encode("utf-8")
         if cuerpo is not None else None
@@ -41,6 +50,7 @@ def llamar(metodo, ruta, cuerpo=None, anotador=None):
 
 
 def comprobar(nombre, esperado, metodo, ruta, cuerpo=None, anotador=None):
+    """Hace la petición y lanza AssertionError si el código no es el esperado; devuelve el cuerpo."""
     codigo, datos = llamar(metodo, ruta, cuerpo, anotador)
 
     if codigo != esperado:
@@ -54,6 +64,7 @@ def comprobar(nombre, esperado, metodo, ruta, cuerpo=None, anotador=None):
 
 
 def main():
+    """Ejecuta el caso completo e imprime B5_1_SESIONES_OK si todo pasa."""
     ids = json.loads(IDS.read_text(encoding="utf-8"))
 
     # No utilizar una sesion activa de otro caso.
@@ -84,6 +95,7 @@ def main():
 
     print(f"ANOTADOR={anotador}", flush=True)
 
+    # Proyecto y tarea propios para no tocar la cola global.
     proyecto = comprobar(
         "Crear proyecto aislado",
         201,
@@ -194,6 +206,7 @@ def main():
         print("B5_1_SESIONES_OK", flush=True)
 
     finally:
+        # Limpieza: libera la tarea pase lo que pase.
         codigo, datos = llamar(
             "POST",
             f"/tareas/{tarea}/liberar",

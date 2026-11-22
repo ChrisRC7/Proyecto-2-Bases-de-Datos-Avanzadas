@@ -5,8 +5,10 @@
 set -u
 cd "$(dirname "$0")/.."
 
+# Nodos a consultar: los que se pasen como argumentos o los tres por defecto.
 if [ $# -gt 0 ]; then nodos=("$@"); else nodos=(mongo1 mongo2 mongo3); fi
 
+# Script de mongosh: nombre del conjunto, term y estado/salud/optime de cada miembro.
 js='
 const s = rs.status();
 print("conjunto: " + s.set + "  term: " + s.term + "  consultado en: " + db.hello().me);
@@ -16,6 +18,7 @@ s.members.forEach(m => print(
 '
 
 date -u +%FT%TZ
+# Prueba nodo por nodo hasta que uno responda.
 for n in "${nodos[@]}"; do
   if out=$(docker compose exec -T "$n" mongosh --quiet --eval "$js" 2>/dev/null); then
     echo "$out"

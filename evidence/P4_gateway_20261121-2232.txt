@@ -1,0 +1,72 @@
+# P4 por el gateway · 2026-11-22T04:32:08Z · commit 1b387ae
+Máquina: Intel(R) Core(TM) i7-6500U CPU @ 2.50GHz · 4 CPU · 11 GiB
+
+## 0. Estado conocido
+Semilla 2026 · carga con w=majority en 5.8 s
+  tareas        60000
+  eventos                808703
+  duplicados_inyectados  1634
+  archivos               115
+OK
+historial y analítica listos; eventos pendientes en el gateway: 0
+
+## 1. Frescura (HTTP 200 del gateway -> fila visible en Q1 por GET /analitica/q1)
+{"modo": "via_gateway", "rep": 1, "tarea_id": "5c8c17b6-a967-4916-8d2a-cb88b96c0240", "event_id": "587ce21b-3301-4fbd-9924-c8394e119f84", "t_200": 1795322006.69, "t_inicio_consulta_que_lo_vio": 1795322015.36, "t_visible": 1795322018.982, "segundos_hasta_visible": 12.29, "segundos_hasta_consulta_que_lo_vio": 8.67, "consultas_q1": 3, "ms_q1_media": 3775.6}
+{"modo": "via_gateway", "rep": 2, "tarea_id": "b2297a1d-43d3-4acd-ad59-166a5677cd38", "event_id": "4e3fafc4-385e-4f47-9691-ccbad2be0d95", "t_200": 1795322021.239, "t_inicio_consulta_que_lo_vio": 1795322026.99, "t_visible": 1795322029.548, "segundos_hasta_visible": 8.31, "segundos_hasta_consulta_que_lo_vio": 5.75, "consultas_q1": 4, "ms_q1_media": 1820.0}
+{"modo": "via_gateway", "rep": 3, "tarea_id": "76f1e944-7bf1-45f7-981d-bb018b3592a5", "event_id": "8596ea3f-bb69-42df-bd36-90080b620869", "t_200": 1795322031.222, "t_inicio_consulta_que_lo_vio": 1795322036.371, "t_visible": 1795322038.093, "segundos_hasta_visible": 6.87, "segundos_hasta_consulta_que_lo_vio": 5.15, "consultas_q1": 4, "ms_q1_media": 1505.0}
+{"modo": "via_gateway", "rep": 4, "tarea_id": "d0d52c67-ce81-4ef5-8e1e-9051990c82e9", "event_id": "56e40aa8-637b-4940-b36f-5d327ed55c4e", "t_200": 1795322039.609, "t_inicio_consulta_que_lo_vio": 1795322045.447, "t_visible": 1795322046.849, "segundos_hasta_visible": 7.24, "segundos_hasta_consulta_que_lo_vio": 5.84, "consultas_q1": 5, "ms_q1_media": 1264.2}
+{"modo": "via_gateway", "rep": 5, "tarea_id": "6bbebbb8-d391-48a7-a0a2-1cf1eb0e2e1f", "event_id": "faa89c1c-51c6-4948-802f-0670a7332e67", "t_200": 1795322049.039, "t_inicio_consulta_que_lo_vio": 1795322055.371, "t_visible": 1795322056.374, "segundos_hasta_visible": 7.34, "segundos_hasta_consulta_que_lo_vio": 6.33, "consultas_q1": 5, "ms_q1_media": 1292.8}
+via_gateway: n=5 min=6.87 mediana=7.34 max=12.29 s
+
+## 2. Fila rechazada en Parquet vs disponible en MongoDB, segundo envío y Q4
+Q4 antes (proyecto LiDAR de ejemplo): {"cliente_id": "f38b2ffc-80a4-4f5a-91c9-bc701e7ea419", "proyecto_id": "18da990c-9704-464a-b54b-82d3b6e57418", "rechazadas": 0, "revisadas": 5, "proporcion": 0.0}
+gateway respondió al rechazo: {"estado": "disponible", "version": 4, "event_id": "0613180a-070a-405f-8e6f-899b53c00efb"}
+segundo envío con el token viejo: 409 {"error": "conflicto_lock", "detalle": "El lock está ocupado, venció o el token no coincide"}
+
+Parquet (filas de la tarea desde el inicio de la prueba, 5.4 s después del 200):
+   {"event_id": "832bfe8f-a440-4ab1-a3f5-58f840db11b8", "ts": "2026-11-22 04:34:22.191000+00:00", "tarea_id": "ba0b2c68-68b7-4bbb-946c-d28a5a9aadef", "estado": "abierta", "version": 1, "motivo_rechazo": null, "anotador_id": "adbafed0-b600-460c-bbdc-fd55304374b3", "revisor_id": null, "micro_lote_id": "1795322062251-0_1795322062372-0", "mes": "2026-11"}
+   {"event_id": "773f63ef-d4a9-4404-acc9-923a219b0b1c", "ts": "2026-11-22 04:34:22.258000+00:00", "tarea_id": "ba0b2c68-68b7-4bbb-946c-d28a5a9aadef", "estado": "anotada", "version": 2, "motivo_rechazo": null, "anotador_id": "adbafed0-b600-460c-bbdc-fd55304374b3", "revisor_id": null, "micro_lote_id": "1795322062251-0_1795322062372-0", "mes": "2026-11"}
+   {"event_id": "fc3e61a7-d869-4ce3-8367-91e9869870b4", "ts": "2026-11-22 04:34:22.323000+00:00", "tarea_id": "ba0b2c68-68b7-4bbb-946c-d28a5a9aadef", "estado": "en_revision", "version": 3, "motivo_rechazo": null, "anotador_id": "adbafed0-b600-460c-bbdc-fd55304374b3", "revisor_id": "a40eecb5-c134-479b-9e3b-7dd373aa881e", "micro_lote_id": "1795322062251-0_1795322062372-0", "mes": "2026-11"}
+   {"event_id": "0613180a-070a-405f-8e6f-899b53c00efb", "ts": "2026-11-22 04:34:22.344000+00:00", "tarea_id": "ba0b2c68-68b7-4bbb-946c-d28a5a9aadef", "estado": "rechazada", "version": 4, "motivo_rechazo": "GEOMETRIA_IMPRECISA", "anotador_id": "adbafed0-b600-460c-bbdc-fd55304374b3", "revisor_id": "a40eecb5-c134-479b-9e3b-7dd373aa881e", "micro_lote_id": "1795322062251-0_1795322062372-0", "mes": "2026-11"}
+filas: 4 · estados: ['abierta', 'anotada', 'en_revision', 'rechazada'] · event_id repetidos: 0
+
+MongoDB (registro): {"_id": "ba0b2c68-68b7-4bbb-946c-d28a5a9aadef", "estado": "disponible", "version": 4, "asignacion": null, "ultima_revision": {"revisor_id": "a40eecb5-c134-479b-9e3b-7dd373aa881e", "resultado": "rechazada", "motivo": "GEOMETRIA_IMPRECISA", "en": "2026-11-22 04:34:22.344000+00:00"}, "ultimo_evento_id": "0613180a-070a-405f-8e6f-899b53c00efb"}
+ultimo_evento_id == event_id de la fila rechazada: True
+
+Q4 después: {"cliente_id": "f38b2ffc-80a4-4f5a-91c9-bc701e7ea419", "proyecto_id": "18da990c-9704-464a-b54b-82d3b6e57418", "rechazadas": 1, "revisadas": 6, "proporcion": 0.1667}
+rechazadas en Q4: 0 -> 1 (se esperaba 1)
+
+## 3. Spark leyendo en bucle mientras el simulador escribe por el gateway; reprocesar un micro-lote
+inicio del simulador: 1795322095.742
+http://gateway:8000 · 9 anotadores + 1 revisores · 0 s de calentamiento + 60 s medidos
+endpoint                            n      p50      p95      p99    2xx   4xx  5xx/0
+POST /tareas/siguiente            274    113.4   1014.5   4444.2    261     0     13
+POST /tareas/{id}/enviar          261    197.3   1009.3  10010.6    253     0      8
+POST /tareas/{id}/revision        127     69.9    342.8   2131.9    124     0      3
+envíos confirmados: 253 en 60 s = 253.0 envíos/min
+fin del simulador: 1795322160.360 · pendientes en el gateway: 0
+lector: 42 vueltas, 0 con error, filas de 810361 a 811005, 0 veces bajó la cuenta, 2907 ms por vuelta
+POST /reprocesar: 200 {"micro_lote_id": "1795322155842-0_1795322159311-0", "filas": 40, "archivos": [{"archivo": "eventos/mes=2026-11/part-1795322155842-0_1795322159311-0.parquet", "filas": 40}], "reprocesado_en": 1795322203292}
+micro-lote 1795322155842-0_1795322159311-0 (40 eventos)
+  /datalake/eventos/mes=2026-11/part-1795322155842-0_1795322159311-0.parquet: sha256 866938fbde018dd9 -> 866938fbde018dd9 · mtime cambió: True
+archivos .parquet en eventos/: 132 -> 132
+filas en el lago con esos event_id: 40 -> 40 (eventos del micro-lote: 40)
+
+## 4. Caída del historial en medio de la carga del simulador
+docker kill historial: 1795322220.512 · pendientes en el gateway: 21
+pendientes en el gateway con el historial caído (15 s): 252
+GET /salud del gateway: degradado {'registro': 'operativo', 'sesion': 'operativo', 'historial': 'caido', 'analitica': 'operativo'}
+historial healthy: 1795322250.596
+http://gateway:8000 · 9 anotadores + 1 revisores · 0 s de calentamiento + 45 s medidos
+endpoint                            n      p50      p95      p99    2xx   4xx  5xx/0
+POST /tareas/siguiente            253     67.1    446.3   1109.3    250     0      3
+POST /tareas/{id}/enviar          250    118.7   1010.6   2566.5    244     0      6
+POST /tareas/{id}/revision        110     43.8    455.7   1109.2    109     0      1
+envíos confirmados: 244 en 45 s = 325.3 envíos/min
+pendientes en el gateway al final: 0
+{"ts": "2026-11-22T04:37:21.661529+00:00", "nivel": "INFO", "servicio": "historial", "msg": "recuperacion", "tmp_huerfanos": [], "reclamados": 49, "micro_lotes_rehechos": [], "pendientes_publicados": 49}
+
+Respuestas 200 del simulador contra eventos distintos en el lago (pruebas/p6_lago.py):
+corrida                             respuestas 200  sin respuesta  eventos en el lago  atraso p50 / p95 / máx. (s)
+P4_gateway_20261121-2232/10u_c1           638            4            644         3.0 /  45.1 /   47.5
+P4_gateway_20261121-2232/10u_c2           603            0            603         7.9 /  35.2 /   36.5

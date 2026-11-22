@@ -17,25 +17,30 @@ import os
 
 from pymongo import MongoClient
 
+# Conexión directa a MongoDB (solo para verificar) y archivo de ids del dataset.
 MONGO_URI = os.getenv("MONGO_URI", "mongodb://mongo1:27017,mongo2:27017,mongo3:27017/?replicaSet=rs0")
 IDS = "/srv/dataset/salida/ids.json"
 
 
 def main() -> None:
+    """Cruza el CSV de la sonda con MongoDB e imprime RPO, duplicados, "error ≠ no escrito" y RTO."""
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--csv", required=True)
     ap.add_argument("--marca", type=float, help="epoch de la falla (docker kill)")
     ap.add_argument("--recuperacion", type=float, help="epoch en que se volvieron a encender los nodos")
     args = ap.parse_args()
 
+    # Clasifica las operaciones del CSV: envíos confirmados, envíos con error y asignaciones.
     filas = list(csv.DictReader(open(args.csv)))
     envios = [f for f in filas if f["op"] == "enviar"]
     confirmados = {f["tarea_id"] for f in envios if f["status"] == "200"}
     desconocidos = {f["tarea_id"] for f in envios if f["status"] != "200"} - confirmados
     asignadas_ok = {f["tarea_id"] for f in filas if f["op"] == "asignar" and f["status"] == "200"}
     asignadas_error = [f for f in filas if f["op"] == "asignar" and f["status"] not in ("200", "204")]
+    # La sonda usa el primer anotador del dataset.
     sonda = next(a["id"] for a in json.load(open(IDS))["anotadores"] if a["rol"] == "anotador")
 
+    # Lee del primario el estado actual de las tareas involucradas.
     bd = MongoClient(MONGO_URI, readPreference="primary")["plataforma"]
     docs = {d["_id"]: d for d in bd.tareas.find({"_id": {"$in": list(confirmados | desconocidos)}},
                                                  {"estado": 1, "version": 1, "anotacion": 1})}
@@ -55,6 +60,7 @@ def main() -> None:
           f" · no escritos: {len(desconocidos - escrita)}")
     print(f"asignaciones con error que SÍ quedaron escritas (tarea abierta a nombre de la sonda): {asignadas_sin_respuesta}")
 
+    # Sin marca de falla no se calcula el RTO.
     if not args.marca:
         return
     antes = [f for f in envios if float(f["ts"]) < args.marca and f["status"] == "200"]

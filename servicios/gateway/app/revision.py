@@ -12,6 +12,7 @@ ACCIONES = {
 
 
 async def revisar(tarea_id, revisor_id, accion, motivo=None, request_id=None):
+    """Aplica la acción de revisión en el registro y publica el evento; devuelve (código, datos)."""
     # Sin token ni versión: el filtro por estado en registro deja pasar una sola petición.
     # La transición NO se reintenta.
     respuesta = await solicitar(

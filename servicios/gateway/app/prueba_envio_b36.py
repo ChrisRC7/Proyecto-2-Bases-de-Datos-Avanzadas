@@ -1,5 +1,11 @@
 
-"""Pruebas B3.6: envio, errores y limpieza segura."""
+"""Pruebas B3.6: envio, errores y limpieza segura.
+
+Se ejecuta dentro del contenedor del gateway:
+    docker compose exec -T gateway python -m app.prueba_envio_b36
+No necesita los demás servicios: las llamadas internas se reemplazan con mocks.
+Imprime una línea OK por cada caso y una marca final si todo pasa.
+"""
 
 import asyncio
 import tempfile
@@ -14,6 +20,7 @@ from app.cliente_interno import ServicioNoDisponible
 
 
 def respuesta(codigo, datos=None):
+    """Construye una httpx.Response falsa con ese código y cuerpo JSON (para los mocks)."""
     return httpx.Response(
         codigo,
         json=datos,
@@ -22,6 +29,7 @@ def respuesta(codigo, datos=None):
 
 
 async def pruebas():
+    """Recorre envio.enviar con sesión, registro, eventos y limpiezas simulados."""
     tarea_id = str(uuid4())
     anotador_id = str(uuid4())
     token = str(uuid4())

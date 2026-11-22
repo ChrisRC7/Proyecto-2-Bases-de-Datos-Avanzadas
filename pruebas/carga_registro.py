@@ -19,6 +19,7 @@ import urllib.request
 import uuid
 from collections import defaultdict
 
+# Registro (red interna), ids del dataset y geometrías válidas por tipo.
 URL = os.getenv("REGISTRO_URL", "http://registro:8001")
 IDS = "/srv/dataset/salida/ids.json"
 GEOMETRIAS = {
@@ -31,6 +32,7 @@ GEOMETRIAS = {
 
 
 def http(metodo: str, ruta: str, cuerpo=None):
+    """Petición JSON al registro; devuelve (status, cuerpo). status 0 si no hubo respuesta."""
     peticion = urllib.request.Request(URL + ruta, method=metodo, headers={"Content-Type": "application/json"},
                                       data=json.dumps(cuerpo).encode() if cuerpo is not None else None)
     try:
@@ -44,11 +46,13 @@ def http(metodo: str, ruta: str, cuerpo=None):
 
 
 def percentil(valores: list[float], p: float) -> float:
+    """Percentil p (0-100) por rango más cercano."""
     orden = sorted(valores)
     return orden[min(len(orden) - 1, max(0, round(p / 100 * len(orden) + 0.5) - 1))]  # nearest rank
 
 
 def main() -> None:
+    """Lanza --hilos hilos que repiten el ciclo de una tarea y resume latencias y ops/s."""
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--hilos", type=int, default=20)
     ap.add_argument("--calentamiento", type=float, default=10)
@@ -56,6 +60,7 @@ def main() -> None:
     ap.add_argument("--csv")
     args = ap.parse_args()
 
+    # Un anotador por hilo y un revisor compartido.
     ids = json.load(open(IDS))
     anotadores = [a["id"] for a in ids["anotadores"] if a["rol"] == "anotador"][:args.hilos]
     revisor = next(a["id"] for a in ids["anotadores"] if a["rol"] == "revisor")
@@ -67,6 +72,7 @@ def main() -> None:
     filas, candado = [], threading.Lock()
 
     def medir(op: str, metodo: str, ruta: str, cuerpo=None):
+        """Hace la petición, mide su duración y la guarda (marcando si es calentamiento o medición)."""
         t0 = time.perf_counter()
         status, datos = http(metodo, ruta, cuerpo)
         ahora = time.time()
@@ -76,6 +82,7 @@ def main() -> None:
         return status, datos
 
     def trabajar(anotador_id: str):
+        """Hilo: asignar -> enviar -> empezar_revision -> aprobar, en bucle hasta `fin`."""
         while time.time() < fin:
             token = str(uuid.uuid4())
             s, d = medir("asignar", "POST", "/tareas/asignar", {"anotador_id": anotador_id, "token": token})
@@ -105,6 +112,7 @@ def main() -> None:
             w.writeheader()
             w.writerows(filas)
 
+    # Resumen: solo las filas de la fase de medición.
     medidas = [f for f in filas if f["fase"] == "medicion"]
     print(f"registro {URL} · {len(anotadores)} hilos · {args.calentamiento:.0f} s de calentamiento + "
           f"{args.duracion:.0f} s medidos · mongodb: {salud and salud.get('mongodb')}")

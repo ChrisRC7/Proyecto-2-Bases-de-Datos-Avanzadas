@@ -27,23 +27,30 @@ from app import lago
 
 
 def compactar(mes: str, conjunto: str = "eventos", ejecutar: bool = False) -> dict:
+    """Compacta los archivos de un mes en uno solo y devuelve un resumen.
+
+    Con ejecutar=False solo calcula el resumen (simulación) sin escribir ni borrar nada.
+    """
     carpeta = lago.LAGO / conjunto / f"mes={mes}"
     archivos = sorted(carpeta.glob("part-*.parquet"))
     if len(archivos) < 2:
         return {"mes": mes, "archivos": len(archivos), "accion": "nada que compactar"}
 
+    # Lee todos los archivos del mes y los une en una sola tabla.
     t = pa.concat_tables([pq.read_table(a, schema=lago.ESQUEMA) for a in archivos])
     filas = t.num_rows
     # Primera aparición de cada event_id.
     indice = pa.table({"event_id": t["event_id"], "i": pa.array(range(filas))})
     primeros = indice.group_by("event_id", use_threads=False).aggregate([("i", "min")])["i_min"]
     t = t.take(pc.take(primeros, pc.sort_indices(primeros)))  # en el orden original
+    # Nombre del archivo compacto con la fecha y hora UTC actual.
     nombre = f"part-compacto-{time.strftime('%Y%m%dT%H%M%S', time.gmtime())}.parquet"
     resumen = {"mes": mes, "archivos": len(archivos), "filas": filas, "filas_sin_duplicados": t.num_rows,
                "duplicados_quitados": filas - t.num_rows, "destino": str(Path(conjunto) / f"mes={mes}" / nombre)}
     if not ejecutar:
         return {**resumen, "accion": "simulacion (usar --ejecutar)"}
 
+    # Publica el archivo compacto y después borra los originales que se leyeron.
     lago.escribir_atomico(t, carpeta / nombre, f"compacto__{conjunto}__{mes}.parquet")
     for a in archivos:
         a.unlink()
@@ -51,6 +58,7 @@ def compactar(mes: str, conjunto: str = "eventos", ejecutar: bool = False) -> di
 
 
 def main() -> None:
+    """Lee los argumentos de la línea de comandos, compacta e imprime el resumen."""
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--mes", required=True, help="AAAA-MM")
     ap.add_argument("--conjunto", default="eventos", choices=["eventos", "eventos_grande", "eventos_prueba"])

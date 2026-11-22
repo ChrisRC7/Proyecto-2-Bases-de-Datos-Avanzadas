@@ -13,7 +13,7 @@ cd "$(dirname "$0")/.."
 resumen=evidence/I5_entorno_limpio_$(date +%Y%m%d-%H%M).txt
 log=${resumen%.txt}.log
 
-operativo() {
+operativo() {  # espera hasta 180 s a que /salud del gateway diga "operativo"
   for _ in $(seq 1 90); do
     curl -s -m 5 localhost:8000/salud | grep -q '^{"servicio":"gateway","estado":"operativo"' && return 0
     sleep 2
@@ -29,6 +29,7 @@ paso() {  # $1 nombre; resto: comando
   printf '%-58s exit=%-3s %5d s\n' "$nombre" "$codigo" $((SECONDS - inicio)) | tee -a "$resumen"
   operativo || echo "  (el sistema no volvió a operativo después de $nombre)" | tee -a "$resumen"
 }
+# Atajos para los comandos de carga de datos y para las pruebas que necesitan varios argumentos.
 dataset() { docker compose --profile datos run --rm dataset; }
 historico() { docker compose --profile datos run --rm dataset-historico "$@"; }
 huerfanos() {
@@ -39,6 +40,7 @@ p2() {
     python /srv/pruebas/p2_concurrencia.py --modo gateway --csv "/srv/evidence/P2_concurrencia_gateway_$(date +%Y%m%d-%H%M).csv"
 }
 
+# Encabezado del resumen con fecha, commit y datos de la máquina.
 {
   echo "# I.5 entorno limpio · $(date -u +%FT%TZ) · commit $(git rev-parse --short HEAD)"
   echo "Máquina: $(grep -m1 'model name' /proc/cpuinfo | cut -d: -f2 | xargs) · $(nproc) CPU · $(free -g | awk '/Mem:/ {print $2}') GiB"
@@ -47,6 +49,7 @@ p2() {
 } > "$resumen"
 cat "$resumen"
 
+# 0. Entorno limpio y 1. carga de datos.
 paso "0a docker compose down -v"                          docker compose down -v
 paso "0b docker compose up -d --build"                    docker compose up -d --build
 paso "1a carga de MongoDB (dataset)"                      dataset
@@ -57,6 +60,7 @@ if [ ! -f datalake/eventos_grande/_resumen.json ]; then
 fi
 paso "1e reinicio de la analítica (lee los conjuntos nuevos)" docker compose restart analitica
 
+# 2. Todas las pruebas, en el mismo orden que la tabla del README.
 paso "A4 rutas de A"                                      python3 pruebas/a4_rutas_gateway.py
 paso "P1 rutas y sesiones (B5.1)"                         python3 pruebas/b51_sesiones_gateway.py
 paso "P1 /salud y puertos"                                bash pruebas/p1_salud.sh

@@ -21,10 +21,12 @@ from app.esquemas import (
     TIPOS_POR_MODALIDAD, Asignar, NuevoLote, NuevoProyecto, Transicion, error_geometria, mime_valido,
 )
 
+# Plazo de una asignación, URL del servicio de sesión y cada cuánto se publica la salud.
 LOCK_SEGUNDOS = int(os.getenv("LOCK_SEGUNDOS", "120"))  # igual que el lock de Valkey
 SESION_URL = os.getenv("SESION_URL", "http://sesion:8002")
 LATIDO_SEGUNDOS = 5
 
+# Aplicación FastAPI con el middleware y errores comunes.
 app = crear_app(SERVICIO)
 
 # accion -> (estado requerido, nuevo estado en Mongo, estado de la fila del lago)
@@ -39,23 +41,27 @@ REGLAS = {
 
 @app.exception_handler(ConnectionFailure)
 async def mongo_sin_primario(_request, exc: ConnectionFailure):
+    """Cualquier petición que no encuentre primario en MongoDB responde 503."""
     # Solo la primera frase; el resto es la topología completa que ve el driver.
     return error(503, "mongodb_no_disponible", str(exc).split(", Topology Description")[0])
 
 
 @app.exception_handler(WriteConcernError)
 async def mongo_sin_mayoria(_request, exc: WriteConcernError):
+    """Una escritura que no logró confirmación de la mayoría responde 503."""
     # wtimeout vencido o el primario se degradó mientras esperaba (11602 InterruptedDueToReplStateChange).
     # La escritura pudo quedar en el primario aunque no llegó a la mayoría: error ≠ no escrito.
     return error(503, "mongodb_sin_mayoria", str(exc).split(", full error")[0])
 
 
 def ahora() -> datetime:
+    """Hora actual en UTC truncada a milisegundos (la misma precisión que guarda MongoDB)."""
     t = datetime.now(timezone.utc)
     return t.replace(microsecond=t.microsecond // 1000 * 1000)  # BSON guarda milisegundos
 
 
 def iso(t: datetime | None) -> str | None:
+    """Convierte una fecha a texto ISO-8601 UTC con milisegundos y "Z" (None se queda None)."""
     if t is None:
         return None
     t = t.astimezone(timezone.utc)
@@ -100,6 +106,7 @@ def evento(tarea: dict, estado: str, version: int, ts: datetime, event_id: str,
 
 @app.post("/proyectos", status_code=201)
 def crear_proyecto(cuerpo: NuevoProyecto):
+    """Crea un proyecto activo para un cliente existente y devuelve su id (404 si no hay cliente)."""
     if bd.clientes.find_one({"_id": cuerpo.cliente_id}, {"_id": 1}) is None:
         return error(404, "cliente_no_existe", cuerpo.cliente_id)
     proyecto_id = str(uuid.uuid4())
@@ -119,12 +126,18 @@ def crear_proyecto(cuerpo: NuevoProyecto):
 
 @app.post("/proyectos/{proyecto_id}/lotes", status_code=201)
 def crear_lote(proyecto_id: str, cuerpo: NuevoLote):
+    """Crea un lote (batch) y todas sus tareas en estado "disponible".
+
+    Valida que el proyecto exista y esté activo, y que cada tarea tenga un tipo y un MIME
+    compatibles con la modalidad del proyecto; si alguna falla, no se inserta nada (422).
+    """
     proyecto = bd.proyectos.find_one({"_id": proyecto_id})
     if proyecto is None:
         return error(404, "proyecto_no_existe", proyecto_id)
     if proyecto["estado"] != "activo":
         return error(422, "proyecto_cerrado", proyecto_id)
 
+    # Revisa todas las tareas y junta los problemas para reportarlos de una vez.
     modalidad = proyecto["modalidad"]
     problemas = []
     for i, t in enumerate(cuerpo.tareas):
@@ -135,6 +148,7 @@ def crear_lote(proyecto_id: str, cuerpo: NuevoLote):
     if problemas:
         return error(422, "lote_invalido", problemas)
 
+    # Documento del lote y documentos de las tareas (copian datos del proyecto para no hacer joins).
     batch_id, creado = str(uuid.uuid4()), ahora()
     bd.batches.insert_one({"_id": batch_id, "proyecto_id": proyecto_id,
                            "total_tareas": len(cuerpo.tareas), "creado_en": creado})
@@ -162,6 +176,11 @@ def crear_lote(proyecto_id: str, cuerpo: NuevoLote):
 
 @app.post("/tareas/asignar")
 def asignar(cuerpo: Asignar):
+    """Asigna de forma exclusiva la tarea disponible de mayor prioridad a un anotador.
+
+    Devuelve la tarea (con la taxonomía del proyecto) y el evento "abierta" para el lago;
+    204 si no hay tareas disponibles; 404 si el anotador no existe.
+    """
     anotador = bd.anotadores.find_one({"_id": cuerpo.anotador_id}, {"equipo_id": 1})
     if anotador is None:
         return error(404, "anotador_no_existe", cuerpo.anotador_id)
@@ -189,9 +208,11 @@ def asignar(cuerpo: Asignar):
         sort=[("prioridad", -1)],
         return_document=ReturnDocument.AFTER,
     )
+    # Ninguna tarea cumplió el filtro: no hay trabajo disponible.
     if tarea is None:
         return Response(status_code=204)
 
+    # La taxonomía se lee del proyecto para que el anotador sepa qué etiquetas usar.
     proyecto = bd.proyectos.find_one({"_id": tarea["proyecto_id"]}, {"taxonomia": 1}) or {}
     return {
         "tarea": a_json({
@@ -220,6 +241,7 @@ def renovar(tarea_id: str, token: str):
     t = ahora()
     vence = t + timedelta(seconds=LOCK_SEGUNDOS)
     propia = {"_id": tarea_id, "estado": "abierta", "asignacion.token": token}
+    # Solo actualiza si es propia, no ha vencido y ya pasó la mitad del plazo.
     resultado = bd.tareas.update_one(
         {**propia, "asignacion.vence_en": {"$gte": t, "$lt": t + timedelta(seconds=LOCK_SEGUNDOS / 2)}},
         {"$set": {"asignacion.vence_en": vence}},
@@ -227,10 +249,12 @@ def renovar(tarea_id: str, token: str):
     if resultado.matched_count == 1:
         return {"tarea_id": tarea_id, "renovado": True, "vence_en": iso(vence)}
 
+    # No se escribió: ¿sigue vigente (simplemente no hacía falta renovar todavía)?
     vigente = bd.tareas.find_one({**propia, "asignacion.vence_en": {"$gte": t}}, {"asignacion.vence_en": 1})
     if vigente is not None:
         return {"tarea_id": tarea_id, "renovado": False, "vence_en": iso(vigente["asignacion"]["vence_en"])}
 
+    # Ni propia ni vigente: o la tarea no existe (404) o la asignación ya venció (409).
     actual = bd.tareas.find_one({"_id": tarea_id}, {"estado": 1, "version": 1})
     if actual is None:
         return error(404, "tarea_no_existe", tarea_id)
@@ -239,8 +263,15 @@ def renovar(tarea_id: str, token: str):
 
 @app.post("/tareas/{tarea_id}/transicion")
 def transicion(tarea_id: str, cuerpo: Transicion):
+    """Aplica una transición de estado a la tarea (enviar, liberar, revisar, aprobar, rechazar).
+
+    Solo cambia si la tarea está en el estado requerido por REGLAS (y, si aplica, con el
+    token y la versión indicados). Devuelve el nuevo estado y el evento para el lago;
+    409 si la transición no es válida, 404 si no existe, 422 si la anotación es inválida.
+    """
     if cuerpo.accion == "renovar":  # sin cambio de estado ni evento (la ruta 7 pasaría el límite de 6)
         return renovar(tarea_id, cuerpo.token)
+    # Estado requerido, estado nuevo y estado que se registra en el lago para esta acción.
     requerido, nuevo, estado_evento = REGLAS[cuerpo.accion]
     t = ahora()
     event_id = str(uuid.uuid4())
@@ -248,12 +279,15 @@ def transicion(tarea_id: str, cuerpo: Transicion):
     cambios: dict = {"estado": nuevo, "ultimo_evento_id": event_id}
     revisor_id = motivo = None
 
+    # Enviar y liberar solo los puede hacer quien tiene la asignación (mismo token).
     if cuerpo.accion in ("enviar", "liberar"):
         filtro["asignacion.token"] = cuerpo.token
+    # Control optimista: si el cliente manda la versión, debe coincidir con la actual.
     if cuerpo.version is not None:
         filtro["version"] = cuerpo.version
 
     if cuerpo.accion == "enviar":
+        # Valida la geometría según el tipo de tarea y las etiquetas contra la taxonomía.
         actual = bd.tareas.find_one({"_id": tarea_id}, {"tipo_tarea": 1, "proyecto_id": 1})
         if actual is None:
             return error(404, "tarea_no_existe", tarea_id)
@@ -266,8 +300,10 @@ def transicion(tarea_id: str, cuerpo: Transicion):
                          {"geometria": problema, "etiquetas_fuera_de_taxonomia": fuera})
         cambios["anotacion"] = {**cuerpo.anotacion.model_dump(), "anotador_id": cuerpo.actor_id, "enviada_en": t}
     elif cuerpo.accion == "liberar":
+        # La tarea vuelve a estar disponible sin dueño.
         cambios["asignacion"] = None
     else:
+        # empezar_revision / aprobar / rechazar: solo un anotador con rol "revisor".
         if bd.anotadores.find_one({"_id": cuerpo.actor_id, "rol": "revisor"}, {"_id": 1}) is None:
             return error(422, "actor_no_es_revisor", cuerpo.actor_id)
         revisor_id = cuerpo.actor_id
@@ -282,6 +318,7 @@ def transicion(tarea_id: str, cuerpo: Transicion):
     antes = bd.tareas.find_one_and_update(
         filtro, {"$set": cambios, "$inc": {"version": 1}}, return_document=ReturnDocument.BEFORE,
     )
+    # No coincidió el filtro: se distingue entre tarea inexistente (404) y estado/token/versión (409).
     if antes is None:
         actual = bd.tareas.find_one({"_id": tarea_id}, {"estado": 1, "version": 1})
         if actual is None:
@@ -289,6 +326,7 @@ def transicion(tarea_id: str, cuerpo: Transicion):
         return error(409, "transicion_invalida",
                      {"accion": cuerpo.accion, "estado": actual["estado"], "version": actual["version"]})
 
+    # Versión nueva (la de "antes" más el $inc aplicado).
     version = antes["version"] + 1
     return {
         "tarea": {"tarea_id": tarea_id, "estado": nuevo, "version": version},
@@ -298,11 +336,17 @@ def transicion(tarea_id: str, cuerpo: Transicion):
 
 @app.get("/proyectos/{proyecto_id}/exportar")
 def exportar(proyecto_id: str, cursor: str | None = None, limite: int = Query(100, ge=1, le=1000)):
+    """Exporta las tareas aprobadas del proyecto por páginas de `limite`, ordenadas por _id.
+
+    `siguiente_cursor` es el último _id de la página (se pasa como `cursor` para pedir la
+    siguiente) o None si ya no hay más.
+    """
     if bd.proyectos.find_one({"_id": proyecto_id}, {"_id": 1}) is None:
         return error(404, "proyecto_no_existe", proyecto_id)
     filtro: dict = {"proyecto_id": proyecto_id, "estado": "aprobada"}
     if cursor:
         filtro["_id"] = {"$gt": cursor}  # paginación por llave, sin skip
+    # Solo los campos que se exportan.
     campos = {"batch_id": 1, "modalidad": 1, "tipo_tarea": 1, "archivo": 1,
               "anotacion": 1, "ultima_revision": 1, "version": 1}
     docs = [a_json({"tarea_id": d.pop("_id"), **d})
@@ -312,6 +356,7 @@ def exportar(proyecto_id: str, cursor: str | None = None, limite: int = Query(10
 
 @app.get("/salud")
 def salud():
+    """Estado del registro según MongoDB: operativo si hay primario, caído si no."""
     # Sin primario el registro no puede asignar ni guardar: el gateway lo lee como "caido".
     mongo = estado_mongo()
     return {"servicio": SERVICIO, "estado": mongo["estado"], "mongodb": mongo, "ts": ahora_iso()}
@@ -320,6 +365,7 @@ def salud():
 def _latido():
     """Cada 5 s publica su estado en sesion:/estado-capas (D4). Nunca escribe en Valkey."""
     indices_listos = False
+    # Hilo infinito: asegura los índices (una vez) y publica la salud cada LATIDO_SEGUNDOS.
     while True:
         if not indices_listos:
             try:
@@ -328,6 +374,7 @@ def _latido():
                 log.info("indices asegurados")
             except PyMongoError as exc:
                 log.warning("indices pendientes", extra={"datos": {"error": str(exc).splitlines()[0]}})
+        # Envía el estado de MongoDB al servicio de sesión por HTTP.
         mongo = estado_mongo()
         cuerpo = json.dumps({"servicio": SERVICIO, "estado": mongo["estado"], "detalle": {"mongodb": mongo}})
         peticion = urllib.request.Request(f"{SESION_URL}/estado-capas", data=cuerpo.encode(),
@@ -341,4 +388,5 @@ def _latido():
 
 @app.on_event("startup")
 def iniciar_latido():
+    """Al arrancar el servicio lanza el hilo de latido en segundo plano (daemon)."""
     threading.Thread(target=_latido, name="latido", daemon=True).start()

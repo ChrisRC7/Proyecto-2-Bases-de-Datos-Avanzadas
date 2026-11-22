@@ -36,9 +36,11 @@ from dataset.historico.lago import CAMPOS, escribir, vaciar
 
 
 def u(prefijo: str, n: int) -> str:
+    """UUID fijo y legible: el prefijo indica el tipo de entidad y n el número."""
     return f"{prefijo}-0000-4000-8000-{n:012d}"
 
 
+# Clientes, proyectos, equipos, anotadores (A1, A2) y revisor (R1) del conjunto de prueba.
 C1, C2 = u("c0000000", 1), u("c0000000", 2)
 P1, P2, P3 = u("90000000", 1), u("90000000", 2), u("90000000", 3)
 E1, E2 = u("e0000000", 1), u("e0000000", 2)
@@ -49,6 +51,7 @@ PROYECTO = {  # proyecto -> cliente, modalidad, tipo, sla
     P2: (C1, "lidar", "cuboide_3d", 48),
     P3: (C2, "imagen", "bbox", 24),
 }
+# Tareas y el proyecto al que pertenece cada una.
 TAREAS = {u("70000000", i): p for i, p in enumerate([P1, P1, P2, P3, P3, P3, P1], start=1)}
 T1, T2, T3, T4, T5, T6, T7 = TAREAS
 
@@ -100,10 +103,12 @@ FILAS = [
 
 
 def ms(texto: str) -> int:
+    """"AAAA-MM-DD HH:MM" (UTC) a epoch en milisegundos."""
     return int(datetime.strptime(texto, "%Y-%m-%d %H:%M").replace(tzinfo=timezone.utc).timestamp() * 1000)
 
 
 def filas() -> list[dict]:
+    """Convierte FILAS en filas completas del lago (versión creciente por tarea)."""
     salida, version = [], defaultdict(int)
     for n, (tarea, ts, estado, anotador, toma, motivo) in enumerate(FILAS, start=1):
         cliente, modalidad, tipo, sla = PROYECTO[TAREAS[tarea]]
@@ -119,6 +124,7 @@ def filas() -> list[dict]:
 
 
 def main() -> None:
+    """Escribe el conjunto "prueba" y un archivo extra con un event_id duplicado (reentrega)."""
     base = vaciar("prueba")
     todas = filas()
     reentrega = [f for f in todas if f["tarea_id"] == T1 and f["estado"] == "aprobada"]

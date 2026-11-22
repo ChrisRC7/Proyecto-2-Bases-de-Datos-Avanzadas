@@ -11,6 +11,7 @@
 \usepackage[margin=1.9cm,top=1.5cm,bottom=1.6cm]{geometry}
 \usepackage{booktabs}
 \usepackage{array}
+\usepackage{longtable}
 \usepackage{xcolor}
 \usepackage{graphicx}
 \usepackage{fancyvrb}
@@ -1040,7 +1041,7 @@ misma laptop y una red virtual. Las cifras comparan configuraciones y muestran c
 un despliegue en varias máquinas. En particular, la diferencia entre \texttt{w: "majority"} y
 \texttt{w: 1} sería mayor con nodos en máquinas distintas, y la comparación de uno y dos workers de Spark no
 mide escalabilidad horizontal porque ambos usan los mismos 2 núcleos físicos.
-\item \textbf{Dos máquinas distintas.} Registro, carga y fallas de MongoDB se midieron en un Ryzen 7 5700U con
+\item \textbf{Tres máquinas distintas.} Registro, carga y fallas de MongoDB se midieron en un Ryzen 7 5700U con
 WSL~2; lago y analítica en un Intel i7-6500U con Ubuntu nativo; las pruebas de sesión y Valkey (B5) en la
 máquina de Alisson con Docker Desktop en Windows, sin el procesador anotado, y repetidas en la i7-6500U
 dentro de la corrida I5. Cada sección dice cuál; las cifras de una no se comparan con las de otra.
@@ -1063,11 +1064,12 @@ Cada archivo está en \texttt{evidence/} del repositorio. Los \texttt{.md} sigue
 (\texttt{evidence/\_PLANTILLA.md}): fecha y hora, objetivo, configuración, comando, resultado,
 interpretación y archivos crudos. Los \texttt{.txt} y \texttt{.csv} son la salida original.
 
-\begin{center}\small
-\begin{tabular}{@{}p{0.47\textwidth}p{0.47\textwidth}@{}}
+{\small
+\begin{longtable}{@{}p{0.47\textwidth}p{0.47\textwidth}@{}}
 \toprule
 Archivo & Qué respalda \\
 \midrule
+\endhead
 \texttt{A3\_explain\_registro\_20261022-2003.md} (y \texttt{.txt}) & Índices: explain de la asignación y la exportación (sección 2.2). \\
 \texttt{A4\_rutas\_gateway\_20261110-1446.txt} & Rutas de proyectos, lotes, exportación y revisión por el gateway, con sus errores (2.1). \\
 \texttt{P2\_concurrencia\_gateway\_20261110-1714.md} (\texttt{.txt}, \texttt{.csv}) & P2: 50 solicitudes contra 10 tareas, cero dobles, 409 (2.3). \\
@@ -1093,20 +1095,22 @@ Archivo & Qué respalda \\
 \texttt{I2\_recorrido\_lidar\_20261115-2217.txt} & Recorrido completo de una tarea LiDAR: siguiente, borradores, recuperar, enviar, segundo envío 409, revisión, exportar, visible en Q1 8,2~s después de aprobar (1). \\
 \texttt{I4\_aislamiento\_20261115-2218.txt} & Aislamiento modular: solo el gateway publica el 8000, redes por motor (D15), bibliotecas de cliente por servicio, lago en solo lectura para la analítica (1). \\
 \texttt{I5\_entorno\_limpio\_20261115-2205.txt} (y \texttt{.log}) & Todas las pruebas en orden desde \texttt{docker compose down -v} siguiendo el README; incluye la renovación del plazo (2.5), la prueba de borradores huérfanos (8.1) y P8 de Valkey (7.2). \\
+\texttt{I5\_entorno\_limpio\_20261121-2215.txt} (y \texttt{.log}, y los archivos de esa hora) & Segunda corrida completa desde \texttt{down -v} con el código final (sesión con seis rutas, D17): todas las pruebas con exit 0; P8 de MongoDB con RPO 0 en los tres escenarios. \\
 \texttt{P1\_salud\_20261115-2307.txt} & \texttt{/salud} con los mensajes de Valkey y la consulta directa: normal, degradado con historial o analítica parados, caído con Valkey parado o MongoDB sin mayoría (7.2 y 8.1). \\
 \texttt{C4.9\_analitica\_gateway\_20261115-2218.txt}, \texttt{P4\_gateway\_20261115-2220.txt}, \texttt{C2.6\_compactacion\_20261115-2227.txt}, \texttt{P5\_analitica\_20261115-2227.txt} (con sus \texttt{.csv}, planes y carpetas) & Las mismas pruebas de C repetidas en la corrida desde cero (I5), todas con exit 0 (4 y 5). \\
 \texttt{P2\_concurrencia\_gateway\_20261115-2213.csv}, \texttt{P8\_mongo\_gateway\_*\_20261115-224*}, \texttt{P6\_carga\_20261115-2246/} & P2, P8 de MongoDB y P6 repetidas en la corrida desde cero (I5), todas con exit 0 (2, 6 y 7.1). \\
 \bottomrule
-\end{tabular}
-\end{center}
+\end{longtable}
+}
 
 Archivos de B, de las corridas en la máquina de Alisson (2026-11-14 y 15):
 
-\begin{center}\small
-\begin{tabular}{@{}p{0.47\textwidth}p{0.47\textwidth}@{}}
+{\small
+\begin{longtable}{@{}p{0.47\textwidth}p{0.47\textwidth}@{}}
 \toprule
 Archivo & Qué respalda \\
 \midrule
+\endhead
 \texttt{B5\_sesion\_valkey\_20261115.md} & Ficha de las pruebas B5.1--B5.3 con la plantilla: fecha, objetivo, configuración, comandos, resultados e interpretación. \\
 \texttt{B5\_1\_sesiones.txt} & P1: asignar, borrador y latido con token ajeno (409) y válido (200), recuperar con tarea, token y borrador iguales (3.2). \\
 \texttt{B5\_1\_A4\_gateway.txt}, \texttt{B5\_1\_*\_invalido.txt}, \texttt{B5\_1\_siguiente\_sin\_anotador.txt}, \texttt{B5\_1\_recuperar\_sin\_sesion.txt} & P1: rutas del gateway y sus errores 404, 409 y 422. \\
@@ -1117,8 +1121,8 @@ Archivo & Qué respalda \\
 \texttt{B4\_2\_interrupcion\_real.txt}, \texttt{B4\_2\_borradores.txt}, \texttt{B4\_2\_integracion.txt} & Usuario virtual con borradores y latidos cada 2~s, matado con \texttt{docker kill} y recuperado (3.4). \\
 \texttt{B5\_3\_P8.txt} & P8 de Valkey: RTO 1,016~s, borrador confirmado sin pérdida (7.2). \\
 \bottomrule
-\end{tabular}
-\end{center}
+\end{longtable}
+}
 
 
 \end{document}

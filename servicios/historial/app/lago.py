@@ -13,6 +13,7 @@ from pathlib import Path
 import pyarrow as pa
 import pyarrow.parquet as pq
 
+# Raíz del lago, carpeta temporal de escritura y carpeta publicada que lee Spark.
 LAGO = Path(os.getenv("LAGO_DIR", "/datalake"))
 TMP = LAGO / "_tmp"
 EVENTOS = LAGO / "eventos"
@@ -37,6 +38,7 @@ ESQUEMA = pa.schema([
     pa.field("sla_horas", pa.int32(), nullable=False),
     pa.field("micro_lote_id", pa.string()),
 ])
+# Nombres de las columnas en orden.
 CAMPOS = ESQUEMA.names
 
 
@@ -52,6 +54,11 @@ def a_fecha(valor) -> datetime | None:
 
 
 def tabla(eventos: list[dict], micro_lote_id: str) -> pa.Table:
+    """Convierte una lista de eventos (dicts) en una tabla Arrow con el ESQUEMA del lago.
+
+    Pasa de filas a columnas, convierte las fechas a datetime y pone el mismo
+    micro_lote_id en todas las filas.
+    """
     columnas = {c: [] for c in CAMPOS}
     for e in eventos:
         for c in CAMPOS:
@@ -63,6 +70,7 @@ def tabla(eventos: list[dict], micro_lote_id: str) -> pa.Table:
 
 
 def _fsync_dir(carpeta: Path) -> None:
+    """Fuerza a disco la entrada del directorio para que el rename sobreviva a un corte de luz."""
     fd = os.open(carpeta, os.O_RDONLY)
     try:
         os.fsync(fd)
@@ -74,10 +82,12 @@ def escribir_atomico(t: pa.Table, destino: Path, nombre_tmp: str) -> None:
     """Escribe en _tmp/, fsync y rename al destino (sobrescribe si ya existía: reprocesar)."""
     TMP.mkdir(parents=True, exist_ok=True)
     tmp = TMP / nombre_tmp
+    # 1) Escribe el Parquet completo en _tmp/ y lo baja a disco.
     with open(tmp, "wb") as f:
         pq.write_table(t, f, compression="snappy")
         f.flush()
         os.fsync(f.fileno())
+    # 2) Rename atómico al destino final y fsync de la carpeta.
     destino.parent.mkdir(parents=True, exist_ok=True)
     os.replace(tmp, destino)
     _fsync_dir(destino.parent)
@@ -85,6 +95,7 @@ def escribir_atomico(t: pa.Table, destino: Path, nombre_tmp: str) -> None:
 
 def publicar(micro_lote_id: str, eventos: list[dict], base: Path = EVENTOS) -> list[dict]:
     """Un archivo por mes del micro-lote, todos con el mismo id. Devuelve [{archivo, filas}]."""
+    # Agrupa los eventos por mes (AAAA-MM) según su ts: la partición del lago es por mes.
     por_mes = defaultdict(list)
     for e in eventos:
         por_mes[f"{a_fecha(e['ts']):%Y-%m}"].append(e)
@@ -107,5 +118,6 @@ def limpiar_tmp() -> list[str]:
 
 
 def escribible() -> bool:
+    """True si la carpeta del lago existe y se puede escribir (para /salud)."""
     return LAGO.is_dir() and os.access(LAGO, os.W_OK)
 

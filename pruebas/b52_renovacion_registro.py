@@ -17,12 +17,14 @@ import urllib.request
 
 from proyecto_prueba import GATEWAY, anotadores, crear_proyecto
 
+# Duración total de la prueba, intervalo entre latidos y geometría válida para enviar.
 DURACION_S = 150
 CADA_S = 10
 GEOMETRIA = {"tipo": "cuboide_3d", "centro": [1.2, 3.4, 0.5], "dimensiones": [0.6, 1.8, 1.7], "yaw": 0.3}
 
 
 def pedir(anotador, metodo, ruta, cuerpo=None):
+    """Petición al gateway como `anotador`; devuelve (status, JSON)."""
     datos = None if cuerpo is None else json.dumps(cuerpo).encode("utf-8")
     peticion = urllib.request.Request(GATEWAY + ruta, data=datos, method=metodo,
                                       headers={"X-Anotador-Id": anotador, "Content-Type": "application/json"})
@@ -36,6 +38,7 @@ def pedir(anotador, metodo, ruta, cuerpo=None):
 
 
 def main():
+    """A toma la tarea y manda latidos 150 s; B nunca la recibe; al final A la envía con éxito."""
     a, b = anotadores(2)
     proyecto = crear_proyecto("b52-renovacion")
     estado, datos = pedir(a, "POST", "/tareas/siguiente", {"proyecto_id": proyecto})
@@ -56,6 +59,7 @@ def main():
             print(f"t={time.monotonic() - inicio:5.1f}s latido 200 · registro_renovado="
                   f"{datos['sesion'].get('registro_renovado')} · otro anotador 204", flush=True)
 
+        # El registro debe haber extendido vence_en al menos dos veces en 150 s.
         assert renovaciones >= 2, f"vence_en se renovó solo {renovaciones} veces en {DURACION_S} s"
         print(f"RENOVACIONES_EN_REGISTRO={renovaciones} (escritura solo con menos de 60 s de plazo)")
         estado, datos = pedir(a, "POST", f"/tareas/{tarea}/enviar",

@@ -1,10 +1,16 @@
 
-"""Prueba de protección de propietario de borradores - B2.4."""
+"""Prueba de protección de propietario de borradores - B2.4.
+
+Comprueba directamente sobre Valkey (sin HTTP) que, si la tarea pasa a otro token y
+otro anotador, este no puede sobrescribir el borrador del primero.
+Imprime B2.4_PROPIETARIO_OK si todo pasa.
+"""
 
 import uuid
 
 from app import borradores, locks
 
+# Tarea y tokens únicos de la corrida.
 identificador = uuid.uuid4().hex
 tarea = f"prueba-propietario-{identificador}"
 token_a = f"token-a-{identificador}"
@@ -39,6 +45,7 @@ try:
     print("B2.4_PROPIETARIO_OK")
 
 finally:
+    # Limpieza: borra lock y borrador de prueba.
     locks.cliente.delete(
         f"lock:tarea:{tarea}",
         f"borrador:{tarea}",

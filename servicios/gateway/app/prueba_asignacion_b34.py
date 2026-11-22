@@ -1,5 +1,11 @@
 
-"""Pruebas B3.4: asignación y compensación."""
+"""Pruebas B3.4: asignación y compensación.
+
+Se ejecuta dentro del contenedor del gateway:
+    docker compose exec -T gateway python -m app.prueba_asignacion_b34
+No necesita los demás servicios: las llamadas internas se reemplazan con mocks.
+Imprime una línea OK por cada caso y una marca final si todo pasa.
+"""
 
 import asyncio
 from unittest.mock import AsyncMock, patch
@@ -12,6 +18,7 @@ from app.cliente_interno import ServicioNoDisponible
 
 
 def respuesta(codigo, datos=None):
+    """Construye una httpx.Response falsa con ese código y cuerpo JSON (para los mocks)."""
     return httpx.Response(
         codigo,
         json=datos,
@@ -23,6 +30,8 @@ def respuesta(codigo, datos=None):
 
 
 async def pruebas():
+    """Casos: sin tareas (204), asignación completa, fallo del lock con compensación y registro caído."""
+    # Identificadores y datos falsos que devuelven los mocks.
     anotador = str(uuid4())
     tarea_id = str(uuid4())
     proyecto_id = str(uuid4())

@@ -1,10 +1,17 @@
 
-"""Pruebas de sesiones activas en Valkey - B2.3."""
+"""Pruebas de sesiones activas en Valkey - B2.3.
+
+Llama directamente a app.sesiones (sin HTTP) y revisa las llaves en Valkey: el hash
+`sesion:{anotador}`, el sorted set `editando:{proyecto}`, el cierre con token correcto e
+incorrecto y la limpieza de anotadores inactivos. Imprime B2.3_VALKEY_OK si todo pasa.
+"""
 
 from app import sesiones
 
+# Conexión directa a Valkey para revisar las llaves.
 cliente = sesiones.cliente
 
+# Datos fijos de la prueba y las llaves que se van a revisar.
 anotador = "prueba-b23-anotador"
 proyecto = "prueba-b23-proyecto"
 tarea = "prueba-b23-tarea"
@@ -62,5 +69,6 @@ try:
     print("B2.3_VALKEY_OK")
 
 finally:
+    # Limpieza: borra la sesión y las entradas de prueba del conjunto.
     cliente.delete(llave_sesion)
     cliente.zrem(llave_editando, anotador, "prueba-b23-vencido")

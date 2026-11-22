@@ -1,5 +1,11 @@
 
-"""B3.8: salud agregada, fallos y consultas paralelas."""
+"""B3.8: salud agregada, fallos y consultas paralelas.
+
+Se ejecuta dentro del contenedor del gateway:
+    docker compose exec -T gateway python -m app.prueba_salud_b38
+No necesita los demás servicios: las llamadas internas se reemplazan con mocks.
+Imprime una línea OK por cada caso y una marca final si todo pasa.
+"""
 
 import asyncio
 import time
@@ -11,10 +17,14 @@ from app import main, salud
 
 
 async def pruebas():
+    """Simula las respuestas /salud de cada capa y los mensajes de Valkey y revisa el estado agregado."""
+    # Se guarda la función real para restaurarla al final.
     original = salud.consultar_salud
 
     async def ejecutar(escenario):
+        """Corre consultar_salud con todas las capas respondiendo según el escenario dado."""
         async def responder(request):
+            """Respuesta simulada de cada servicio (con 0.2 s de demora para medir el paralelismo)."""
             await asyncio.sleep(0.2)
 
             nombre = request.url.host
@@ -60,6 +70,7 @@ async def pruebas():
         ) as interno:
 
             async def salud_simulada():
+                """consultar_salud real usando el cliente HTTP simulado."""
                 return await original(cliente=interno)
 
             with patch.object(

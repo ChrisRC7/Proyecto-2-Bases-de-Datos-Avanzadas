@@ -1,10 +1,15 @@
 
-"""B2.6 - Conservacion de borradores ante un envio fallido."""
+"""B2.6 - Conservacion de borradores ante un envio fallido.
+
+Simula que el envío al registro falló (503) y comprueba que el borrador y la sesión
+siguen en Valkey para que el anotador pueda reintentar. Imprime B2.6_CONSERVACION_OK.
+"""
 
 import uuid
 
 from app import borradores, locks, sesiones
 
+# Datos únicos de la corrida y contenido del borrador.
 identificador = uuid.uuid4().hex
 tarea = f"prueba-b26-{identificador}"
 anotador = f"anotador-b26-{identificador}"
@@ -42,6 +47,7 @@ try:
     print("B2.6_CONSERVACION_OK")
 
 finally:
+    # Limpieza: borra lock, borrador y sesión de prueba.
     locks.cliente.delete(
         f"lock:tarea:{tarea}",
         f"borrador:{tarea}",

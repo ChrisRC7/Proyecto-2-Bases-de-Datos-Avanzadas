@@ -13,13 +13,16 @@ import socket
 
 import valkey
 
+# Nombre del stream, del grupo de consumidores y de este consumidor (hostname del contenedor).
 STREAM = "eventos:tareas"
 GRUPO = "historial"
 CONSUMIDOR = os.getenv("CONSUMIDOR", socket.gethostname())
+# Cuánto se recuerda un event_id ya recibido (7 días por defecto).
 VISTO_TTL_S = int(os.getenv("VISTO_TTL_S", str(7 * 24 * 3600)))
 # Micro-lotes que se pueden reprocesar: el stream se recorta hasta el primero de ellos.
 RETENER_MICRO_LOTES = int(os.getenv("RETENER_MICRO_LOTES", "2000"))
 
+# Conexión a la instancia de Valkey dedicada a la cola de eventos.
 cola = valkey.Valkey(
     host=os.getenv("COLA_HOST", "cola-eventos"),
     port=int(os.getenv("COLA_PUERTO", "6379")),
@@ -40,15 +43,18 @@ return false
 
 def encolar(eventos: list[dict]) -> tuple[int, int]:
     """Devuelve (aceptados, duplicados)."""
+    # Pipeline sin transacción: manda todos los scripts juntos y luego lee los resultados.
     tubo = cola.pipeline(transaction=False)
     for e in eventos:
         _encolar(keys=[f"visto:{e['event_id']}", STREAM], args=[json.dumps(e), VISTO_TTL_S], client=tubo)
     resultados = tubo.execute()
+    # El script devuelve el id del XADD si entró y False si el event_id ya se había visto.
     aceptados = sum(1 for r in resultados if r)
     return aceptados, len(eventos) - aceptados
 
 
 def crear_grupo() -> None:
+    """Crea el grupo de consumidores (y el stream si no existe); ignora si ya existe (BUSYGROUP)."""
     try:
         cola.xgroup_create(STREAM, GRUPO, id="0", mkstream=True)
     except valkey.ResponseError as exc:
@@ -63,6 +69,7 @@ def reclamar_pendientes() -> int:
         siguiente, reclamadas, *_ = cola.xautoclaim(STREAM, GRUPO, CONSUMIDOR, min_idle_time=0,
                                                     start_id=inicio, count=500)
         total += len(reclamadas)
+        # XAUTOCLAIM devuelve "0-0" cuando ya recorrió todo el PEL.
         if siguiente == "0-0":
             return total
         inicio = siguiente
@@ -76,10 +83,16 @@ def leer(desde: str, cantidad: int, bloquear_ms: int | None) -> list[tuple[str, 
 
 
 def rango(primero: str, ultimo: str) -> list[tuple[str, dict]]:
+    """XRANGE: entradas del stream entre dos ids (inclusive) como (id, evento)."""
     return [(i, json.loads(c["evento"])) for i, c in cola.xrange(STREAM, primero, ultimo)]
 
 
 def abrir_micro_lote(mlid: str, primero: str, ultimo: str, filas: int) -> None:
+    """Anota el micro-lote como "escribiendo" antes de escribir el Parquet.
+
+    Si el servicio cae a mitad de la escritura, al volver se encuentra en
+    `microlotes:abiertos` y se rehace con el mismo rango.
+    """
     tubo = cola.pipeline(transaction=True)
     tubo.hset(f"microlote:{mlid}", mapping={"primero": primero, "ultimo": ultimo, "filas": filas,
                                             "estado": "escribiendo"})
@@ -100,9 +113,11 @@ def confirmar_micro_lote(mlid: str, ids: list[str], archivos: list[dict], ts_ms:
 
 def recortar() -> None:
     """Deja en el stream solo lo necesario para reprocesar los últimos RETENER_MICRO_LOTES."""
+    # Micro-lotes que sobran (todos menos los últimos RETENER_MICRO_LOTES).
     viejos = cola.zrange("microlotes", 0, -RETENER_MICRO_LOTES - 1)
     if not viejos:
         return
+    # El más antiguo que se conserva: el stream se recorta hasta su primer id.
     limite = cola.zrange("microlotes", -RETENER_MICRO_LOTES, -RETENER_MICRO_LOTES)
     primero = cola.hget(f"microlote:{limite[0]}", "primero") if limite else None
     tubo = cola.pipeline(transaction=True)
@@ -114,6 +129,7 @@ def recortar() -> None:
 
 
 def micro_lote(mlid: str) -> dict | None:
+    """Datos de un micro-lote (con números y lista de archivos ya convertidos) o None si no existe."""
     datos = cola.hgetall(f"microlote:{mlid}")
     if not datos:
         return None
@@ -126,6 +142,7 @@ def micro_lote(mlid: str) -> dict | None:
 
 
 def ultimos_micro_lotes(n: int) -> list[dict]:
+    """Los n micro-lotes publicados más recientes, del más nuevo al más viejo."""
     return [m for m in (micro_lote(i) for i in cola.zrevrange("microlotes", 0, n - 1)) if m]
 
 

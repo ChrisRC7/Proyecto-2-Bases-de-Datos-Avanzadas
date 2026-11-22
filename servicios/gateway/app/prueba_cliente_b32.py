@@ -1,5 +1,11 @@
 
-"""Pruebas B3.2 - cliente HTTP interno."""
+"""Pruebas B3.2 - cliente HTTP interno.
+
+Se ejecuta dentro del contenedor del gateway:
+    docker compose exec -T gateway python -m app.prueba_cliente_b32
+No necesita los demás servicios: las llamadas internas se reemplazan con mocks.
+Imprime una línea OK por cada caso y una marca final si todo pasa.
+"""
 
 import asyncio
 
@@ -13,10 +19,12 @@ from app.cliente_interno import (
 
 
 async def pruebas():
+    """Usa httpx.MockTransport para simular respuestas y contar cuántas llamadas hizo `solicitar`."""
     # 1. GET: un fallo temporal seguido de éxito.
     llamadas = []
 
     def get_temporal(request):
+        """Primera llamada: 503; las siguientes: 200."""
         llamadas.append(request)
         if len(llamadas) == 1:
             return httpx.Response(503)
@@ -37,6 +45,7 @@ async def pruebas():
     llamadas = []
 
     def put_temporal(request):
+        """Primera llamada: 503; las siguientes: 200."""
         llamadas.append(request)
         if len(llamadas) == 1:
             return httpx.Response(503)
@@ -62,6 +71,7 @@ async def pruebas():
     llamadas = []
 
     def enviar_fallido(request):
+        """Siempre 503 (para comprobar que el POST no se repite)."""
         llamadas.append(request)
         return httpx.Response(503)
 
@@ -95,6 +105,7 @@ async def pruebas():
     llamadas = []
 
     def sin_conexion(request):
+        """Simula que el servicio no acepta conexiones."""
         llamadas.append(request)
         raise httpx.ConnectError("Sin conexión")
 
@@ -116,6 +127,7 @@ async def pruebas():
     llamadas = []
 
     def conflicto(request):
+        """Siempre 409 (error de negocio, no se reintenta)."""
         llamadas.append(request)
         return httpx.Response(409, json={"error": "conflicto"})
 
@@ -137,6 +149,7 @@ async def pruebas():
     llamadas = []
 
     def verificar_header(request):
+        """Guarda la petición para revisar el X-Request-Id enviado."""
         llamadas.append(request)
         return httpx.Response(200)
 

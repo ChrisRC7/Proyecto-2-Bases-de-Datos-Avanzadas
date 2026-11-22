@@ -20,6 +20,7 @@ def llamar(ruta: str, manejador):
     llamadas = []
 
     def transporte(request: httpx.Request) -> httpx.Response:
+        """Registra la petición que hizo el gateway y responde con el manejador del caso."""
         llamadas.append(request)
         return manejador(request)
 
@@ -30,6 +31,7 @@ def llamar(ruta: str, manejador):
 
 
 def main():
+    """Ejecuta los seis casos e imprime C4.9_PRUEBAS_OK si todos pasan."""
     # 1. 200: pasa la respuesta de la analítica tal cual.
     cuerpo = {"consulta": "q3", "conjunto": "grande", "parametros": {}, "filas": [{"modalidad": "lidar"}],
               "ms": 9490.0, "primera_ejecucion": False, "ejecutores": 1}
@@ -61,6 +63,7 @@ def main():
 
     # 5. La analítica no responde a tiempo: 503 y sin reintento.
     def lenta(req):
+        """Simula que la analítica no responde a tiempo."""
         raise httpx.ReadTimeout("sin respuesta", request=req)
 
     r, llamadas = llamar("/analitica/q5", lenta)

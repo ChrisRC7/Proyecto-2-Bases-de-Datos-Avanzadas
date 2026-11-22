@@ -15,6 +15,7 @@ from pathlib import Path
 from dataset.generar import SEMILLA, generar
 from dataset.mongo import conectar, crear_indices, insertar_por_lotes
 
+# Bitácora pública de regeneraciones (en evidence/) y su encabezado de tabla Markdown.
 REGISTRO = Path(__file__).resolve().parents[1] / "evidence" / "regeneraciones.md"
 ENCABEZADO = (
     "# Regeneraciones de tareas (A5.4)\n\n"
@@ -24,10 +25,12 @@ ENCABEZADO = (
 
 
 def por_estado(bd) -> dict:
+    """Cuenta las tareas por estado con una agregación $group."""
     return {d["_id"]: d["n"] for d in bd.tareas.aggregate([{"$group": {"_id": "$estado", "n": {"$sum": 1}}}])}
 
 
 def main() -> None:
+    """Reemplaza batches y tareas por los generados con la semilla y anota el cambio en la bitácora."""
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--motivo", required=True)
     ap.add_argument("--semilla", type=int, default=SEMILLA)
@@ -44,6 +47,7 @@ def main() -> None:
     crear_indices(bd)
     despues = por_estado(bd)
 
+    # Agrega una fila a evidence/regeneraciones.md (crea el archivo con encabezado si no existe).
     if not REGISTRO.exists():
         REGISTRO.write_text(ENCABEZADO, encoding="utf-8")
     fecha = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M")

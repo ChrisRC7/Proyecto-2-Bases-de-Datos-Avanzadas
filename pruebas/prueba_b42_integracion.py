@@ -1,5 +1,9 @@
 
-"""B4.2: prueba real de borradores, latidos y recuperacion."""
+"""B4.2: prueba real de borradores, latidos y recuperacion.
+
+Contra el gateway real: toma la tarea de un proyecto propio, guarda borradores y latidos cada
+2 s y luego recupera la sesión como si el usuario volviera a entrar.
+"""
 
 import os
 
@@ -9,6 +13,7 @@ from b42_borradores import guardar_periodicamente, recuperar
 from proyecto_prueba import crear_proyecto
 
 
+# Gateway (desde la red de Docker por defecto).
 GATEWAY = os.getenv("GATEWAY_URL", "http://gateway:8000")
 
 # Anotador del dataset (rol: anotador).
@@ -17,6 +22,7 @@ ANOTADOR = "adbafed0-b600-460c-bbdc-fd55304374b3"
 # Proyecto propio con una sola tarea (antes era un id creado a mano para B4.1).
 PROYECTO = crear_proyecto("b42", GATEWAY)  # una sola tarea: la primera asignación es esa
 
+# Contenido del borrador que se guarda y se espera recuperar.
 CONTENIDO = {
     "etiquetas": ["lidar#ciclista"],
     "origen": "prueba_b42",
@@ -25,6 +31,7 @@ CONTENIDO = {
 
 
 def main():
+    """Ejecuta asignar -> borradores -> recuperar y verifica el contenido."""
     with httpx.Client(base_url=GATEWAY, timeout=10) as cliente:
         headers = {"X-Anotador-Id": ANOTADOR}
 

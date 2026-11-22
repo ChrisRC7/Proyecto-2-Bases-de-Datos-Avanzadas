@@ -15,6 +15,7 @@ import httpx
 from pathlib import Path
 
 
+# URL del registro (este script corre dentro de la red interna) y archivo de manifiesto.
 REGISTRO_URL = os.getenv(
     "REGISTRO_URL", "http://registro:8001"
 )
@@ -23,11 +24,13 @@ MANIFIESTO = Path(__file__).resolve().parent / "casos_b41.json"
 
 
 def guardar_manifiesto(datos):
+    """Guarda en casos_b41.json qué proyecto y tareas creó este script."""
     MANIFIESTO.write_text(
         json.dumps(datos, indent=2),
         encoding="utf-8",
     )
 
+# Dirección de Valkey (reservada para una futura limpieza segura).
 VALKEY_URL = os.getenv(
     "VALKEY_URL", "redis://valkey:6379/0"
 )
@@ -43,6 +46,7 @@ def crear_casos(numero, cliente_id):
         )
 
     with httpx.Client(timeout=10) as http:
+        # 1. Crea el proyecto LiDAR de prueba.
         respuesta = http.post(
             f"{REGISTRO_URL}/proyectos",
             json={
@@ -68,6 +72,7 @@ def crear_casos(numero, cliente_id):
             "estado": "proyecto_creado",
         })
 
+        # 2. Crea un lote con `numero` tareas cuboide_3d.
         tareas = [
             {
                 "tipo_tarea": "cuboide_3d",
@@ -103,6 +108,7 @@ def crear_casos(numero, cliente_id):
         }
 
 def main():
+    """Sin --ejecutar solo muestra lo que haría; con --ejecutar crea los casos de prueba."""
     parser = argparse.ArgumentParser()
     parser.add_argument("--n", type=int, default=10)
     parser.add_argument("--cliente-id")

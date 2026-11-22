@@ -1,5 +1,12 @@
 
-"""Servicio gateway - API de entrada."""
+"""Servicio gateway - API de entrada.
+
+Único servicio expuesto al host (puerto 8000). Recibe las peticiones del simulador y las
+reparte entre los servicios internos: registro (MongoDB), sesión (Valkey), historial
+(lago Parquet) y analítica (Spark). Valida lo básico, propaga X-Request-Id, convierte los
+fallos de los servicios internos en 503 y publica en el historial los eventos que le
+devuelve el registro.
+"""
 
 from fastapi import Request,Header, Response
 
@@ -31,10 +38,12 @@ from pydantic import model_validator
 
 from app import revision
 
+# Aplicación FastAPI con el middleware de X-Request-Id y el formato de error común.
 app = crear_app(SERVICIO)
 
 
 class SolicitudSiguiente(BaseModel):
+    """Cuerpo de POST /tareas/siguiente: proyecto opcional para limitar la búsqueda."""
     proyecto_id: UUID | None = None
 
 
@@ -44,6 +53,7 @@ async def tareas_siguiente(
     cuerpo: SolicitudSiguiente,
     anotador_id: UUID = Header(alias="X-Anotador-Id"),
 ):
+    """Asigna al anotador la siguiente tarea disponible (o 204 si no hay ninguna)."""
     codigo, datos = await asignacion.siguiente(
         anotador_id=anotador_id,
         proyecto_id=cuerpo.proyecto_id,
@@ -66,12 +76,14 @@ async def tareas_siguiente(
 
 @app.on_event("startup")
 async def startup():
+    """Al arrancar: inicia el publicador de eventos y el proceso de limpiezas pendientes."""
     await eventos.iniciar_publicador()
     await limpiezas.iniciar()
 
 
 @app.on_event("shutdown")
 async def shutdown():
+    """Al apagar: detiene las tareas de fondo y cierra el cliente HTTP compartido."""
     await limpiezas.detener()
     await eventos.detener_publicador()
     await cerrar_cliente()
@@ -80,6 +92,7 @@ async def shutdown():
 
 @app.exception_handler(ServicioNoDisponible)
 async def servicio_no_disponible(_request: Request, exc: ServicioNoDisponible):
+    """Si un servicio interno no responde (o responde 5xx), el cliente recibe 503 con su nombre."""
     return error(
         503,
         "servicio_no_disponible",
@@ -92,6 +105,7 @@ async def servicio_no_disponible(_request: Request, exc: ServicioNoDisponible):
 
 @app.get("/salud")
 async def salud():
+    """GET /salud: estado del gateway y de todas las capas internas."""
     return await salud_capas.consultar_salud()
 
 
@@ -111,6 +125,7 @@ async def renovar_registro(tarea_id, token, anotador_id, request_id) -> bool | N
         )
     except ServicioNoDisponible:
         return None
+    # 200: el registro respondió; 404/409: la asignación ya no es de este token.
     if respuesta.status_code == 200:
         return bool(respuesta.json().get("renovado"))
     if respuesta.status_code in (404, 409):
@@ -119,10 +134,12 @@ async def renovar_registro(tarea_id, token, anotador_id, request_id) -> bool | N
 
 
 class AsignacionVencida(Exception):
+    """El registro ya no tiene la tarea abierta con ese token (la asignación venció)."""
     pass
 
 
 class SolicitudBorrador(BaseModel):
+    """Cuerpo de PUT /tareas/{id}/borrador: token de la asignación y contenido libre."""
     token: UUID
     contenido: dict = Field(...)
 
@@ -134,6 +151,7 @@ async def guardar_borrador(
     cuerpo: SolicitudBorrador,
     anotador_id: UUID = Header(alias="X-Anotador-Id"),
 ):
+    """Guarda el borrador en sesión (renueva el lock) y extiende también el plazo en el registro."""
     respuesta = await solicitar(
         "sesion",
         "PUT",
@@ -148,6 +166,7 @@ async def guardar_borrador(
 
     datos = respuesta.json()
 
+    # Error de sesión (409 lock perdido, 422...): se devuelve tal cual al cliente.
     if respuesta.status_code != 200:
         return error(
             respuesta.status_code,
@@ -167,6 +186,7 @@ async def guardar_borrador(
 
 
 class SolicitudEnviar(BaseModel):
+    """Cuerpo de POST /tareas/{id}/enviar: token y anotación final."""
     token: UUID
     anotacion: dict
 
@@ -178,6 +198,7 @@ async def enviar_anotacion(
     cuerpo: SolicitudEnviar,
     anotador_id: UUID = Header(alias="X-Anotador-Id"),
 ):
+    """Envía la anotación final al registro (ver app/envio.py)."""
     codigo, datos = await envio.enviar(
         tarea_id=tarea_id,
         anotador_id=anotador_id,
@@ -196,6 +217,7 @@ async def enviar_anotacion(
     return datos
 
 class SolicitudLiberar(BaseModel):
+    """Cuerpo de POST /tareas/{id}/liberar: token de la asignación."""
     token: UUID
 
 
@@ -206,6 +228,7 @@ async def liberar_tarea(
     cuerpo: SolicitudLiberar,
     anotador_id: UUID = Header(alias="X-Anotador-Id"),
 ):
+    """Devuelve la tarea a la cola sin anotarla (ver app/liberacion.py)."""
     codigo, datos = await liberacion.liberar(
         tarea_id=tarea_id,
         anotador_id=anotador_id,
@@ -228,6 +251,7 @@ async def recuperar_sesion(
     request: Request,
     anotador_id: UUID = Header(alias="X-Anotador-Id"),
 ):
+    """Devuelve la tarea en curso del anotador, su token y su borrador (si existe)."""
     respuesta = await solicitar(
         "sesion",
         "POST",
@@ -245,6 +269,7 @@ async def recuperar_sesion(
             datos.get("detalle"),
         )
 
+    # Se traduce el formato interno de sesión al formato público del gateway.
     sesion = datos["sesion"]
 
     return {
@@ -268,6 +293,7 @@ def _reenviar(respuesta):
 
 @app.post("/proyectos", status_code=201)
 async def crear_proyecto(request: Request, cuerpo: dict):
+    """Crea un proyecto (reenvío directo a registro)."""
     # La validación completa (cliente, taxonomía, sla_horas) la hace registro.
     respuesta = await solicitar(
         "registro", "POST", "/proyectos",
@@ -278,6 +304,7 @@ async def crear_proyecto(request: Request, cuerpo: dict):
 
 @app.post("/proyectos/{proyecto_id}/lotes", status_code=201)
 async def crear_lote(request: Request, proyecto_id: UUID, cuerpo: dict):
+    """Carga un lote de tareas en el proyecto (reenvío directo a registro)."""
     respuesta = await solicitar(
         "registro", "POST", f"/proyectos/{proyecto_id}/lotes",
         json=cuerpo, request_id=request.state.request_id,
@@ -292,6 +319,7 @@ async def exportar(
     cursor: UUID | None = None,
     limite: int = 100,
 ):
+    """Exporta las tareas aprobadas del proyecto, paginadas con cursor."""
     params = {"limite": limite}
     if cursor is not None:
         params["cursor"] = str(cursor)
@@ -306,6 +334,7 @@ async def exportar(
 
 # --- A4.2: revisión (empezar, aprobar, rechazar) ---
 
+# Motivos de rechazo aceptados (los mismos del registro).
 MOTIVOS = Literal[
     "ETIQUETA_INCORRECTA", "GEOMETRIA_IMPRECISA", "OBJETO_OMITIDO",
     "INSTRUCCION_NO_SEGUIDA", "OTRO",
@@ -313,11 +342,13 @@ MOTIVOS = Literal[
 
 
 class SolicitudRevision(BaseModel):
+    """Cuerpo de POST /tareas/{id}/revision: acción del revisor y motivo si rechaza."""
     accion: Literal["empezar", "aprobar", "rechazar"]
     motivo: MOTIVOS | None = None
 
     @model_validator(mode="after")
     def motivo_en_rechazo(self):
+        """Rechazar sin motivo es un error de validación (422)."""
         if self.accion == "rechazar" and self.motivo is None:
             raise ValueError("'rechazar' requiere un motivo")
         return self
@@ -330,6 +361,7 @@ async def revisar_tarea(
     cuerpo: SolicitudRevision,
     revisor_id: UUID = Header(alias="X-Anotador-Id"),
 ):
+    """Empieza, aprueba o rechaza la revisión de una tarea (ver app/revision.py)."""
     codigo, datos = await revision.revisar(
         tarea_id=tarea_id,
         revisor_id=revisor_id,
@@ -362,6 +394,7 @@ async def analitica(
     consulta: Literal["q1", "q2", "q3", "q4", "q5"],
     conjunto: Literal["principal", "grande", "prueba"] = "principal",
 ):
+    """Ejecuta la consulta analítica q1..q5 sobre el conjunto indicado."""
     respuesta = await solicitar(
         "analitica", "GET", f"/q/{consulta[1]}",
         params={"conjunto": conjunto}, request_id=request.state.request_id,
@@ -374,6 +407,7 @@ async def analitica(
 # --- B4.2: latido de sesión desde el simulador ---
 
 class SolicitudLatido(BaseModel):
+    """Cuerpo de POST /sesiones/latido: token de la asignación."""
     token: UUID
 
 
@@ -383,6 +417,7 @@ async def latido_sesion(
     cuerpo: SolicitudLatido,
     anotador_id: UUID = Header(alias="X-Anotador-Id"),
 ):
+    """Latido del anotador: renueva el lock en sesión y el plazo de la asignación en registro."""
     respuesta = await solicitar(
         "sesion",
         "POST",

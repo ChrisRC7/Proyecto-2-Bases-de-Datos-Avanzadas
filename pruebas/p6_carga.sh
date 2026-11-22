@@ -10,6 +10,7 @@
 set -u
 cd "$(dirname "$0")/.."
 
+# Niveles de usuarios, corridas por nivel y carpeta de evidencia.
 niveles=${*:-10 40 100}
 corridas=${CORRIDAS:-3}
 dir=evidence/P6_${ETIQUETA:-carga}_$(date +%Y%m%d-%H%M)
@@ -36,6 +37,7 @@ muestrear() {  # docker stats cada ~2 s hasta que aparezca $1.fin
   echo "Máquina: $(grep -m1 'model name' /proc/cpuinfo | cut -d: -f2 | xargs) · $(nproc) CPU y $(free -g | awk '/Mem:/ {print $2}') GiB visibles en WSL 2"
 } | tee "$dir/maquina.txt"
 
+# Para cada nivel y corrida: recarga el dataset, limpia Valkey, muestrea docker stats y corre el simulador.
 for n in $niveles; do
   for c in $(seq 1 "$corridas"); do
     base=$dir/${n}u_c$c
@@ -52,4 +54,5 @@ for n in $niveles; do
   done
 done
 
+# Resumen final de todas las corridas.
 python3 pruebas/p6_resumen.py "$dir" | tee "$dir/resumen.txt"

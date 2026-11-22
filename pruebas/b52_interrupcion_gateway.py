@@ -1,5 +1,12 @@
 
-"""B5.2: interrupcion y recuperacion de borradores por Gateway."""
+"""B5.2: interrupcion y recuperacion de borradores por Gateway.
+
+Toma una tarea, guarda un borrador y deja de trabajar sin enviar ni liberar (como si el
+anotador cerrara el programa). Luego recupera la sesión y comprueba que vuelve el mismo
+borrador. Al final libera la tarea.
+
+    python3 pruebas/b52_interrupcion_gateway.py
+"""
 
 import json
 import time
@@ -7,12 +14,14 @@ import urllib.error
 import urllib.request
 from proyecto_prueba import crear_proyecto
 
+# Gateway en el host, anotador fijo y proyecto propio de una sola tarea.
 GATEWAY = "http://localhost:8000"
 ANOTADOR = "adbafed0-b600-460c-bbdc-fd55304374b3"
 PROYECTO = crear_proyecto("b52-interrupcion")  # una sola tarea: la primera asignación es esa
 
 
 def solicitar(metodo, ruta, cuerpo=None):
+    """Petición al gateway como ANOTADOR; devuelve (status, JSON) también en errores HTTP."""
     datos = None if cuerpo is None else json.dumps(cuerpo).encode("utf-8")
     peticion = urllib.request.Request(
         GATEWAY + ruta,
@@ -33,6 +42,7 @@ def solicitar(metodo, ruta, cuerpo=None):
 
 
 def main():
+    """Asigna, guarda borrador, "interrumpe", recupera y verifica; libera la tarea al final."""
     token = None
     tarea = None
 

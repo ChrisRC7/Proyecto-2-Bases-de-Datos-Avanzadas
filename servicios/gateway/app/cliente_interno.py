@@ -1,5 +1,11 @@
 
-"""Cliente HTTP interno del gateway - B3.2."""
+"""Cliente HTTP interno del gateway - B3.2.
+
+Función `solicitar` para hablar con los servicios internos: arma la URL, propaga el
+X-Request-Id, aplica timeout y reintenta una sola vez solo las operaciones seguras de
+repetir (GET y PUT de borrador). Los errores de red y los 5xx se convierten en
+ServicioNoDisponible, que el gateway responde como 503.
+"""
 
 import asyncio
 import os
@@ -8,6 +14,7 @@ import re
 import httpx
 
 
+# URL base de cada servicio interno (nombres de la red de docker-compose).
 SERVICIOS = {
     "registro": os.getenv("REGISTRO_URL", "http://registro:8001"),
     "sesion": os.getenv("SESION_URL", "http://sesion:8002"),
@@ -15,10 +22,12 @@ SERVICIOS = {
     "analitica": os.getenv("ANALITICA_URL", "http://analitica:8004"),
 }
 
+# Timeout por intento, intentos máximos (1 + 1 reintento) y pausa entre intentos.
 TIMEOUT_SEGUNDOS = 1.0
 MAX_INTENTOS = 2
 ESPERA_REINTENTO = 0.1
 
+# Códigos 5xx que pueden ser pasajeros y justifican reintentar.
 ERRORES_TEMPORALES = {502, 503, 504}
 
 # Un solo cliente para todo el gateway. Crear un httpx.AsyncClient cuesta CPU (arma el contexto TLS)
@@ -30,6 +39,7 @@ _compartido: httpx.AsyncClient | None = None
 
 
 def cliente_compartido() -> httpx.AsyncClient:
+    """Devuelve el cliente HTTP compartido, creándolo si no existe o si ya se cerró."""
     global _compartido
     if _compartido is None or _compartido.is_closed:
         _compartido = httpx.AsyncClient(
@@ -43,6 +53,7 @@ def cliente_compartido() -> httpx.AsyncClient:
 
 
 async def cerrar_cliente():
+    """Cierra el cliente compartido (se llama al apagar el gateway)."""
     global _compartido
     if _compartido is not None:
         await _compartido.aclose()
@@ -53,6 +64,7 @@ class ServicioNoDisponible(Exception):
     """Fallo de comunicación con un servicio interno."""
 
     def __init__(self, servicio: str, detalle: str):
+        """Guarda qué servicio falló y una descripción corta del problema."""
         self.servicio = servicio
         self.detalle = detalle
         super().__init__(f"{servicio}: {detalle}")
@@ -60,6 +72,11 @@ class ServicioNoDisponible(Exception):
 
 
 def permite_reintento(metodo: str, ruta: str) -> bool:
+    """True si repetir la petición no tiene efectos dobles (idempotente).
+
+    GET siempre; PUT solo para borradores (guardar dos veces lo mismo da igual). Los POST
+    (asignar, enviar, transiciones) nunca se reintentan.
+    """
     metodo = metodo.upper()
 
     if metodo == "GET":
@@ -101,6 +118,7 @@ async def solicitar(
     tarda segundos y repetirla después de un timeout duplicaría el trabajo en el clúster.
     """
 
+    # Validaciones defensivas: servicio conocido y ruta relativa (evita armar URLs a otro host).
     if servicio not in SERVICIOS:
         raise ValueError(f"Servicio interno desconocido: {servicio}")
 
@@ -117,6 +135,7 @@ async def solicitar(
         headers["X-Request-Id"] = request_id
 
     async def ejecutar(http: httpx.AsyncClient) -> httpx.Response:
+        """Hace hasta `intentos` llamadas; devuelve la primera respuesta < 500."""
         for intento in range(intentos):
             try:
                 respuesta = await http.request(
@@ -128,8 +147,11 @@ async def solicitar(
                     timeout=timeout,
                 )
 
+                # 2xx/4xx: respuesta válida del servicio; la ruta decide qué hacer.
                 if respuesta.status_code < 500:
                     return respuesta
+
+                # 5xx no temporal o último intento: se da por caído.
 
                 if (
                     respuesta.status_code not in ERRORES_TEMPORALES
@@ -140,6 +162,7 @@ async def solicitar(
                         f"HTTP {respuesta.status_code} del servicio interno",
                     )
 
+            # Error de red (conexión rechazada, timeout...): se reintenta si quedan intentos.
             except httpx.TransportError as exc:
                 if intento == intentos - 1:
                     raise ServicioNoDisponible(
@@ -151,4 +174,5 @@ async def solicitar(
 
         raise ServicioNoDisponible(servicio, "Intentos agotados")
 
+    # Las pruebas pueden pasar su propio cliente; si no, se usa el compartido.
     return await ejecutar(cliente or cliente_compartido())

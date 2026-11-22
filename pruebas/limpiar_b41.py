@@ -13,6 +13,7 @@ from uuid import UUID
 from app.locks import cliente
 
 
+# Proyecto de B4.1 y archivos que describen las tareas autorizadas para limpiar.
 PROYECTO_ESPERADO = "d2347c44-16a6-43cf-ad47-1c1e435b4b09"
 
 CARPETA = Path("/srv/pruebas")
@@ -21,6 +22,10 @@ ARCHIVO_TAREAS = CARPETA / "tareas_b41.json"
 
 
 def cargar_ids():
+    """Lee y valida el manifiesto y la lista de tareas; devuelve los 10 ids de tarea.
+
+    Lanza ValueError si algo no coincide, para no borrar llaves de otras tareas.
+    """
     manifiesto = json.loads(
         MANIFIESTO.read_text(encoding="utf-8-sig")
     )
@@ -63,6 +68,7 @@ def sesiones_relacionadas(tareas):
 
 
 def main():
+    """Muestra (o con --ejecutar borra) los locks y borradores de las tareas de B4.1."""
     parser = argparse.ArgumentParser()
     parser.add_argument("--ejecutar", action="store_true")
     args = parser.parse_args()
@@ -80,6 +86,7 @@ def main():
         print("Revisar esas sesiones antes de continuar.")
         return
 
+    # Llaves de Valkey que se pueden borrar: lock y borrador de cada tarea autorizada.
     llaves = []
 
     for tarea_id in tareas:

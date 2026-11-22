@@ -11,9 +11,10 @@
 set -u
 cd "$(dirname "$0")/.."
 
+# Prefijo de la evidencia en el host y dentro de los contenedores.
 base=evidence/P4_historial_$(date +%Y%m%d-%H%M)
 prefijo=/srv/evidence/${base#evidence/}
-fase() {
+fase() {  # corre una fase de pruebas/p4_historial.py en el contenedor dataset (lago en solo lectura)
   docker compose --profile datos run --rm -T -v ./pruebas:/srv/pruebas -v ./datalake:/datalake:ro dataset \
     python /srv/pruebas/p4_historial.py "$@" --prefijo "$prefijo" 2>&1 | grep -v '^ Container'
 }
@@ -24,7 +25,7 @@ sano() {  # espera a que el contenedor del servicio esté healthy
   done
   return 1
 }
-spark_listo() {
+spark_listo() {  # espera hasta 180 s a que la analítica tenga su SparkSession operativa
   for _ in $(seq 1 90); do
     docker compose exec -T analitica python3 -c "import json,urllib.request,sys; sys.exit(json.load(urllib.request.urlopen('http://localhost:8004/salud', timeout=3))['estado'] != 'operativo')" 2>/dev/null && return 0
     sleep 2
@@ -52,13 +53,14 @@ spark_listo() {
   echo; echo "## 3. Spark leyendo en bucle mientras el historial escribe; reprocesar un micro-lote"
   docker compose run --rm --no-deps -T -v ./pruebas:/srv/pruebas analitica \
     python3 /srv/pruebas/p4_lector.py --segundos 110 2>/dev/null > "${base}_lector.csv" &
-  lector=$!
+  lector=$!  # PID del lector en segundo plano
   sleep 25  # vueltas de referencia antes de escribir
   echo "inicio de escritura: $(date +%s.%N | cut -c1-14)"
   fase carga --eventos 20000 --pausa 0.05
   echo "fin de escritura: $(date +%s.%N | cut -c1-14)"
   fase reprocesar
   wait "$lector"
+  # Resume el CSV del lector: vueltas, errores, rango de filas y si alguna vez bajó la cuenta.
   awk -F, 'NR > 1 { n++; if ($7 != "") e++; else { if (min == "" || $3 < min) min = $3; if ($3 > max) max = $3;
                     if (prev != "" && $3 < prev) baja++; prev = $3; ms += $6 } }
            END { printf "lector: %d vueltas, %d con error, filas de %d a %d, %d veces bajó la cuenta, %.0f ms por vuelta\n",

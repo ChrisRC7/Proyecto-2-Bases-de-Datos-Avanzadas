@@ -21,6 +21,7 @@ from collections import defaultdict
 
 import httpx
 
+# Archivo con los ids de anotadores/revisores y motivos de rechazo posibles.
 IDS = os.getenv("IDS_JSON", "/srv/ids/ids.json")
 MOTIVOS = ["ETIQUETA_INCORRECTA", "GEOMETRIA_IMPRECISA", "OBJETO_OMITIDO", "INSTRUCCION_NO_SEGUIDA", "OTRO"]
 
@@ -29,11 +30,13 @@ class Registro:
     """Junta las mediciones de todos los hilos."""
 
     def __init__(self, inicio_medicion: float):
+        """`inicio_medicion`: instante (epoch) en que termina el calentamiento."""
         self.inicio_medicion = inicio_medicion
         self.filas: list[dict] = []
         self.candado = threading.Lock()
 
     def anotar(self, usuario: str, rol: str, endpoint: str, status: int, ms: float):
+        """Agrega una medición (protegida con candado porque escriben varios hilos)."""
         ahora = time.time()
         fila = {"ts": round(ahora, 3), "fase": "medicion" if ahora >= self.inicio_medicion else "calentamiento",
                 "usuario": usuario, "rol": rol, "endpoint": endpoint, "status": status, "ms": round(ms, 2)}
@@ -43,6 +46,10 @@ class Registro:
 
 def peticion(cliente: httpx.Client, reg: Registro, usuario: str, rol: str, metodo: str, ruta: str,
              endpoint: str, cuerpo: dict | None = None):
+    """Hace una petición al gateway como `usuario`, mide su duración y la anota en `reg`.
+
+    Devuelve la respuesta, o None si no hubo respuesta (timeout o error de conexión).
+    """
     t0 = time.perf_counter()
     try:
         r = cliente.request(metodo, ruta, json=cuerpo, headers={"X-Anotador-Id": usuario})
@@ -54,6 +61,7 @@ def peticion(cliente: httpx.Client, reg: Registro, usuario: str, rol: str, metod
 
 
 def geometria(rng: random.Random, tipo: str) -> dict:
+    """Geometría aleatoria pero válida para el tipo de tarea (span, bbox, polígono, video o cuboide)."""
     if tipo == "span":
         inicio = rng.randint(0, 500)
         return {"tipo": "span", "inicio": inicio, "fin": inicio + rng.randint(1, 40)}
@@ -72,6 +80,7 @@ def geometria(rng: random.Random, tipo: str) -> dict:
 def anotar(cliente, reg, usuario, tarea, token, contenido, segundos, borradores=False):
     """Simula la anotacion y, opcionalmente, guarda borradores en otro hilo."""
 
+    # Sin borradores: solo "piensa" el tiempo indicado.
     if not borradores:
         time.sleep(segundos)
         return True
@@ -81,12 +90,14 @@ def anotar(cliente, reg, usuario, tarea, token, contenido, segundos, borradores=
     resultado = {}
 
     def enviar(metodo, ruta, endpoint, cuerpo):
+        """Usa `peticion` para que los borradores y latidos también queden medidos."""
         return peticion(
             cliente, reg, usuario, "anotador",
             metodo, ruta, endpoint, cuerpo
         )
 
     def trabajo_borradores():
+        """Hilo secundario: guarda borrador + latido cada 2 s mientras dura la anotación."""
         resultado.update(
             guardar_periodicamente(
                 cliente=cliente,
@@ -110,6 +121,7 @@ def anotar(cliente, reg, usuario, tarea, token, contenido, segundos, borradores=
     time.sleep(segundos)
     hilo.join()
 
+    # Si un borrador o latido falló, la tarea ya no es de este anotador: no se envía.
     if resultado.get("estado") != "completado":
         print(
             f"B4.2 | No se enviara tarea {tarea['tarea_id']}: {resultado}",
@@ -122,6 +134,10 @@ def anotar(cliente, reg, usuario, tarea, token, contenido, segundos, borradores=
 
 
 def anotador(args, url: str, usuario: str, reg: Registro, fin: float, enviadas: queue.Queue, semilla: int):
+    """Hilo de un anotador: pide tarea, la anota y la envía, en bucle hasta `fin`.
+
+    Cada tarea enviada con éxito se pone en la cola `enviadas` para los revisores.
+    """
     rng = random.Random(semilla)
     with httpx.Client(base_url=url, timeout=args.timeout) as cliente:
         while time.time() < fin:
@@ -131,6 +147,7 @@ def anotador(args, url: str, usuario: str, reg: Registro, fin: float, enviadas: 
                 time.sleep(1)  # 204 sin tareas, 503 o sin respuesta: espera y vuelve a pedir
                 continue
 
+            # Arma una anotación válida con una etiqueta de la taxonomía del proyecto.
             datos = r.json()
             tarea, token = datos["tarea"], datos["token"]
 
@@ -157,6 +174,7 @@ def anotador(args, url: str, usuario: str, reg: Registro, fin: float, enviadas: 
             if not completada:
                 continue
 
+            # Envía la anotación final; si se acepta, queda disponible para revisión.
             cuerpo = {
                 "token": token,
                 "anotacion": anotacion,
@@ -169,6 +187,7 @@ def anotador(args, url: str, usuario: str, reg: Registro, fin: float, enviadas: 
 
 
 def revisor(args, url: str, usuario: str, reg: Registro, fin: float, enviadas: queue.Queue, semilla: int):
+    """Hilo de un revisor: toma tareas enviadas, empieza la revisión y aprueba o rechaza."""
     rng = random.Random(semilla)
     with httpx.Client(base_url=url, timeout=args.timeout) as cliente:
         while time.time() < fin:
@@ -181,6 +200,7 @@ def revisor(args, url: str, usuario: str, reg: Registro, fin: float, enviadas: q
                          {"accion": "empezar"})
             if r is None or r.status_code != 200:
                 continue
+            # Tiempo de revisión y decisión (rechaza con probabilidad args.rechazo).
             time.sleep(rng.uniform(args.revisar_min, args.revisar_max))
             if rng.random() < args.rechazo:
                 cuerpo = {"accion": "rechazar", "motivo": rng.choice(MOTIVOS)}
@@ -190,11 +210,13 @@ def revisor(args, url: str, usuario: str, reg: Registro, fin: float, enviadas: q
 
 
 def percentil(valores: list[float], p: float) -> float:
+    """Percentil p (0-100) por el método de rango más cercano."""
     orden = sorted(valores)
     return orden[min(len(orden) - 1, max(0, round(p / 100 * len(orden) + 0.5) - 1))]  # nearest rank
 
 
 def resumen(filas: list[dict], segundos: float) -> list[str]:
+    """Tabla de texto con n, p50/p95/p99 y conteo de códigos por endpoint (solo fase de medición)."""
     medidas = [f for f in filas if f["fase"] == "medicion"]
     por_endpoint = defaultdict(list)
     for f in medidas:
@@ -213,6 +235,7 @@ def resumen(filas: list[dict], segundos: float) -> list[str]:
 
 
 def main() -> None:
+    """Lee los argumentos, lanza los hilos de usuarios, espera a que terminen y reporta."""
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--url", default=os.getenv("GATEWAY_URL", "http://gateway:8000"))
     ap.add_argument("--usuarios", type=int, default=10, help="total de usuarios virtuales (10 %% revisores)")
@@ -230,6 +253,7 @@ def main() -> None:
     ap.add_argument("--csv", help="archivo con una fila por petición")
     args = ap.parse_args()
 
+    # Elige los anotadores y revisores (10 % de los usuarios) de ids.json.
     ids = json.load(open(IDS))
     n_revisores = max(1, round(args.usuarios * 0.1))
     n_anotadores = args.usuarios - n_revisores
@@ -238,10 +262,12 @@ def main() -> None:
     if len(anotadores) < n_anotadores or len(revisores) < n_revisores:
         raise SystemExit(f"ids.json no tiene suficientes anotadores/revisores para {args.usuarios} usuarios")
 
+    # Tiempos: calentamiento (no se mide) y luego `duracion` segundos medidos.
     inicio = time.time()
     reg = Registro(inicio + args.calentamiento)
     fin = inicio + args.calentamiento + args.duracion
     enviadas: queue.Queue = queue.Queue()
+    # Un hilo por usuario virtual, cada uno con su propia semilla.
     hilos = [threading.Thread(target=anotador, args=(args, args.url, u, reg, fin, enviadas, args.semilla + i))
              for i, u in enumerate(anotadores)]
     hilos += [threading.Thread(target=revisor, args=(args, args.url, u, reg, fin, enviadas, args.semilla + 1000 + i))
@@ -253,6 +279,7 @@ def main() -> None:
     for h in hilos:
         h.join()
 
+    # Guarda las mediciones crudas (opcional) e imprime el resumen.
     if args.csv:
         with open(args.csv, "w", newline="") as f:
             w = csv.DictWriter(f, fieldnames=["ts", "fase", "usuario", "rol", "endpoint", "status", "ms"])

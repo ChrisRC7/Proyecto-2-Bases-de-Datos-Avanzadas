@@ -1,5 +1,12 @@
 
-"""B5.2: vencimiento real del lock y exclusividad por Gateway."""
+"""B5.2: vencimiento real del lock y exclusividad por Gateway.
+
+A toma la única tarea de un proyecto y deja de mandar latidos. Mientras la asignación está
+vigente, B recibe 204; cuando vence (120 s), B la recibe con un token nuevo, A ya no puede
+usar su token viejo y B sí puede trabajar. Tarda unos 2 min.
+
+    python3 pruebas/b52_vencimiento_gateway.py
+"""
 
 import json
 import time
@@ -8,6 +15,7 @@ import urllib.request
 from datetime import datetime, timezone
 from proyecto_prueba import crear_proyecto
 
+# Gateway en el host, proyecto propio de una sola tarea y dos anotadores fijos (A y B).
 GATEWAY = "http://localhost:8000"
 PROYECTO = crear_proyecto("b52-vencimiento")  # una sola tarea: la primera asignación es esa
 TAREA = None  # la única tarea del proyecto, se conoce al asignarla a A
@@ -17,6 +25,7 @@ B = "a5497863-210f-4de3-853d-82cbe0b89bcb"
 
 
 def pedir(anotador, metodo, ruta, cuerpo=None):
+    """Petición al gateway como `anotador`; devuelve (status, JSON)."""
     datos = None if cuerpo is None else json.dumps(cuerpo).encode("utf-8")
     peticion = urllib.request.Request(
         GATEWAY + ruta,
@@ -37,6 +46,7 @@ def pedir(anotador, metodo, ruta, cuerpo=None):
 
 
 def liberar(anotador, tarea, token, nombre):
+    """Intenta liberar la tarea (limpieza) e imprime el resultado."""
     if not token:
         return
     try:
@@ -52,6 +62,7 @@ def liberar(anotador, tarea, token, nombre):
 
 
 def main():
+    """Ejecuta el caso de vencimiento completo e imprime el resultado de cada paso."""
     token_a = None
     token_b = None
 

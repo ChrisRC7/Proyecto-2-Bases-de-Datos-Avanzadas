@@ -15,6 +15,7 @@ import urllib.error
 import urllib.request
 import uuid
 
+# URL de cada modo y lugares donde buscar ids.json.
 URLS = {
     "registro": os.getenv("REGISTRO_URL", "http://registro:8001"),
     "gateway": os.getenv("GATEWAY_URL", "http://gateway:8000"),
@@ -22,6 +23,7 @@ URLS = {
 IDS = [os.getenv("IDS_JSON", ""), "/srv/ids/ids.json", "/srv/dataset/salida/ids.json"]
 URL = URLS["registro"]
 ANOTADOR = None  # en modo gateway va en el header X-Anotador-Id
+# Una geometría válida fija por tipo de tarea (la sonda no necesita variedad).
 GEOMETRIAS = {
     "span": {"tipo": "span", "inicio": 3, "fin": 12},
     "bbox": {"tipo": "bbox", "x": 10, "y": 20, "w": 100, "h": 80},
@@ -32,6 +34,7 @@ GEOMETRIAS = {
 
 
 def http(metodo: str, ruta: str, cuerpo=None):
+    """Petición JSON a URL+ruta; devuelve (status, cuerpo). status 0 si no hubo respuesta."""
     cabeceras = {"Content-Type": "application/json"}
     if ANOTADOR:
         cabeceras["X-Anotador-Id"] = ANOTADOR
@@ -61,6 +64,7 @@ def codigo_error(cuerpo) -> str:
 
 
 def main() -> None:
+    """Bucle de asignar + enviar durante --duracion segundos, anotando cada petición en el CSV."""
     global URL, ANOTADOR
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--modo", choices=["gateway", "registro"], default="gateway")
@@ -69,6 +73,7 @@ def main() -> None:
     ap.add_argument("--csv", required=True)
     args = ap.parse_args()
 
+    # La sonda trabaja como el primer anotador del dataset.
     ids = json.load(open(next(p for p in IDS if p and os.path.exists(p))))
     anotador = next(a["id"] for a in ids["anotadores"] if a["rol"] == "anotador")
     URL = URLS[args.modo]
@@ -83,6 +88,7 @@ def main() -> None:
         w.writeheader()
 
         def anotar(op, tarea_id, version, status, cuerpo, t0):
+            """Escribe una fila en el CSV y avisa por pantalla solo cuando cambia el estado (ok/error)."""
             nonlocal ultimo
             ts = time.time()
             error = codigo_error(cuerpo) if status not in (200, 204) else ""
@@ -95,6 +101,7 @@ def main() -> None:
                 ultimo = estado
 
         while time.time() < fin:
+            # 1. Asignación (por el gateway o directo al registro).
             t0 = time.time()
             if args.modo == "gateway":
                 s, d = http("POST", "/tareas/siguiente", {})
@@ -104,6 +111,7 @@ def main() -> None:
                 s, d = http("POST", "/tareas/asignar", {"anotador_id": anotador, "token": token})
             tarea = d["tarea"] if s == 200 else None
             anotar("asignar", tarea and tarea["tarea_id"], tarea and tarea["version"], s, d, t0)
+            # 2. Si hubo tarea, se envía su anotación.
             if tarea:
                 anotacion = {"etiquetas": [etiquetas[tarea["proyecto_id"]]],
                              "geometria": GEOMETRIAS[tarea["tipo_tarea"]]}

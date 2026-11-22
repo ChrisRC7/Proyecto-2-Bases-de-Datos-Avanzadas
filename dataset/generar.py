@@ -11,6 +11,7 @@ import random
 import uuid
 from datetime import datetime, timedelta, timezone
 
+# Parámetros del volumen generado y fecha base de los datos.
 SEMILLA = 2026
 CLIENTES = 60
 EQUIPOS = 30
@@ -23,6 +24,7 @@ BASE = datetime(2026, 10, 1, tzinfo=timezone.utc)
 MODALIDADES_ACTIVOS = ["texto"] * 36 + ["imagen"] * 36 + ["video"] * 24 + ["lidar"] * 24
 MODALIDADES_CERRADOS = ["texto"] * 18 + ["imagen"] * 18 + ["video"] * 12 + ["lidar"] * 12
 
+# Etiquetas e instrucciones de cada modalidad (todos los proyectos de una modalidad usan la misma).
 TAXONOMIAS = {
     "texto": [
         ("texto#persona", "Nombre propio de una persona."),
@@ -52,6 +54,10 @@ TAXONOMIAS = {
 
 
 def _archivo(rng: random.Random, modalidad: str, tipo: str, carpeta: str, n: int) -> dict:
+    """Metadatos ficticios del archivo original de una tarea (uri, sha256, bytes, mime y meta).
+
+    Los tamaños y campos de `meta` dependen de la modalidad (texto, imagen, video o LiDAR).
+    """
     sha256 = f"{rng.getrandbits(256):064x}"
     if modalidad == "texto":
         b = rng.randint(2_000, 60_000)
@@ -73,6 +79,7 @@ def _archivo(rng: random.Random, modalidad: str, tipo: str, carpeta: str, n: int
 
 
 def _tipo(rng: random.Random, modalidad: str) -> str:
+    """Tipo de tarea según la modalidad; en imagen, 70 % bbox y 30 % polígono."""
     if modalidad == "imagen":
         return "bbox" if rng.random() < 0.7 else "poligono"
     return {"texto": "span", "video": "bbox_video", "lidar": "cuboide_3d"}[modalidad]
@@ -80,14 +87,18 @@ def _tipo(rng: random.Random, modalidad: str) -> str:
 
 def generar(semilla: int = SEMILLA) -> dict:
     """Devuelve todas las colecciones y los proyectos cerrados (estos no van a MongoDB)."""
+    # Todo el azar sale de este generador: misma semilla, mismos datos.
     rng = random.Random(semilla)
 
     def nuevo_id() -> str:
+        """UUID v4 reproducible (sale del rng con semilla, no de uuid4())."""
         return str(uuid.UUID(int=rng.getrandbits(128), version=4))
 
+    # Clientes.
     clientes = [{"_id": nuevo_id(), "nombre": f"Cliente {i + 1:02d}", "creado_en": BASE - timedelta(days=400 - i)}
                 for i in range(CLIENTES)]
 
+    # Equipos y anotadores (10 por equipo, el primero es revisor).
     equipos = [nuevo_id() for _ in range(EQUIPOS)]
     anotadores = []
     for e, equipo_id in enumerate(equipos):
@@ -97,6 +108,7 @@ def generar(semilla: int = SEMILLA) -> dict:
                                "rol": "revisor" if k == 0 else "anotador"})
 
     def proyecto(i: int, modalidad: str, estado: str, cliente_id: str) -> dict:
+        """Documento de un proyecto (activo o cerrado) con su taxonomía, SLA y prioridad."""
         ejemplo = estado == "activo" and i == 0  # el proyecto LiDAR del enunciado
         return {
             "_id": nuevo_id(),
@@ -119,6 +131,7 @@ def generar(semilla: int = SEMILLA) -> dict:
     rng.shuffle(cerrados_mod)
     cerrados = [proyecto(i, m, "cerrado", clientes[i]["_id"]) for i, m in enumerate(cerrados_mod)]
 
+    # 5 batches de 100 tareas por cada proyecto activo, todas "disponible" y versión 0.
     batches, tareas = [], []
     for p in activos:
         carpeta = p["_id"][:8]
@@ -153,6 +166,7 @@ def generar(semilla: int = SEMILLA) -> dict:
 def ids(datos: dict, semilla: int = SEMILLA) -> dict:
     """IDs que el histórico de C necesita (dataset/salida/ids.json)."""
     def resumen(p: dict) -> dict:
+        """Datos de un proyecto que necesita el histórico."""
         return {"id": p["_id"], "cliente_id": p["cliente_id"], "nombre": p["nombre"],
                 "modalidad": p["modalidad"], "sla_horas": p["sla_horas"],
                 "etiquetas": [e["etiqueta"] for e in p["taxonomia"]]}

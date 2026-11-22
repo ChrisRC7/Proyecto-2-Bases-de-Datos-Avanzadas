@@ -1,5 +1,10 @@
 
-"""B3.6: envío de anotaciones y limpieza posterior."""
+"""B3.6: envío de anotaciones y limpieza posterior.
+
+Orden: comprobar el lock en sesión -> transición "enviar" en el registro -> guardar el
+evento para el historial -> limpiar (borrador, lock y sesión). Si el registro rechaza el
+envío, el borrador y el lock se conservan para que el anotador pueda corregir y reintentar.
+"""
 
 from app import eventos
 from app.cliente_interno import ServicioNoDisponible, solicitar
@@ -7,6 +12,11 @@ from app.comun import log
 from app import limpiezas
 
 async def enviar(tarea_id, anotador_id, token, anotacion, request_id=None):
+    """Envía la anotación de una tarea y devuelve (código, datos).
+
+    200 con estado, versión y event_id si el registro aceptó; si no, el código y cuerpo
+    de la sesión o del registro (409 lock perdido, 422 anotación inválida, ...).
+    """
     tarea_id = str(tarea_id)
     anotador_id = str(anotador_id)
     token = str(token)

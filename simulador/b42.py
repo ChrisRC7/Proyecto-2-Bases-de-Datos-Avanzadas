@@ -1,10 +1,16 @@
 
-"""B4.2: borradores periodicos y latidos del simulador."""
+"""B4.2: borradores periodicos y latidos del simulador.
+
+Mientras el anotador "trabaja" en una tarea, cada INTERVALO_BORRADOR segundos guarda un
+borrador (PUT /tareas/{id}/borrador) y envía un latido (POST /sesiones/latido) al gateway.
+Así el lock y la asignación no vencen y el trabajo se puede recuperar si se interrumpe.
+"""
 
 import time
 
 import httpx
 
+# Segundos entre cada borrador + latido.
 INTERVALO_BORRADOR = 2.0
 
 
@@ -28,6 +34,7 @@ def guardar_periodicamente(
     if intervalo <= 0 or duracion < 0:
         raise ValueError("Intervalo y duracion invalidos")
 
+    # Reloj monotónico: no lo afectan los cambios de hora del sistema.
     headers = {"X-Anotador-Id": str(anotador_id)}
     inicio = time.monotonic()
     siguiente = inicio + intervalo
@@ -35,6 +42,7 @@ def guardar_periodicamente(
     guardados = 0
 
     def solicitar(metodo, ruta, endpoint, cuerpo):
+        """Usa `enviar` si se pasó (para medir); si no, llama al gateway directamente."""
         if enviar is not None:
             return enviar(metodo, ruta, endpoint, cuerpo)
 
@@ -48,8 +56,11 @@ def guardar_periodicamente(
     while True:
         ahora = time.monotonic()
 
+        # Terminó el tiempo de trabajo.
         if ahora >= fin:
             break
+
+        # Todavía no toca guardar: duerme hasta el próximo guardado (o hasta el fin).
 
         if ahora < siguiente:
             time.sleep(min(siguiente - ahora, fin - ahora))
@@ -74,6 +85,8 @@ def guardar_periodicamente(
                 }
 
             guardados += 1
+
+            # Latido: renueva lock y plazo de la asignación.
 
             latido = solicitar(
                 "POST",
@@ -105,6 +118,7 @@ def guardar_periodicamente(
 
 
 def recuperar(cliente, anotador_id):
+    """POST /sesiones/recuperar del anotador; devuelve (status, JSON)."""
     respuesta = cliente.post(
         "/sesiones/recuperar",
         headers={"X-Anotador-Id": str(anotador_id)},

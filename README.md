@@ -375,6 +375,7 @@ Se agotaron las tareas: recargar el dataset o usar `dataset.regenerar_tareas` (v
 - `informe/`: informe final (`informe.tex` y el PDF compilado `informe.pdf`; cómo compilarlo está al inicio
   del `.tex`).
 - `evidence/`: resultados de las pruebas.
+- `defensa/guia_ejecucion.md`: cómo levantar todo, la demo en vivo y cada prueba con su comando, tiempo y señal de éxito; `defensa/preguntas.md`: preguntas cruzadas.
 
 ## Observaciones de integración
 

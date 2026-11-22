@@ -1,5 +1,11 @@
 
-"""B5.2: comprobar persistencia AOF tras reiniciar Valkey."""
+"""B5.2: comprobar persistencia AOF tras reiniciar Valkey.
+
+Toma una tarea, guarda un borrador, reinicia el contenedor de Valkey (docker compose restart)
+y comprueba que la sesión y el borrador siguen ahí gracias al AOF.
+
+    python3 pruebas/b52_persistencia_gateway.py
+"""
 
 import json
 import subprocess
@@ -8,12 +14,14 @@ import urllib.error
 import urllib.request
 from proyecto_prueba import crear_proyecto
 
+# Gateway en el host, anotador fijo y proyecto propio de una sola tarea.
 GATEWAY = "http://localhost:8000"
 ANOTADOR = "adbafed0-b600-460c-bbdc-fd55304374b3"
 PROYECTO = crear_proyecto("b52-persistencia")  # una sola tarea: la primera asignación es esa
 
 
 def solicitar(metodo, ruta, cuerpo=None):
+    """Petición al gateway como ANOTADOR; devuelve (status, JSON) también en errores HTTP."""
     datos = None if cuerpo is None else json.dumps(cuerpo).encode("utf-8")
     peticion = urllib.request.Request(
         GATEWAY + ruta,
@@ -34,6 +42,7 @@ def solicitar(metodo, ruta, cuerpo=None):
 
 
 def recuperar_con_reintentos():
+    """Intenta recuperar la sesión cada segundo durante 35 s (mientras Valkey vuelve a arrancar)."""
     limite = time.monotonic() + 35
     ultimo_error = None
 
@@ -52,6 +61,7 @@ def recuperar_con_reintentos():
 
 
 def main():
+    """Asigna, guarda borrador, reinicia Valkey y verifica que el borrador sobrevivió."""
     tarea = None
     token = None
 

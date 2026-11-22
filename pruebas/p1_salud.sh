@@ -6,6 +6,7 @@ set -u
 cd "$(dirname "$0")/.."
 salida=evidence/P1_salud_$(date +%Y%m%d-%H%M).txt
 
+# Programa Python que resume en una línea la respuesta de GET /salud.
 FORMATO=$(cat <<'PY'
 import json, sys
 d = json.load(sys.stdin)

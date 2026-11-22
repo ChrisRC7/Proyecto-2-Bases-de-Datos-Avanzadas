@@ -14,15 +14,18 @@ from pathlib import Path
 from dataset.generar import SEMILLA, generar, ids
 from dataset.mongo import conectar, crear_indices, insertar_por_lotes
 
+# Colecciones que se borran y se vuelven a llenar, y carpeta donde se deja ids.json.
 COLECCIONES = ["clientes", "anotadores", "proyectos", "batches", "tareas"]
 SALIDA = Path(__file__).resolve().parent / "salida"
 
 
 def main() -> None:
+    """Genera los datos con la semilla, recarga MongoDB, escribe ids.json e imprime un resumen."""
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--semilla", type=int, default=SEMILLA)
     args = ap.parse_args()
 
+    # Genera en memoria, borra las colecciones e inserta todo de nuevo (mide el tiempo total).
     inicio = time.perf_counter()
     datos = generar(args.semilla)
     bd = conectar()
@@ -33,9 +36,11 @@ def main() -> None:
     crear_indices(bd)
     seg = time.perf_counter() - inicio
 
+    # Ids que necesita el generador del histórico para usar los mismos clientes/anotadores.
     SALIDA.mkdir(exist_ok=True)
     (SALIDA / "ids.json").write_text(json.dumps(ids(datos, args.semilla), ensure_ascii=False, indent=1))
 
+    # Resumen de lo cargado.
     print(f"Semilla {args.semilla} · carga con w=majority en {seg:.1f} s")
     for col in COLECCIONES:
         print(f"  {col:<11} {bd[col].count_documents({}):>7}")

@@ -1,9 +1,9 @@
 
-"""Servicio sesion - API interna S1 (B2.1).
+"""Servicio sesion - API interna (endpoints/sesion.md).
 
-Esqueleto de las seis rutas del contrato endpoints/sesion.md.
-La persistencia, los locks y los borradores se implementan
-en las siguientes actividades B2.
+Rutas: POST /locks/{tarea_id} · PUT y DELETE /borradores/{tarea_id} · POST /sesiones/{anotador_id} ·
+POST y GET /estado-capas · GET /salud. Único servicio con acceso al Valkey de sesión; no decide el
+estado de una tarea (eso es del registro).
 """
 
 from typing import Literal
@@ -46,14 +46,6 @@ class EstadoCapa(BaseModel):
 class SolicitudEliminarBorrador(BaseModel):
     anotador_id: str
     token: str
-
-def pendiente(actividad: str):
-    return error(
-        501,
-        "no_implementado",
-        {"actividad": actividad},
-    )
-
 
 @app.post("/locks/{tarea_id}")
 def gestionar_lock(tarea_id: str, solicitud: SolicitudLock):

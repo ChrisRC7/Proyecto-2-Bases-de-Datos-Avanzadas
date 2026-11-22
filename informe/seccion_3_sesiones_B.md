@@ -1,3 +1,9 @@
+> **Borrador histórico (2026-11-15).** La versión vigente de esta sección está en `informe/informe.tex`
+> (y en `informe/informe.pdf`), corregida con lo que cambió después: redes propias de MongoDB y Valkey (D15),
+> plazo de la asignación renovado con latidos y borradores (D16), la sesión vencida que ahora se borra al
+> recuperarla y la publicación durable de eventos (B3.6) ya verificada. Algunas limitaciones de este
+> borrador ya no aplican.
+
 # 3. Gestión de sesiones y recuperación con Valkey
 
 ## 3.1 Descripción del servicio de Sesión

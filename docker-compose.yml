@@ -12,6 +12,8 @@
 #   (sin perfil) -> plataforma completa con 1 worker de Spark.
 #   spark2       -> agrega el segundo worker de Spark (comparación 1 vs 2 workers).
 #   carga        -> contenedor del simulador para pruebas de carga.
+#   datos        -> dataset y dataset-historico: BORRAN y recargan MongoDB o el lago; usar con
+#                   `docker compose --profile datos run --rm ...`, nunca con `up`.
 
 name: proyecto2
 

@@ -21,7 +21,6 @@ from app import limpiezas
 
 from app import liberacion
 
-from datetime import datetime, timezone
 
 from app import salud as salud_capas
 
@@ -247,7 +246,6 @@ async def recuperar_sesion(
         )
 
     sesion = datos["sesion"]
-    borrador = datos.get("borrador")
 
     return {
         "tarea": {
@@ -256,17 +254,8 @@ async def recuperar_sesion(
             "etapa": sesion["etapa"],
         },
         "token": sesion["token"],
-        "borrador": (
-            {
-                "contenido": borrador["contenido"],
-                "guardado_en": datetime.fromtimestamp(
-                    borrador["guardado_en"] / 1000,
-                    tz=timezone.utc,
-                ).isoformat(),
-            }
-            if borrador is not None
-            else None
-        ),
+        # Mismo formato que el borrador de /tareas/siguiente.
+        "borrador": asignacion.borrador_publico(datos.get("borrador")),
     }
 
 

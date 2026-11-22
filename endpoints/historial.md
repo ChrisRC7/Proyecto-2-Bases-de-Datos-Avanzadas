@@ -16,7 +16,7 @@ Valkey de sesión para respetar el aislamiento entre servicios.
 1. `XREADGROUP` en `eventos:tareas` (grupo `historial`).
 2. Junta un micro-lote: 500 eventos **o** 5 s, lo que ocurra primero.
 3. `micro_lote_id = <primer stream id>_<último stream id>` (determinista → reprocesar sobrescribe el mismo archivo).
-4. Escribe `datalake/_tmp/<micro_lote_id>.parquet` (pyarrow) → `fsync` → `os.rename` a
+4. Escribe `datalake/_tmp/<micro_lote_id>__<AAAA-MM>.parquet` (pyarrow) → `fsync` → `os.rename` a
    `datalake/eventos/mes=AAAA-MM/part-<micro_lote_id>.parquet` (rename atómico en el mismo FS).
    Si el lote abarca dos meses, se escribe un archivo por mes con el mismo id.
 5. `XACK` solo después del rename. Al arrancar: `XAUTOCLAIM` de pendientes y limpieza de `_tmp/`.

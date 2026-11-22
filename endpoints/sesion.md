@@ -25,10 +25,10 @@ Respuestas: `200`; `409` si el lock está tomado por otro token o el token no co
 | `sesion:{anotador}` | hash | `tarea`, `proyecto`, `etapa` (anotando/revisando), `token`, `actualizada_en` | — (se borra al cerrar) |
 | `borrador:{tarea}` | hash | `contenido` (JSON), `anotador`, `token`, `guardado_en` | — (se borra tras envío 200) |
 | `editando:{proyecto}` | sorted set | miembro = anotador, score = epoch ms del último latido | — (se limpian scores viejos) |
-| `pendiente:{tarea}` | hash | envío que recibió 503 (para que el usuario reintente) | — |
+| *(sin llave propia)* | — | Envío pendiente: si MongoDB responde 503 al enviar, el gateway no borra el borrador ni suelta el lock, así que el contenido sigue en `borrador:{tarea}` y el anotador reintenta (B2.6). No se usa una llave `pendiente:{tarea}` aparte. | — |
 | `salud:{servicio}` | hash | `estado`, `detalle`, `ts` | 15 s |
 
 ## Mensajes de salud
-Cada servicio (registro, historial, analitica, gateway) publica cada 5 s su estado con
+Cada servicio interno (registro, historial, analitica) publica cada 5 s su estado con
 `POST /estado-capas`. Como la llave tiene TTL 15 s, una capa que deja de publicar desaparece y el
 gateway la reporta como `caido`. Ningún otro servicio escribe directamente en Valkey.

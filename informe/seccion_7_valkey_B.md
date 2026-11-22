@@ -1,3 +1,9 @@
+> **Borrador histórico (2026-11-15).** La versión vigente de esta sección está en `informe/informe.tex`
+> (y en `informe/informe.pdf`), corregida con lo que cambió después: redes propias de MongoDB y Valkey (D15),
+> plazo de la asignación renovado con latidos y borradores (D16), la sesión vencida que ahora se borra al
+> recuperarla y la publicación durable de eventos (B3.6) ya verificada. Algunas limitaciones de este
+> borrador ya no aplican.
+
 # 7. Evaluación y resultados — Componente Valkey
 
 ## 7.1 Objetivo de la evaluación

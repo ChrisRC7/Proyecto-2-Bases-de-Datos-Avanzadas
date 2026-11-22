@@ -28,7 +28,6 @@ Body `{"accion": "...", "token": "uuid|null", "version": n, "actor_id": "uuid", 
 | empezar_revision | anotada | no | en_revision | en_revision |
 | aprobar | en_revision | no | aprobada | aprobada |
 | rechazar | en_revision | no | disponible | **rechazada** |
-
 | renovar | abierta y plazo vigente | sí | (sin cambio) | (sin evento) |
 
 `renovar` corre `asignacion.vence_en` otros 120 s cuando el gateway recibe un latido o un borrador, igual
@@ -42,8 +41,9 @@ para trazabilidad y Spark lo ignora en Q1–Q5 (documentarlo en el informe).
 Si el filtro (`_id`, estado, token, version) no coincide → `409`. Cada transición válida: `version += 1`,
 genera `event_id` (UUID) y lo guarda en `ultimo_evento_id`.
 Respuesta `200 {"tarea": {...}, "evento": {<fila según historial.md>}}` — el gateway reenvía `evento` al historial.
-`version` es opcional: el gateway la manda en `enviar` (la recibió en la asignación); en la revisión
-basta el filtro por estado, porque solo una petición puede encontrar la tarea en el estado requerido.
+`version` es opcional y el gateway hoy no la manda: en `enviar` y `liberar` el filtro por estado y token ya
+deja pasar una sola petición, y en la revisión basta el filtro por estado. Queda para un cliente que quiera
+control optimista explícito.
 
 ### Errores
 

@@ -9,13 +9,13 @@ Identidad del usuario simulado: header `X-Anotador-Id: <uuid>` (anotador o revis
 |---|---|---|
 | `POST /proyectos` | registro | 201, 404 (cliente), 422 |
 | `POST /proyectos/{id}/lotes` | registro | 201, 404, 422 |
-| `POST /tareas/siguiente` | sesion → registro → sesion (lock) → historial | 200, 204, 503 |
-| `PUT /tareas/{id}/borrador` | sesion | 200, 409 |
-| `POST /tareas/{id}/enviar` | sesion → registro → historial | 200, 409, 503 |
-| `POST /tareas/{id}/liberar` | registro → sesion → historial | 200, 409 |
+| `POST /tareas/siguiente` | registro → sesion (lock y sesión) → historial | 200, 204, 404, 503 |
+| `PUT /tareas/{id}/borrador` | sesion → registro (plazo) | 200, 409, 503 |
+| `POST /tareas/{id}/enviar` | sesion → registro → historial | 200, 409, 422, 503 |
+| `POST /tareas/{id}/liberar` | registro → historial → sesion | 200, 409, 503 |
 | `POST /tareas/{id}/revision` | registro → historial | 200, 409, 422 |
-| `POST /sesiones/recuperar` | sesion | 200, 404 |
-| `POST /sesiones/latido` | sesion | 200, 404, 409, 503 |
+| `POST /sesiones/recuperar` | sesion | 200, 404, 409, 503 |
+| `POST /sesiones/latido` | sesion → registro (plazo) | 200, 404, 409, 503 |
 | `GET /analitica/{q1..q5}?conjunto=` | analitica | 200, 404, 503 |
 | `GET /proyectos/{id}/exportar?cursor=&limite=` | registro | 200, 404 |
 | `GET /salud` | todas (timeout corto) | 200 siempre |
@@ -73,10 +73,17 @@ Body: `{"proyecto_id": "uuid (opcional)"}` · Header `X-Anotador-Id`.
   "borrador": null
 }
 ```
-→ `204` sin tareas · `503` registro/sesión no disponible.
+`borrador` trae `{"contenido": {...}, "guardado_en": "ISO-8601"}` cuando el mismo anotador vuelve a tomar
+una tarea que ya tenía borrador suyo (mismo formato que `/sesiones/recuperar`); si el borrador era de otro
+anotador, la sesión lo archiva y aquí viene `null`.
+→ `204` sin tareas · `404 anotador_no_existe` · `503` registro/sesión no disponible (si el lock o la sesión
+fallan después de asignar, el gateway devuelve la tarea con `liberar`).
 
 ### PUT /tareas/{id}/borrador
-Body: `{"token": "uuid", "contenido": {...}}` → `200 {"guardado_en": "...", "lock_vence_en": "..."}` · `409` token no coincide.
+Body: `{"token": "uuid", "contenido": {...}}` → `200 {"estado": "ok", "borrador": {"tarea_id", "anotador_id",
+"guardado_en": <epoch ms>}, "registro_renovado": true|false|null}` (renueva el lock a 120 s y, como el
+latido, el plazo en el registro). `409 conflicto_lock` (token que no tiene el lock), `409
+borrador_de_otro_anotador`, `409 asignacion_vencida` · `503` sesión no disponible.
 
 ### POST /tareas/{id}/enviar
 Body:
@@ -85,7 +92,9 @@ Body:
   "anotacion": { "etiquetas": ["lidar#ciclista"],
                  "geometria": {"tipo": "cuboide_3d", "centro": [1.2, 3.4, 0.5], "dimensiones": [0.6, 1.8, 1.7], "yaw": 0.3} } }
 ```
-→ `200 {"estado": "anotada", "version": 2, "event_id": "uuid"}` · `409` token o estado · `503` MongoDB no responde (no se reintenta; el borrador sigue en Valkey).
+→ `200 {"estado": "anotada", "version": 2, "event_id": "uuid"}` · `409` token o estado · `422
+anotacion_invalida` (geometría o etiquetas fuera de la taxonomía) · `503` MongoDB no responde (no se
+reintenta; el borrador y el lock siguen en Valkey y se puede volver a enviar).
 
 Geometrías por modalidad: texto → `span` (`inicio`, `fin`); imagen → `bbox` (`x`,`y`,`w`,`h`) o
 `poligono` (`puntos`); video → `bbox_video` (`cuadros: [{t, x, y, w, h}]`); lidar → `cuboide_3d`.
@@ -103,7 +112,9 @@ Códigos de motivo: `ETIQUETA_INCORRECTA`, `GEOMETRIA_IMPRECISA`, `OBJETO_OMITID
 → `200 {"estado": "...", "version": n, "event_id": "uuid"}` · `409` estado inválido · `422` rechazo sin motivo.
 
 ### POST /sesiones/recuperar
-Header `X-Anotador-Id` → `200 {"tarea": {...}, "token": "uuid", "borrador": {"contenido": {}, "guardado_en": "..."}}` · `404` sin sesión.
+Header `X-Anotador-Id` → `200 {"tarea": {"tarea_id", "proyecto_id", "etapa"}, "token": "uuid", "borrador":
+{"contenido": {}, "guardado_en": "ISO-8601"} | null}` · `404 sesion_no_existe` (sin sesión, o su lock ya venció
+o es de otro token: la sesión se borra) · `409 borrador_de_otro_anotador`.
 
 ### POST /sesiones/latido
 Header: `X-Anotador-Id` (UUID).

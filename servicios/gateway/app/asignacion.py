@@ -1,6 +1,7 @@
 
 """B3.4: coordinación de asignación, lock, sesión y evento."""
 
+from datetime import datetime, timezone
 from uuid import uuid4
 
 from app import eventos
@@ -10,6 +11,20 @@ from app.comun import log
 
 class FalloAsignacion(Exception):
     pass
+
+
+def borrador_publico(borrador):
+    """El borrador como lo devuelve /sesiones/recuperar: contenido y guardado_en en ISO-8601 UTC.
+
+    La sesión lo guarda con el anotador, el token y guardado_en en epoch ms; al cliente solo le
+    sirven el contenido y la fecha.
+    """
+    if not borrador:
+        return None
+    guardado = borrador.get("guardado_en")
+    if isinstance(guardado, (int, float)):
+        guardado = datetime.fromtimestamp(guardado / 1000, tz=timezone.utc).isoformat()
+    return {"contenido": borrador.get("contenido"), "guardado_en": guardado}
 
 
 async def _compensar(tarea_id, anotador_id, token, request_id):
@@ -140,7 +155,7 @@ async def siguiente(anotador_id, proyecto_id=None, request_id=None):
             "tarea": tarea,
             "token": token,
             "vence_en": tarea["vence_en"],
-            "borrador": sesion.json().get("borrador"),
+            "borrador": borrador_publico(sesion.json().get("borrador")),
         }
 
     except (FalloAsignacion, ServicioNoDisponible, ValueError, KeyError):

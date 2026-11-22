@@ -369,7 +369,6 @@ Llave & Tipo & Contenido & Vida \\
 \texttt{borrador:\{tarea\}} & hash & \texttt{contenido} (JSON), \texttt{anotador}, \texttt{token}, \texttt{guardado\_en}. & Hasta el envío con 200 \\
 \texttt{borrador:archivado:}\allowbreak\texttt{\{tarea\}:\{uuid\}} & hash & Borrador de un anotador cuyo lock venció y la tarea la tomó otro. & 7~días \\
 \texttt{editando:\{proyecto\}} & sorted set & Anotadores con su último latido (epoch ms como score). & Se podan los viejos \\
-\texttt{pendiente:\{tarea\}} & hash & Envío que recibió 503 de MongoDB, para reintentar. & Hasta reintentar \\
 \texttt{salud:\{servicio\}} & hash & Último mensaje de salud de cada capa (D4). & 15~s \\
 \bottomrule
 \end{tabular}
@@ -397,8 +396,10 @@ anotadores no reciban la misma tarea lo garantiza el filtro del registro (secci�
 Con \texttt{-{}-borradores}, cada usuario virtual del simulador guarda su borrador y manda un latido cada 2~s
 mientras anota. \texttt{PUT /tareas/\{id\}/borrador} solo se acepta si el token es el del lock vigente, y
 reemplaza el borrador entero con su \texttt{guardado\_en}. Tras el envío con 200 el gateway borra el
-borrador, suelta el lock y cierra la sesión; si el envío falla, no toca nada y el anotador puede
-reintentar.
+borrador, suelta el lock y cierra la sesión. Si MongoDB responde 503, no toca nada: el borrador queda
+como el envío pendiente que pide el enunciado (no hay otra llave para eso) y el anotador puede reintentar
+con el mismo token. Se comprobó con un 503 simulado dentro de la sesión (\ev{B2\_6\_conservacion.txt}),
+no con MongoDB caído de verdad.
 
 \texttt{POST /sesiones/recuperar} es lo que llama un cliente que se cayó: devuelve la tarea, el token y el
 último borrador. Dos casos de borde:
@@ -1106,6 +1107,7 @@ Archivos de B, de las corridas en la máquina de Alisson (2026-11-14 y 15):
 \toprule
 Archivo & Qué respalda \\
 \midrule
+\texttt{B5\_sesion\_valkey\_20261115.md} & Ficha de las pruebas B5.1--B5.3 con la plantilla: fecha, objetivo, configuración, comandos, resultados e interpretación. \\
 \texttt{B5\_1\_sesiones.txt} & P1: asignar, borrador y latido con token ajeno (409) y válido (200), recuperar con tarea, token y borrador iguales (3.2). \\
 \texttt{B5\_1\_A4\_gateway.txt}, \texttt{B5\_1\_*\_invalido.txt}, \texttt{B5\_1\_siguiente\_sin\_anotador.txt}, \texttt{B5\_1\_recuperar\_sin\_sesion.txt} & P1: rutas del gateway y sus errores 404, 409 y 422. \\
 \texttt{B5\_1\_puertos.txt}, \texttt{B5\_1\_salud\_*.json} y \texttt{.txt} & P1: solo el gateway publica el 8000; \texttt{/salud} normal, sin historial (degradado) y sin Valkey (caído) (7.2). \\

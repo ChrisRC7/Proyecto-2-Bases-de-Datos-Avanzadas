@@ -190,6 +190,7 @@ Observaciones (resueltas el 2026-11-15, ver «Tareas nuevas descubiertas»): la 
 - [x] B6.5 `endpoints/gateway.md` completo (todas las rutas, ejemplos curl, códigos).
 - [x] B6.6 Revisar PRs de **C** y preparar 5 preguntas/respuestas sobre lago y Spark para la defensa.
       Nota: redactadas por C en `defensa/preguntas.md` (micro-lote atómico, duplicados, fila rechazada, 1ª ejecución y workers, plan de Q1); Alisson las repasa antes del ensayo (I.10).
+      Nota (B, 2026-11-20): Alisson revisó y aprobó el PR #2 (ChrisDevelop → documentacion) y verificó las cinco preguntas con respuesta sobre lago, Parquet, historial y Spark de `defensa/preguntas.md`.
 
 ---
 

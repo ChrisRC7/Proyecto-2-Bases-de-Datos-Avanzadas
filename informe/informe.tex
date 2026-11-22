@@ -59,17 +59,122 @@
 
 \vspace{4pt}\hrule\vspace{6pt}
 
-\textbf{Entorno de todas las mediciones.} Laptop AMD Ryzen 7 5700U, 16 GB de RAM (4 CPU y 9,7 GiB para
+\textbf{Entorno de las mediciones} (salvo donde la sección diga otra máquina; ver sección~8.2). Laptop AMD Ryzen 7 5700U, 16 GB de RAM (4 CPU y 9,7 GiB para
 WSL 2), Windows 11 Home con Ubuntu 24.04 en WSL 2 y Docker Desktop 29.5.2. Todos los servicios, los tres
 nodos de MongoDB y el simulador corren como contenedores en esa misma máquina. Cada cifra del informe cita
 el archivo de \texttt{evidence/} que la respalda; el Apéndice~A los reúne.
 
 \section{Arquitectura y recorrido de una tarea LiDAR}
 
-\falta{B6.1 (Alisson): arquitectura general, diagrama, límites de responsabilidad de cada servicio,
-recorrido completo de una tarea LiDAR (siguiente, borrador, enviar, revisión, aprobada, visible en Q1) y
-evidencia del aislamiento modular (redes, variables de entorno: el registro no tiene la dirección de
-Valkey, el simulador solo está en la red \texttt{borde})}
+La plataforma son cinco servicios en Python (FastAPI y uvicorn) y un simulador, todos en Docker Compose.
+Cada motor de datos tiene un solo dueño y los servicios se hablan solo por HTTP. El gateway es la única
+entrada: publica el puerto 8000 y coordina a los demás, pero no tiene ningún motor propio salvo una cola
+local de eventos en SQLite (sección~4).
+
+\begin{center}\footnotesize
+\begin{tabular}{@{}>{\raggedright}p{0.13\textwidth}>{\raggedright}p{0.21\textwidth}>{\raggedright}p{0.17\textwidth}>{\raggedright\arraybackslash}p{0.41\textwidth}@{}}
+\toprule
+Servicio & Motor (dueño único) & Redes & Responsabilidad \\
+\midrule
+gateway & SQLite local (cola de eventos) & \texttt{borde}, \texttt{interna} & Única API pública; asigna (registro + lock), guarda borradores, envía, revisa, publica eventos y arma \texttt{/salud}. \\
+registro & MongoDB \texttt{rs0}, 3 nodos & \texttt{interna}, \texttt{mongo} & Fuente de verdad del estado de cada tarea; asignación exclusiva y transiciones (sección~2). \\
+sesion & Valkey (AOF \texttt{everysec}) & \texttt{interna}, \texttt{valkey} & Sesiones, locks, borradores, actividad y mensajes de salud (sección~3). No decide el estado de una tarea. \\
+historial & Valkey \texttt{cola-eventos} y lago Parquet & \texttt{interna}, \texttt{cola} & Recibe eventos, los pone en un Stream y los escribe en Parquet en micro-lotes (sección~4). \\
+analitica & Spark 3.5.1 (lago en solo lectura) & \texttt{interna}, \texttt{spark} & Q1--Q5 sobre el lago (sección~5). \\
+simulador & --- & \texttt{borde} & Usuarios virtuales que solo hablan con el gateway. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{Verbatim}
+                  simulador / cliente
+                          |  HTTP :8000 (red borde)
+                       gateway ------ SQLite (cola local de eventos)
+       +---------------+--+------------+---------------+      red interna
+       |               |               |               |
+   registro          sesion        historial       analitica
+       |               |               |       \       |
+  MongoDB rs0       Valkey       cola-eventos   \    Spark master
+  (red mongo)    (red valkey)     (red cola)     \   + worker (red spark)
+                                                  \      |  solo lectura
+                                              lago Parquet (/datalake)
+\end{Verbatim}
+
+\textbf{Por qué cada motor.} Cada uno guarda el tipo de dato que mejor le calza:
+\begin{itemize}\setlength{\itemsep}{1pt}
+\item \textbf{MongoDB} guarda el estado de las tareas. Una tarea es un documento con partes anidadas (archivo,
+asignación, anotación, revisión) y cambia de estado con una sola escritura atómica sobre ese documento,
+que es lo que da la exclusividad (sección~2.3). El replica set con \texttt{w: "majority"} hace que un 200 no
+se pierda en una elección (sección~7.1).
+\item \textbf{Valkey} guarda sesiones, locks y borradores: datos pequeños que cambian cada 2~s y caducan.
+\texttt{SET NX PX} y Lua dan un lock con vencimiento sin escribir en MongoDB en cada latido, y AOF
+\texttt{everysec} cuesta a lo sumo $\sim$1~s de trabajo si Valkey cae (sección~7.2).
+\item \textbf{Un Stream de Valkey aparte} (\texttt{cola-eventos}) hace de cola durable para el historial:
+grupos de consumidores, ACK y reclamo de pendientes (D3). Va en una instancia propia para que el historial
+no use el Valkey de la sesión.
+\item \textbf{Parquet} guarda el histórico inmutable. Al ser columnar y estar particionado por mes, Spark
+lee solo las columnas y los meses que pide cada consulta (sección~5.4).
+\item \textbf{Spark} corre Q1--Q5 sobre millones de filas (el conjunto grande tiene unos 10~M) sin
+cargarlas en el servicio.
+\end{itemize}
+Así ningún motor resuelve un problema para el que no fue pensado: no hay borradores en MongoDB ni KPIs
+sobre la base operacional.
+
+\subsection{Aislamiento modular}
+
+Las reglas del enunciado se cumplen por construcción, no por convención: un servicio no puede usar el
+motor de otro porque ni siquiera lo encuentra en la red. \texttt{pruebas/i4\_aislamiento.sh} lo comprueba
+sobre los contenedores en marcha (\ev{I4\_aislamiento\_20261115-2218.txt}):
+\begin{itemize}\setlength{\itemsep}{1pt}
+\item \textbf{Puertos.} De los doce contenedores, solo el gateway publica un puerto al anfitrión (8000).
+\item \textbf{Redes.} Cada motor está en una red propia con su único servicio dueño (D15): desde el registro,
+\texttt{valkey}, \texttt{cola-eventos} y \texttt{spark-master} no resuelven por DNS; desde la sesión,
+\texttt{mongo1} tampoco. El simulador solo resuelve \texttt{gateway}. Antes de D15 todo compartía la red
+\texttt{interna} y el registro sí resolvía \texttt{valkey}: la separación era solo de código.
+\item \textbf{Variables y bibliotecas.} El registro tiene \texttt{MONGO\_URI} y ninguna dirección de Valkey;
+la sesión solo \texttt{VALKEY\_URL}; el historial \texttt{COLA\_HOST}. \texttt{pymongo} solo está instalado en
+el registro, \texttt{valkey} en la sesión y el historial, \texttt{pyarrow} en el historial, \texttt{pyspark}
+en la analítica; el gateway no tiene cliente de ningún motor.
+\item \textbf{Lago.} El historial lo monta en lectura y escritura; la analítica y el worker de Spark en solo
+lectura, y un intento de escribir desde la analítica falla.
+\item \textbf{Código.} Las únicas menciones a Valkey dentro del registro son comentarios (el plazo de la
+asignación va junto con el lock, sección~2.5); la analítica no menciona MongoDB, Valkey ni el historial.
+\end{itemize}
+El registro sí conoce \texttt{SESION\_URL}, pero solo para publicar su mensaje de salud por HTTP
+con \texttt{POST sesion:/estado-capas}. No lee locks ni sesiones.
+
+\subsection{Recorrido de una tarea LiDAR}
+
+\texttt{pruebas/recorrido\_lidar.sh} crea por el gateway un proyecto con la taxonomía del enunciado y una
+sola tarea de tipo \texttt{cuboide\_3d}, y la lleva de punta a punta como lo haría un anotador. Las
+latencias son de una sola corrida en la laptop i7-6500U (\ev{I2\_recorrido\_lidar\_20261115-2217.txt}):
+
+\begin{center}\footnotesize
+\begin{tabular}{@{}>{\raggedright}p{0.32\textwidth}>{\raggedright}p{0.07\textwidth}>{\raggedright\arraybackslash}p{0.53\textwidth}@{}}
+\toprule
+Paso (ruta del gateway) & Código & Qué pasa por dentro \\
+\midrule
+\texttt{POST /tareas/siguiente} & 200 & Token nuevo; el registro asigna con \texttt{findOneAndUpdate}, la sesión toma el lock y abre la sesión; evento \texttt{abierta} a la cola (54~ms). \\
+El mismo, otro anotador & 204 & No queda otra tarea en el proyecto. \\
+\texttt{PUT /tareas/\{id\}/borrador} $\times 2$ & 200 & Primero \texttt{lidar\#peaton}, después lo corrige a \texttt{lidar\#ciclista} (un skater es ciclista). \\
+\texttt{POST /sesiones/latido} & 200 & Renueva el lock y, si queda menos de la mitad, el plazo en el registro (D16). \\
+\texttt{POST /sesiones/recuperar} & 200 & Devuelve la tarea, el token y el último borrador (\texttt{lidar\#ciclista}). \\
+\texttt{POST /tareas/\{id\}/enviar} & 200 & La sesión valida el token, MongoDB pasa a \texttt{anotada}; se borra el borrador, se suelta el lock y se cierra la sesión. \\
+El mismo envío otra vez & 409 & La tarea ya no está \texttt{abierta}: no hay transición ni fila nueva en el lago. \\
+\texttt{POST /tareas/\{id\}/revision} $\times 2$ & 200 & \texttt{empezar} y \texttt{aprobar}. \\
+\texttt{GET /proyectos/\{id\}/exportar} & 200 & La tarea aprobada sale con \texttt{lidar\#ciclista}. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Q1 por el gateway contaba 11 aprobadas LiDAR del día antes del recorrido y 12 después; el cambio se vio
+8,2~s después del 200 de aprobar, lo que cabe en la frescura medida en la sección~4.4. El mismo flujo con
+una tarea rechazada (MongoDB vuelve a \texttt{disponible}, el lago guarda \texttt{rechazada} y Q4 la cuenta)
+está en la prueba P4 (sección~4.3).
+
+Si un paso falla a la mitad, el gateway deshace lo que ya hizo: si el registro asignó pero el lock no se
+pudo tomar, devuelve la tarea con \texttt{liberar} y responde 503; un envío que MongoDB rechaza no deja
+evento. La exclusividad no depende del lock sino del filtro del registro (sección~2.3).
 
 \section{Registro: modelo, índices y asignación exclusiva}
 
@@ -246,8 +351,102 @@ examinados y latencias relativas, no tiempos de un despliegue real.
 
 \section{Sesión, borrador y reinicio de Valkey}
 
-\falta{B6.2 (Alisson): llaves de Valkey, lock con SET NX PX, borrador cada 2 s, recuperación de la
-sesión y qué pasa al reiniciar Valkey con AOF everysec (P3)}
+La sesión es el único servicio que habla con el Valkey de sesiones. Guarda lo que vive poco y cambia
+mucho: quién está trabajando, en qué tarea, con qué token y qué lleva hecho. No decide el estado de una
+tarea: eso es del registro, y la sesión ni siquiera lo conoce (\ev{I4\_aislamiento\_20261115-2218.txt},
+punto 7). Valkey corre con \texttt{appendonly yes} y \texttt{appendfsync everysec} sobre el volumen
+\texttt{valkey\_sesion}.
+
+\subsection{Llaves}
+
+\begin{center}\footnotesize
+\begin{tabular}{@{}>{\raggedright}p{0.22\textwidth}>{\raggedright}p{0.09\textwidth}>{\raggedright}p{0.45\textwidth}>{\raggedright\arraybackslash}p{0.16\textwidth}@{}}
+\toprule
+Llave & Tipo & Contenido & Vida \\
+\midrule
+\texttt{lock:tarea:\{id\}} & string & Token de la asignación (el mismo que guarda MongoDB). & 120~s, se renueva \\
+\texttt{sesion:\{anotador\}} & hash & \texttt{tarea}, \texttt{proyecto}, \texttt{etapa}, \texttt{token}, \texttt{actualizada\_en}. & Hasta enviar o liberar \\
+\texttt{borrador:\{tarea\}} & hash & \texttt{contenido} (JSON), \texttt{anotador}, \texttt{token}, \texttt{guardado\_en}. & Hasta el envío con 200 \\
+\texttt{borrador:archivado:}\allowbreak\texttt{\{tarea\}:\{uuid\}} & hash & Borrador de un anotador cuyo lock venció y la tarea la tomó otro. & 7~días \\
+\texttt{editando:\{proyecto\}} & sorted set & Anotadores con su último latido (epoch ms como score). & Se podan los viejos \\
+\texttt{pendiente:\{tarea\}} & hash & Envío que recibió 503 de MongoDB, para reintentar. & Hasta reintentar \\
+\texttt{salud:\{servicio\}} & hash & Último mensaje de salud de cada capa (D4). & 15~s \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Lock: exclusividad de edición}
+
+Al pedir una tarea, el gateway genera un token UUID y lo usa dos veces: el registro lo guarda en la
+asignación y la sesión lo pone como valor del lock con \texttt{SET lock:tarea:\{id\} <token> NX PX 120000}.
+\texttt{NX} hace que no pise un lock vigente; \texttt{PX} hace que se libere solo si el anotador
+desaparece. Renovar y soltar son scripts Lua que primero comparan el token: un anotador no puede renovar
+ni soltar el lock de otro, y la comparación y la escritura no se pueden intercalar con otro cliente.
+
+Cada borrador y cada latido (\texttt{POST /sesiones/latido}) renuevan el lock y marcan la actividad en
+\texttt{editando:\{proyecto\}}; el gateway además le pide al registro que corra \texttt{vence\_en} cuando
+queda menos de la mitad del plazo (D16, sección~2.5). Si el anotador se va sin avisar, el lock vence a los
+120~s y la tarea vuelve a poder asignarse.
+
+El lock protege la edición, no la asignación: un token que no es el del lock recibe 409 al guardar un
+borrador, al mandar un latido o al enviar, antes de llegar a MongoDB (\ev{B5\_1\_sesiones.txt}). Que dos
+anotadores no reciban la misma tarea lo garantiza el filtro del registro (sección~2.3).
+
+\subsection{Borrador y recuperación de la sesión}
+
+Con \texttt{-{}-borradores}, cada usuario virtual del simulador guarda su borrador y manda un latido cada 2~s
+mientras anota. \texttt{PUT /tareas/\{id\}/borrador} solo se acepta si el token es el del lock vigente, y
+reemplaza el borrador entero con su \texttt{guardado\_en}. Tras el envío con 200 el gateway borra el
+borrador, suelta el lock y cierra la sesión; si el envío falla, no toca nada y el anotador puede
+reintentar.
+
+\texttt{POST /sesiones/recuperar} es lo que llama un cliente que se cayó: devuelve la tarea, el token y el
+último borrador. Dos casos de borde:
+\begin{itemize}\setlength{\itemsep}{1pt}
+\item \textbf{Sesión de un lock vencido.} Si el lock ya no tiene el token de la sesión (venció o la tarea
+la tomó otro), un script Lua borra la sesión y la respuesta es 404 \texttt{sesion\_no\_existe}: no se le
+devuelve a nadie una tarea ajena. Va en Lua para no borrar una sesión que se acaba de reabrir con otro
+token entre la lectura y el borrado.
+\item \textbf{Borrador de otro anotador.} Si una tarea vuelve a la cola con el borrador del anotador
+anterior todavía en Valkey, al asignarla otro Lua lo mueve a \texttt{borrador:archivado:...} (solo si el
+nuevo anotador tiene el lock) y el nuevo empieza sin borrador. Ninguna ruta devuelve ese archivo
+(sección~8).
+\end{itemize}
+
+\subsection{P3: interrupción, reinicio de Valkey y vencimiento del lock}
+
+Tres pruebas por el gateway (\texttt{pruebas/b52\_*\_gateway.py}), cada una con su propio proyecto de una
+tarea LiDAR. Las corrió Alisson el 2026-11-15 en su máquina, con Docker Desktop en Windows (la evidencia no
+anota el procesador), y se repitieron en la corrida desde cero I5 en la laptop i7-6500U:
+
+\begin{center}\footnotesize
+\begin{tabular}{@{}>{\raggedright}p{0.38\textwidth}>{\raggedright}p{0.25\textwidth}>{\raggedright\arraybackslash}p{0.25\textwidth}@{}}
+\toprule
+Escenario & Corrida B5.2 & Corrida I5 \\
+\midrule
+Interrupción: guardar borrador, dejar de editar y \texttt{recuperar} & 200, mismo token y contenido, 0,047~s & 200, mismo token y contenido, 0,027~s \\
+Borrador confirmado + \texttt{docker compose restart valkey} + \texttt{recuperar} & token y contenido intactos & token y contenido intactos \\
+Lock vigente: otro anotador pide la tarea & no la recibe & no la recibe \\
+Tras 123~s sin latidos: el otro anotador & la recibe con otro token & la recibe con otro token \\
+Borrador con el token viejo / con el nuevo & 409 / 200 & 409 / 200 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Evidencia: \ev{B5\_2\_interrupcion.txt}, \ev{B5\_2\_persistencia.txt}, \ev{B5\_2\_vencimiento.txt} y la
+sección «P3» de \ev{I5\_entorno\_limpio\_20261115-2205.log}. El enunciado pide que el borrador
+recuperado tenga como máximo 5~s, es decir, que al volver se pierdan a lo sumo 5~s de trabajo. Con un
+borrador cada 2~s, lo que se pierde es lo hecho desde el último guardado confirmado. Aquí el borrador se
+recupera justo después de guardarlo: la llamada a \texttt{recuperar} tarda 0,047 y 0,027~s. En P8 el
+borrador recuperado después de reiniciar Valkey tenía 2,024 y 1,946~s (sección~7.2). Es una muestra por
+corrida y no da un percentil. La interrupción también se probó con el simulador real: un usuario virtual que
+guardaba borradores y latidos cada 2~s se mató con \texttt{docker kill} sin enviar, y al volver
+\texttt{recuperar} le devolvió la misma tarea, el mismo token y el último borrador
+(\ev{B4\_2\_interrupcion\_real.txt}, \ev{B4\_2\_borradores.txt}).
+
+En la primera corrida de vencimiento la sesión del primer anotador siguió en Valkey después de que otro tomó
+la tarea, y \texttt{recuperar} se la devolvía. Las pruebas la cerraban a mano. Ahora la borra el script Lua de la
+subsección anterior, y por eso \texttt{recuperar} responde 404.
 
 \section{Lago Parquet}
 
@@ -547,7 +746,7 @@ envían. El 10\,\% son revisores: toman una tarea enviada, empiezan la revisión
 con un motivo al azar el 20\,\% de las veces. El cliente espera cada respuesta hasta 10~s. Cada petición
 queda en un CSV con su fase, endpoint, código y milisegundos. Los percentiles son por rango más cercano,
 juntando las tres corridas de cada nivel (solo la fase medida). P6 se corrió antes de integrar los
-borradores de B4.2 (opción \texttt{--borradores}), así que esta carga no incluye
+borradores de B4.2 (opción \texttt{-{}-borradores}), así que esta carga no incluye
 \texttt{PUT /tareas/\{id\}/borrador} ni los latidos.
 
 \subsection{Resultados}
@@ -741,8 +940,51 @@ partición de red ni un disco lento. Hay una sola sonda, y el gateway no le dice
 
 \subsection{Valkey y sesión}
 
-\falta{B6.3 (Alisson): reiniciar Valkey durante carga, interrumpir una sesión, RTO y RPO de los
-borradores con AOF everysec (P8 de Valkey)}
+\textbf{Método.} \texttt{pruebas/b53\_fallo\_valkey.py} asigna una tarea por el gateway, guarda un borrador y
+arranca un hilo que manda un latido cada $\sim$0,3~s. Un segundo después ejecuta
+\texttt{docker compose restart valkey}, guarda la marca y llama a \texttt{recuperar} cada 0,25~s hasta que
+vuelve la sesión con su borrador. Definimos:
+\begin{itemize}\setlength{\itemsep}{1pt}
+\item \textbf{RTO}: desde la marca del reinicio hasta la primera \texttt{recuperar} con 200 que trae el
+borrador.
+\item \textbf{RPO}: borradores confirmados con 200 que no vuelven, o vuelven con otro contenido.
+\end{itemize}
+
+\textbf{Resultado} (\ev{B5\_3\_P8.txt} y la sección «P8 Valkey» de \ev{I5\_entorno\_limpio\_20261115-2205.log}):
+
+\begin{center}\small
+\begin{tabular}{@{}lrr@{}}
+\toprule
+ & Corrida B5.3 & Corrida I5 \\
+\midrule
+Latidos durante la prueba (200 / 503) & 5 / 2 & 6 / 1 \\
+\textbf{RTO} & \textbf{1,016 s} & \textbf{0,930 s} \\
+\textbf{RPO}: borrador confirmado que volvió igual & \textbf{1 de 1} & \textbf{1 de 1} \\
+Edad del borrador al recuperarlo & 2,024 s & 1,946 s \\
+Sesión y token después & los mismos & los mismos \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Durante el reinicio la sesión no llega a Valkey y el gateway responde 503 \texttt{servicio\_no\_disponible};
+apenas Valkey vuelve a aceptar conexiones, todo sigue. El RTO es casi solo el tiempo de arranque de Valkey
+leyendo el AOF, que aquí es pequeño. La «edad» del borrador es cuánto hacía que se había guardado cuando se
+recuperó; no es pérdida, porque el contenido es exactamente el confirmado.
+
+\textbf{Lo que este RPO no demuestra.} \texttt{docker compose restart} manda SIGTERM, y Valkey al apagarse
+limpio escribe y sincroniza el AOF: con ese apagado el RPO esperado es 0. El riesgo de
+\texttt{appendfsync everysec} está en una caída sin aviso (\texttt{docker kill}, corte de luz, kernel): se
+puede perder hasta $\sim$1~s de escrituras que ya respondieron 200, es decir, el último borrador (se
+guardan cada 2~s) y una renovación del lock. No se midió con \texttt{docker kill} de Valkey. Perder un
+borrador se acota a 2~s de trabajo y lo vuelve a escribir el siguiente; perder una renovación del lock solo
+acorta su plazo. Para no perder nada habría que usar \texttt{appendfsync always} y pagar un \texttt{fsync}
+por escritura en cada latido y borrador; para datos que se reescriben cada 2~s no lo vale.
+
+\textbf{Valkey caído más tiempo.} Sin Valkey no se puede tomar una tarea ni guardar borradores (503), pero
+MongoDB no se entera: las asignaciones abiertas siguen con su plazo y las que venzan quedan libres para cuando Valkey vuelva. Un
+envío exige validar el token contra el lock, así que también da 503 y se reintenta. \texttt{/salud} pasa a
+\texttt{caido} porque la sesión no responde (\ev{B5\_1\_salud\_sin\_valkey.txt}) y se arma solo con la
+consulta directa (sección~8.1, \ev{P1\_salud\_20261115-2307.txt}).
 
 
 \section{Limitaciones de la solución}
@@ -798,8 +1040,9 @@ un despliegue en varias máquinas. En particular, la diferencia entre \texttt{w:
 \texttt{w: 1} sería mayor con nodos en máquinas distintas, y la comparación de uno y dos workers de Spark no
 mide escalabilidad horizontal porque ambos usan los mismos 2 núcleos físicos.
 \item \textbf{Dos máquinas distintas.} Registro, carga y fallas de MongoDB se midieron en un Ryzen 7 5700U con
-WSL~2; lago y analítica en un Intel i7-6500U con Ubuntu nativo. Cada sección dice cuál; las cifras de una no se
-comparan con las de la otra.
+WSL~2; lago y analítica en un Intel i7-6500U con Ubuntu nativo; las pruebas de sesión y Valkey (B5) en la
+máquina de Alisson con Docker Desktop en Windows, sin el procesador anotado, y repetidas en la i7-6500U
+dentro de la corrida I5. Cada sección dice cuál; las cifras de una no se comparan con las de otra.
 \item \textbf{Pocas repeticiones.} Tres corridas por nivel en P6, una en el experimento de dos procesos, cinco
 en la frescura del lago y seis por consulta en P5.
 \item \textbf{Fallas simuladas con \texttt{docker kill}.} No se probaron particiones de red, discos lentos ni
@@ -856,7 +1099,24 @@ Archivo & Qué respalda \\
 \end{tabular}
 \end{center}
 
-\falta{B: agregar sus archivos (P1, P3, P8 de Valkey) a esta tabla}
+Archivos de B, de las corridas en la máquina de Alisson (2026-11-14 y 15):
+
+\begin{center}\small
+\begin{tabular}{@{}p{0.47\textwidth}p{0.47\textwidth}@{}}
+\toprule
+Archivo & Qué respalda \\
+\midrule
+\texttt{B5\_1\_sesiones.txt} & P1: asignar, borrador y latido con token ajeno (409) y válido (200), recuperar con tarea, token y borrador iguales (3.2). \\
+\texttt{B5\_1\_A4\_gateway.txt}, \texttt{B5\_1\_*\_invalido.txt}, \texttt{B5\_1\_siguiente\_sin\_anotador.txt}, \texttt{B5\_1\_recuperar\_sin\_sesion.txt} & P1: rutas del gateway y sus errores 404, 409 y 422. \\
+\texttt{B5\_1\_puertos.txt}, \texttt{B5\_1\_salud\_*.json} y \texttt{.txt} & P1: solo el gateway publica el 8000; \texttt{/salud} normal, sin historial (degradado) y sin Valkey (caído) (7.2). \\
+\texttt{B5\_2\_interrupcion.txt} & P3: recuperar la sesión con su borrador en 0,047~s (3.4). \\
+\texttt{B5\_2\_persistencia.txt} & P3: token y borrador intactos tras reiniciar Valkey (3.4). \\
+\texttt{B5\_2\_vencimiento.txt} & P3: exclusividad con el lock vigente, reasignación tras 123~s, 409 al token viejo (3.4). \\
+\texttt{B4\_2\_interrupcion\_real.txt}, \texttt{B4\_2\_borradores.txt}, \texttt{B4\_2\_integracion.txt} & Usuario virtual con borradores y latidos cada 2~s, matado con \texttt{docker kill} y recuperado (3.4). \\
+\texttt{B5\_3\_P8.txt} & P8 de Valkey: RTO 1,016~s, borrador confirmado sin pérdida (7.2). \\
+\bottomrule
+\end{tabular}
+\end{center}
 
 
 \end{document}

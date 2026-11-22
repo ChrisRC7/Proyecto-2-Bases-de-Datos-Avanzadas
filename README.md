@@ -13,7 +13,9 @@ Gateway REST (único puerto expuesto, 8000) delante de cuatro servicios: registr
 - Docker Desktop con Docker Compose v2.
 - Docker Desktop iniciado y con recursos suficientes para MongoDB, Valkey y Spark.
 - En Windows (PowerShell) usar `curl.exe` en lugar de `curl` en los ejemplos.
-- Python 3.12 para las pruebas en `pruebas/` que corren desde el anfitrión.
+- Python 3.12 para las pruebas en `pruebas/` que corren desde el anfitrión. Solo usan la biblioteca estándar,
+  salvo `pruebas/p6_lago.py`, que necesita `pip install pyarrow`.
+- Bash para los scripts `pruebas/*.sh` (en Windows, desde WSL o Git Bash).
 
 Las dependencias internas de cada servicio se instalan mediante sus imágenes Docker.
 
@@ -59,11 +61,9 @@ Ejecutar el sistema con el simulador:
 docker compose --profile carga up -d --build
 ```
 
-Ejecutar la configuración de preparación de datos:
-
-```bash
-docker compose --profile datos up -d --build
-```
+Los servicios del perfil `datos` (`dataset` y `dataset-historico`) son tareas de una sola vez que **borran y
+vuelven a cargar** MongoDB o el lago. No se levantan con `up`: se corren con `docker compose --profile datos
+run --rm ...`, como se explica en [Carga de datos](#carga-de-datos).
 
 Habilitar un segundo trabajador de Spark:
 
@@ -237,7 +237,8 @@ curl "localhost:8000/analitica/q1?conjunto=principal"   # principal (por defecto
 La respuesta trae `filas`, `ms` (lo que tardó Spark), `primera_ejecucion` y `ejecutores`. La primera
 consulta después de arrancar tarda más (la SparkSession y los ejecutores se crean al iniciar la analítica,
 y la primera ejecución carga clases y genera código). Errores: `404 conjunto_no_existe` si el conjunto no
-se ha generado (por ejemplo `grande`), `422` si la consulta o el conjunto no existen, `503` si la analítica
+se ha generado (por ejemplo `grande`), `422` si la consulta no es `q1`–`q5` o el conjunto no es `principal`,
+`grande` ni `prueba`, `503` si la analítica
 o Spark no están.
 
 Los planes de ejecución (`explain("formatted")`) solo se piden por dentro, a la analítica:
@@ -258,7 +259,10 @@ docker compose --profile spark2 rm -sf spark-worker-2 && docker compose restart 
 
 ## Pruebas
 
-Cada prueba deja sus archivos en `evidence/`. Antes de cada una conviene recargar el dataset (arriba).
+Los scripts `.sh` dejan sus archivos en `evidence/` con fecha y hora. Las pruebas en Python (`a4_*`, `b5*`)
+imprimen el resultado en pantalla; para guardarlo como evidencia, redirigir la salida, por ejemplo
+`python3 pruebas/b53_fallo_valkey.py | tee evidence/B5_3_P8_$(date +%Y%m%d-%H%M).txt`. Antes de cada prueba
+conviene recargar el dataset (arriba).
 
 | Prueba | Comando | Evidencia |
 |---|---|---|
@@ -272,7 +276,7 @@ Cada prueba deja sus archivos en `evidence/`. Antes de cada una conviene recarga
 | Borradores huérfanos al reasignar una tarea | `docker compose cp pruebas/prueba_borradores_huerfanos.py sesion:/tmp/h.py && docker compose exec -T -e PYTHONPATH=/srv sesion python /tmp/h.py` | |
 | Recorrido completo de una tarea LiDAR (siguiente → borrador → enviar → revisión → exportar → Q1) | `pruebas/recorrido_lidar.sh` | `I2_recorrido_lidar_*` |
 | Aislamiento modular (puertos, redes, variables, bibliotecas, lago en solo lectura) | `pruebas/i4_aislamiento.sh` | `I4_aislamiento_*` |
-| Todas las anteriores, en orden, desde un entorno limpio (`down -v`) | `pruebas/i5_todas.sh` (hora y media aprox.) | `I5_entorno_limpio_*` |
+| Todas las anteriores, en orden, desde un entorno limpio (`down -v`) | `pruebas/i5_todas.sh` (alrededor de 1 h) | `I5_entorno_limpio_*` |
 | P4 historial por el gateway (frescura, rechazo, lectura en bucle, reprocesar, caída) | `pruebas/p4_gateway.sh` (unos 8 min; recarga MongoDB y el conjunto principal) | `P4_gateway_*` |
 | P4 historial directo, sin gateway (incluye reenvío del mismo evento) | `pruebas/p4_historial.sh` | `P4_historial_*` |
 | P5 analítica (validación, 1ª vs siguientes, 1 y 2 workers, principal y grande) | `pruebas/p5_analitica.sh` (necesita el conjunto grande y prueba generados) | `P5_analitica_*` |
@@ -368,7 +372,8 @@ Se agotaron las tareas: recargar el dataset o usar `dataset.regenerar_tareas` (v
 - `DECISIONES.md`: decisiones técnicas y justificaciones.
 - `TODO.md`: distribución de responsabilidades y avance del proyecto.
 - `endpoints/`: documentación de las interfaces HTTP.
-- `informe/`: secciones preparadas para el informe final.
+- `informe/`: informe final (`informe.tex` y el PDF compilado `informe.pdf`; cómo compilarlo está al inicio
+  del `.tex`).
 - `evidence/`: resultados de las pruebas.
 
 ## Observaciones de integración

@@ -15,6 +15,8 @@
 \usepackage{xcolor}
 \usepackage{graphicx}
 \usepackage{fancyvrb}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta}
 
 \definecolor{acc}{HTML}{1F4E79}
 \definecolor{gris}{HTML}{5B6672}
@@ -87,19 +89,36 @@ simulador & --- & \texttt{borde} & Usuarios virtuales que solo hablan con el gat
 \end{tabular}
 \end{center}
 
-\begin{Verbatim}
-                  simulador / cliente
-                          |  HTTP :8000 (red borde)
-                       gateway ------ SQLite (cola local de eventos)
-       +---------------+--+------------+---------------+      red interna
-       |               |               |               |
-   registro          sesion        historial       analitica
-       |               |               |       \       |
-  MongoDB rs0       Valkey       cola-eventos   \    Spark master
-  (red mongo)    (red valkey)     (red cola)     \   + worker (red spark)
-                                                  \      |  solo lectura
-                                              lago Parquet (/datalake)
-\end{Verbatim}
+\begin{center}
+\begin{tikzpicture}[
+  font=\footnotesize,
+  srv/.style={draw, rounded corners=2pt, fill=gray!12, minimum width=2.3cm, minimum height=0.6cm, align=center},
+  mot/.style={draw, minimum width=2.7cm, minimum height=0.85cm, align=center},
+  red/.style={font=\scriptsize\itshape, text=gray!70!black},
+  flecha/.style={-{Stealth[length=4pt]}, semithick},
+  node distance=0.6cm]
+  \node[srv, fill=none] (cli) at (0,0) {simulador / cliente};
+  \node[srv] (gw) at (0,-1.4) {gateway};
+  \node[mot, minimum width=2.6cm] (sqlite) at (4.8,-1.4) {SQLite\\[-1pt]\scriptsize(cola local de eventos)};
+  \draw[flecha] (cli) -- node[right, red]{HTTP :8000 (red \texttt{borde})} (gw);
+  \draw[semithick] (gw) -- (sqlite);
+  % bus de la red interna
+  \draw[semithick] (-5.4,-2.4) -- (5.4,-2.4) node[right, red, align=left]{red\\\texttt{interna}};
+  \draw[semithick] (gw) -- (0,-2.4);
+  \foreach \x/\n/\t in {-4.8/reg/registro, -1.6/ses/sesion, 1.6/his/historial, 4.8/ana/analitica}{
+    \node[srv] (\n) at (\x,-3.3) {\t};
+    \draw[semithick] (\x,-2.4) -- (\n);
+  }
+  \node[mot] (mongo) at (-4.8,-4.9) {MongoDB \texttt{rs0}\\[-1pt]\scriptsize(red \texttt{mongo})};
+  \node[mot] (valk)  at (-1.6,-4.9) {Valkey\\[-1pt]\scriptsize(red \texttt{valkey})};
+  \node[mot] (cola)  at ( 1.6,-4.9) {\texttt{cola-eventos}\\[-1pt]\scriptsize(red \texttt{cola})};
+  \node[mot] (spark) at ( 4.8,-4.9) {Spark master\,+\,worker\\[-1pt]\scriptsize(red \texttt{spark})};
+  \foreach \a/\b in {reg/mongo, ses/valk, his/cola, ana/spark} \draw[semithick] (\a) -- (\b);
+  \node[mot, fill=gray!6] (lago) at (3.2,-6.7) {lago Parquet\\[-1pt]\scriptsize(\texttt{/datalake})};
+  \draw[flecha] (his.east) -- (3.2,-3.3) -- node[left, red, pos=0.85]{escribe} (lago.north);
+  \draw[flecha] (lago.east) -| node[right, red, pos=0.75]{solo lectura} (spark.south);
+\end{tikzpicture}
+\end{center}
 
 \textbf{Por qué cada motor.} Cada uno guarda el tipo de dato que mejor le calza:
 \begin{itemize}\setlength{\itemsep}{1pt}

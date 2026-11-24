@@ -1,0 +1,9 @@
+﻿OK | Adquirir lock libre: HTTP 200 (esperado 200)
+OK | Otro token no puede adquirir: HTTP 409 (esperado 409)
+OK | Otro token no puede renovar: HTTP 409 (esperado 409)
+OK | Token correcto puede renovar: HTTP 200 (esperado 200)
+OK | Otro token no puede soltar: HTTP 409 (esperado 409)
+OK | Token correcto puede soltar: HTTP 200 (esperado 200)
+OK | Lock libre puede adquirirse otra vez: HTTP 200 (esperado 200)
+OK | Liberar lock de prueba: HTTP 200 (esperado 200)
+B2.2_HTTP_OK

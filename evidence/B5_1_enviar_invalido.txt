@@ -1,0 +1,8 @@
+HTTP/1.1 422 Unprocessable Entity
+date: Sun, 15 Nov 2026 17:56:43 GMT
+server: uvicorn
+content-length: 388
+content-type: application/json
+x-request-id: fc744e38-3f63-466b-9e6b-8e666ee9a0e7
+
+{"error":"validacion","detalle":[{"type":"uuid_parsing","loc":["path","tarea_id"],"msg":"Input should be a valid UUID, invalid character: found `n` at 0","input":"no-es-un-uuid","ctx":{"error":"invalid character: found `n` at 0"}},{"type":"missing","loc":["body","token"],"msg":"Field required","input":{}},{"type":"missing","loc":["body","anotacion"],"msg":"Field required","input":{}}]}

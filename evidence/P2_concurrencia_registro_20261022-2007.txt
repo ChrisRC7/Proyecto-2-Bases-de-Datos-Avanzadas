@@ -1,0 +1,20 @@
+# 2026-10-23T02:07:16Z · commit 889dd3a
+
+## Estado del replica set (pruebas/estado_rs.sh)
+2026-10-23T02:07:16Z
+conjunto: rs0  term: 3  consultado en: mongo1:27017
+mongo1:27017  SECONDARY               health=1  optime=2026-10-23T02:07:15.000Z
+mongo2:27017  PRIMARY                 health=1  optime=2026-10-23T02:07:15.000Z
+mongo3:27017  SECONDARY               health=1  optime=2026-10-23T02:07:15.000Z
+
+## pruebas/p2_concurrencia.py (modo registro)
+Proyecto fc68142d-f383-4d40-8230-0e0ac11d1bc7 con 10 tareas libres · 50 anotadores distintos
+Las 50 salieron en una ventana de 59.7 ms
+Respuestas: {200: 10, 204: 40} · latencia p50=132.4 ms max=176.3 ms
+OK:   10 asignaciones (200)
+OK:   40 sin tarea (204)
+OK:   ninguna tarea con dos anotadores
+OK:   enviar con token ajeno -> 409
+OK:   primer envío -> 200
+OK:   segundo envío de una tarea ya enviada -> 409
+OK:   exportación: 10 aprobadas, cada una con el anotador que la tomó

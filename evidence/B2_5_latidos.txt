@@ -1,0 +1,9 @@
+﻿OK | Lock adquirido
+OK | Sesion abierta: HTTP 200
+OK | Latido: HTTP 200
+OK | TTL renovado a 120 segundos
+OK | Timestamp de sesion actualizado
+OK | ZADD editando actualizado
+OK | Token incorrecto: HTTP 409
+OK | Lock vencido: HTTP 409
+B2.5_LATIDOS_OK

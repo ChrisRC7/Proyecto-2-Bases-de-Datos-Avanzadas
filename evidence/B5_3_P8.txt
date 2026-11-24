@@ -1,0 +1,25 @@
+ASIGNACION_OK
+BORRADOR_GUARDADO_OK
+LATIDO_1_HTTP_200
+LATIDO_2_HTTP_200
+LATIDO_3_HTTP_200
+FALLO_INYECTADO_REINICIO_VALKEY
+LATIDO_4_HTTP_200
+python :  Container proyecto2-valkey-1 Restarting
+En línea: 1 Carácter: 1
++ python .\pruebas\b53_fallo_valkey.py 2>&1 | Tee-Object .\evidence\B5_ ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ( Container proy...y-1 Restarting :String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+LATIDO_5_HTTP_503
+LATIDO_6_HTTP_503
+ Container proyecto2-valkey-1 Started
+LATIDO_7_HTTP_200
+RTO_OBSERVADO_SEGUNDOS=1.016
+RPO_OBSERVADO=sin_perdida_del_borrador_confirmado
+ANTIGUEDAD_BORRADOR_SEGUNDOS=2.024
+LATIDOS_REGISTRADOS=7
+SESION_Y_TOKEN_RECUPERADOS_OK
+B5_3_P8_OK
+LIMPIEZA_HTTP_200={'estado': 'disponible'}

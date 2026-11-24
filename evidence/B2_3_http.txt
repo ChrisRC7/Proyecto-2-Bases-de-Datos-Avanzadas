@@ -1,0 +1,5 @@
+﻿OK | Abrir sesion: HTTP 200
+OK | Cierre con token incorrecto: HTTP 409
+OK | Cerrar sesion: HTTP 200
+OK | Sesion inexistente: HTTP 404
+B2.3_HTTP_OK

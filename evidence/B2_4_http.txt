@@ -1,0 +1,8 @@
+﻿OK | Adquirir lock: HTTP 200
+OK | Guardar borrador: HTTP 200
+OK | Token incorrecto: HTTP 409
+OK | Abrir devuelve borrador
+OK | Recuperar devuelve borrador
+OK | Otro anotador rechazado: HTTP 409
+OK | Borrador conservado en Valkey
+B2.4_HTTP_OK

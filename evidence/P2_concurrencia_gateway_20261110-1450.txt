@@ -1,0 +1,22 @@
+== Estado del replica set antes (2026-11-10 14:51:28 CST)
+2026-11-10T20:51:28Z
+conjunto: rs0  term: 11  consultado en: mongo1:27017
+mongo1:27017  SECONDARY               health=1  optime=2026-11-10T20:51:27.000Z
+mongo2:27017  SECONDARY               health=1  optime=2026-11-10T20:51:27.000Z
+mongo3:27017  PRIMARY                 health=1  optime=2026-11-10T20:51:27.000Z
+
+== P2 vía gateway
+ Container proyecto2-simulador-run-6c2f3c32a60f Creating 
+ Container proyecto2-simulador-run-6c2f3c32a60f Created 
+Modo gateway (http://gateway:8000) · proyecto b344b55f-1e20-4570-b306-385b3ce3c2dc con 10 tareas libres · 50 anotadores distintos
+Las 50 salieron en una ventana de 710.0 ms
+Respuestas: {200: 10, 204: 40} · latencia p50=3414.3 ms max=4029.4 ms
+Enviar con token ajeno: {409: 10} · primer envío: {200: 10} · segundo envío: {409: 10}
+OK:   10 asignaciones (200)
+OK:   40 sin tarea (204)
+OK:   ninguna tarea con dos anotadores
+OK:   enviar con token ajeno -> 409
+OK:   primer envío -> 200
+OK:   segundo envío de una tarea ya enviada -> 409
+OK:   exportación: 10 aprobadas, cada una con el anotador que la tomó
+salida=0

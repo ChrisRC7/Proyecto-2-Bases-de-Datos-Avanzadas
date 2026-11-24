@@ -1,0 +1,7 @@
+﻿OK | Publicar estado: HTTP 200
+OK | HSET salud:{servicio}
+OK | TTL de 15 segundos
+OK | Consultar estado: HTTP 200
+OK | Nueva publicacion renueva TTL
+OK | Capa vencida desaparece
+B2.7_ESTADO_CAPAS_OK

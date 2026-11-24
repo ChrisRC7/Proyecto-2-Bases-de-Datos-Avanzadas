@@ -1,0 +1,19 @@
+﻿Prueba: B1.2 - Aislamiento de puertos y configuracion
+Fecha: 2026-11-01
+Verificacion: docker compose config --format json
+Puertos publicados: solamente gateway, TCP 8000
+Variable VALKEY_URL: solamente servicio sesion
+Valor: redis://valkey:6379/0
+Valkey: puerto 6379/tcp interno, sin publicacion al host
+Resultado: configuracion declarada verificada
+Pendiente: comprobar aislamiento con todos los servicios en ejecucion.
+
+Validacion con servicios en ejecucion:
+docker compose up -d --build: construccion y arranque exitosos.
+Gateway: healthy, unico puerto publicado 8000/tcp.
+Sesion, registro, historial y analitica: healthy, sin puertos publicados.
+MongoDB: tres nodos healthy, puerto 27017 solo interno.
+Valkey: healthy, puerto 6379 solo interno.
+mongo-init: Exited (0), inicializacion finalizada.
+docker compose ps --format json: solo gateway con PublishedPort=8000; MongoDB y Valkey con PublishedPort=0.
+Resultado final B1.2: APROBADO.

@@ -1,0 +1,8 @@
+﻿{"ts": "2026-11-10T02:19:33.298800+00:00", "nivel": "WARNING", "servicio": "gateway", "msg": "limpieza_envio_pendiente", "accion": "eliminar_borrador", "tarea_id": "a019f7dd-7e2b-4866-a259-282843679b07", "causa": "servicio_no_disponible"}
+OK | HTTP 200: evento y limpieza posterior
+OK | Lock 409: sin envio ni evento
+OK | Registro 409: borrador conservado
+OK | Registro 503: sin reintento ni limpieza
+OK | SQLite falla: sin limpiar borrador
+OK | Fallo de limpieza: no repetir envio
+B3.6_ENVIO_OK

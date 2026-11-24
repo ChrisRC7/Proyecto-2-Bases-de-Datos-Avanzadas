@@ -1,0 +1,8 @@
+HTTP/1.1 200 OK
+date: Sun, 15 Nov 2026 17:42:42 GMT
+server: uvicorn
+content-length: 829
+content-type: application/json
+x-request-id: 7bc55373-71e2-4d2c-af08-568008e91ac4
+
+{"servicio":"gateway","estado":"degradado","capas":{"registro":{"estado":"operativo","detalle":{"servicio":"registro","estado":"operativo","mongodb":{"estado":"operativo","primario":"mongo1:27017","secundarios":2},"ts":"2026-11-15T17:42:43.323004+00:00"}},"sesion":{"estado":"operativo","detalle":{"servicio":"sesion","estado":"operativo","valkey":{"ping":true,"aof_activo":true,"aof_escribiendo":true},"ts":"2026-11-15T17:42:43.322099+00:00"}},"historial":{"estado":"caido","detalle":"ConnectTimeout"},"analitica":{"estado":"operativo","detalle":{"servicio":"analitica","estado":"operativo","spark":{"master":"spark://spark-master:7077","master_alcanzable":true,"sesion_spark":true,"arranque_ms":10488.6,"error":null,"ejecutores":1,"nucleos":2},"ts":"2026-11-15T17:42:43.325361+00:00"}}},"ts":"2026-11-15T17:42:44.320021+00:00"}

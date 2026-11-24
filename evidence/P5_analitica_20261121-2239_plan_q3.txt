@@ -1,0 +1,100 @@
+# explain('formatted') de Q3 · conjunto principal · parametros {}
+
+== Physical Plan ==
+AdaptiveSparkPlan (16)
++- Sort (15)
+   +- Exchange (14)
+      +- ObjectHashAggregate (13)
+         +- Exchange (12)
+            +- ObjectHashAggregate (11)
+               +- Project (10)
+                  +- Filter (9)
+                     +- SortAggregate (8)
+                        +- Sort (7)
+                           +- Exchange (6)
+                              +- SortAggregate (5)
+                                 +- Sort (4)
+                                    +- Project (3)
+                                       +- Filter (2)
+                                          +- Scan parquet  (1)
+
+
+(1) Scan parquet 
+Output [7]: [event_id#10997, ts#10998, modalidad#11003, tipo_tarea#11004, estado#11005, tomada_ts#11011, mes#11014]
+Batched: true
+Location: InMemoryFileIndex [file:/datalake/eventos]
+PushedFilters: [IsNotNull(estado), EqualTo(estado,anotada)]
+ReadSchema: struct<event_id:string,ts:timestamp,modalidad:string,tipo_tarea:string,estado:string,tomada_ts:timestamp>
+
+(2) Filter
+Input [7]: [event_id#10997, ts#10998, modalidad#11003, tipo_tarea#11004, estado#11005, tomada_ts#11011, mes#11014]
+Condition : (isnotnull(estado#11005) AND (estado#11005 = anotada))
+
+(3) Project
+Output [5]: [event_id#10997, ts#10998, modalidad#11003, tipo_tarea#11004, tomada_ts#11011]
+Input [7]: [event_id#10997, ts#10998, modalidad#11003, tipo_tarea#11004, estado#11005, tomada_ts#11011, mes#11014]
+
+(4) Sort
+Input [5]: [event_id#10997, ts#10998, modalidad#11003, tipo_tarea#11004, tomada_ts#11011]
+Arguments: [event_id#10997 ASC NULLS FIRST], false, 0
+
+(5) SortAggregate
+Input [5]: [event_id#10997, ts#10998, modalidad#11003, tipo_tarea#11004, tomada_ts#11011]
+Keys [1]: [event_id#10997]
+Functions [4]: [partial_first(ts#10998, false), partial_first(modalidad#11003, false), partial_first(tipo_tarea#11004, false), partial_first(tomada_ts#11011, false)]
+Aggregate Attributes [8]: [first#11126, valueSet#11127, first#11128, valueSet#11129, first#11130, valueSet#11131, first#11132, valueSet#11133]
+Results [9]: [event_id#10997, first#11134, valueSet#11135, first#11136, valueSet#11137, first#11138, valueSet#11139, first#11140, valueSet#11141]
+
+(6) Exchange
+Input [9]: [event_id#10997, first#11134, valueSet#11135, first#11136, valueSet#11137, first#11138, valueSet#11139, first#11140, valueSet#11141]
+Arguments: hashpartitioning(event_id#10997, 16), ENSURE_REQUIREMENTS, [plan_id=14551]
+
+(7) Sort
+Input [9]: [event_id#10997, first#11134, valueSet#11135, first#11136, valueSet#11137, first#11138, valueSet#11139, first#11140, valueSet#11141]
+Arguments: [event_id#10997 ASC NULLS FIRST], false, 0
+
+(8) SortAggregate
+Input [9]: [event_id#10997, first#11134, valueSet#11135, first#11136, valueSet#11137, first#11138, valueSet#11139, first#11140, valueSet#11141]
+Keys [1]: [event_id#10997]
+Functions [4]: [first(ts#10998, false), first(modalidad#11003, false), first(tipo_tarea#11004, false), first(tomada_ts#11011, false)]
+Aggregate Attributes [4]: [first(ts#10998)()#11084, first(modalidad#11003)()#11094, first(tipo_tarea#11004)()#11096, first(tomada_ts#11011)()#11110]
+Results [4]: [first(ts#10998)()#11084 AS ts#11085, first(modalidad#11003)()#11094 AS modalidad#11095, first(tipo_tarea#11004)()#11096 AS tipo_tarea#11097, first(tomada_ts#11011)()#11110 AS tomada_ts#11111]
+
+(9) Filter
+Input [4]: [ts#11085, modalidad#11095, tipo_tarea#11097, tomada_ts#11111]
+Condition : isnotnull(tomada_ts#11111)
+
+(10) Project
+Output [3]: [modalidad#11095, tipo_tarea#11097, (cast(ts#11085 as double) - cast(tomada_ts#11111 as double)) AS duracion_s#11034]
+Input [4]: [ts#11085, modalidad#11095, tipo_tarea#11097, tomada_ts#11111]
+
+(11) ObjectHashAggregate
+Input [3]: [modalidad#11095, tipo_tarea#11097, duracion_s#11034]
+Keys [2]: [modalidad#11095, tipo_tarea#11097]
+Functions [3]: [partial_count(1), partial_avg(duracion_s#11034), partial_percentile_approx(duracion_s#11034, 0.95, 10000, 0, 0)]
+Aggregate Attributes [4]: [count#11118L, sum#11119, count#11120L, buf#11121]
+Results [6]: [modalidad#11095, tipo_tarea#11097, count#11122L, sum#11123, count#11124L, buf#11125]
+
+(12) Exchange
+Input [6]: [modalidad#11095, tipo_tarea#11097, count#11122L, sum#11123, count#11124L, buf#11125]
+Arguments: hashpartitioning(modalidad#11095, tipo_tarea#11097, 16), ENSURE_REQUIREMENTS, [plan_id=14558]
+
+(13) ObjectHashAggregate
+Input [6]: [modalidad#11095, tipo_tarea#11097, count#11122L, sum#11123, count#11124L, buf#11125]
+Keys [2]: [modalidad#11095, tipo_tarea#11097]
+Functions [3]: [count(1), avg(duracion_s#11034), percentile_approx(duracion_s#11034, 0.95, 10000, 0, 0)]
+Aggregate Attributes [3]: [count(1)#11073L, avg(duracion_s#11034)#11075, percentile_approx(duracion_s#11034, 0.95, 10000, 0, 0)#11077]
+Results [5]: [modalidad#11095, tipo_tarea#11097, count(1)#11073L AS anotadas#11074L, round(avg(duracion_s#11034)#11075, 2) AS media_s#11076, percentile_approx(duracion_s#11034, 0.95, 10000, 0, 0)#11077 AS p95_s#11078]
+
+(14) Exchange
+Input [5]: [modalidad#11095, tipo_tarea#11097, anotadas#11074L, media_s#11076, p95_s#11078]
+Arguments: rangepartitioning(media_s#11076 DESC NULLS LAST, 16), ENSURE_REQUIREMENTS, [plan_id=14561]
+
+(15) Sort
+Input [5]: [modalidad#11095, tipo_tarea#11097, anotadas#11074L, media_s#11076, p95_s#11078]
+Arguments: [media_s#11076 DESC NULLS LAST], true, 0
+
+(16) AdaptiveSparkPlan
+Output [5]: [modalidad#11095, tipo_tarea#11097, anotadas#11074L, media_s#11076, p95_s#11078]
+Arguments: isFinalPlan=false
+

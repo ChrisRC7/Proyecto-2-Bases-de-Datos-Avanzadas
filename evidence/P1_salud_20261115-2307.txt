@@ -1,0 +1,40 @@
+# P1 /salud y puertos · 2026-11-16T05:07:26Z · commit 2208c0e
+
+## Normal
+HTTP 200 · operativo · mensajes_valkey=True · registro operativo (valkey+directa; valkey operativo) · sesion operativo (directa; valkey -) · historial operativo (valkey+directa; valkey operativo) · analitica operativo (valkey+directa; valkey operativo)
+
+## Degradado: historial parado (docker compose stop historial)
+inmediato: HTTP 200 · degradado · mensajes_valkey=True · registro operativo (valkey+directa; valkey operativo) · sesion operativo (directa; valkey -) · historial caido (valkey+directa; valkey operativo) · analitica operativo (valkey+directa; valkey operativo)
+a los 16 s (mensajes de Valkey vencidos, TTL 15 s): HTTP 200 · degradado · mensajes_valkey=True · registro operativo (valkey+directa; valkey operativo) · sesion operativo (directa; valkey -) · historial caido (valkey+directa; valkey caido) · analitica operativo (valkey+directa; valkey operativo)
+recuperado: HTTP 200 · operativo · mensajes_valkey=True · registro operativo (valkey+directa; valkey operativo) · sesion operativo (directa; valkey -) · historial operativo (valkey+directa; valkey operativo) · analitica operativo (valkey+directa; valkey operativo)
+
+## Degradado: analítica parada (docker compose stop analitica)
+inmediato: HTTP 200 · degradado · mensajes_valkey=True · registro operativo (valkey+directa; valkey operativo) · sesion operativo (directa; valkey -) · historial operativo (valkey+directa; valkey operativo) · analitica caido (valkey+directa; valkey operativo)
+a los 16 s (mensajes de Valkey vencidos, TTL 15 s): HTTP 200 · degradado · mensajes_valkey=True · registro operativo (valkey+directa; valkey operativo) · sesion operativo (directa; valkey -) · historial operativo (valkey+directa; valkey operativo) · analitica caido (valkey+directa; valkey caido)
+recuperado: HTTP 200 · operativo · mensajes_valkey=True · registro operativo (valkey+directa; valkey operativo) · sesion operativo (directa; valkey -) · historial operativo (valkey+directa; valkey operativo) · analitica operativo (valkey+directa; valkey operativo)
+
+## Caído: Valkey de sesión parado (docker compose stop valkey)
+inmediato: HTTP 200 · caido · mensajes_valkey=False · registro operativo (directa; valkey -) · sesion caido (directa; valkey -) · historial operativo (directa; valkey -) · analitica operativo (directa; valkey -)
+a los 16 s (mensajes de Valkey vencidos, TTL 15 s): HTTP 200 · caido · mensajes_valkey=False · registro operativo (directa; valkey -) · sesion caido (directa; valkey -) · historial operativo (directa; valkey -) · analitica operativo (directa; valkey -)
+recuperado: HTTP 200 · operativo · mensajes_valkey=True · registro operativo (valkey+directa; valkey operativo) · sesion operativo (directa; valkey -) · historial operativo (valkey+directa; valkey operativo) · analitica operativo (valkey+directa; valkey operativo)
+
+## Caído: MongoDB sin mayoría (dos nodos parados) (docker compose stop mongo2 mongo3)
+inmediato: HTTP 200 · caido · mensajes_valkey=True · registro caido (valkey+directa; valkey caido) · sesion operativo (directa; valkey -) · historial operativo (valkey+directa; valkey operativo) · analitica operativo (valkey+directa; valkey operativo)
+a los 16 s (mensajes de Valkey vencidos, TTL 15 s): HTTP 200 · caido · mensajes_valkey=True · registro caido (valkey+directa; valkey caido) · sesion operativo (directa; valkey -) · historial operativo (valkey+directa; valkey operativo) · analitica operativo (valkey+directa; valkey operativo)
+recuperado: HTTP 200 · operativo · mensajes_valkey=True · registro operativo (valkey+directa; valkey operativo) · sesion operativo (directa; valkey -) · historial operativo (valkey+directa; valkey operativo) · analitica operativo (valkey+directa; valkey operativo)
+
+## Puertos publicados al anfitrión
+analitica	(ninguno)
+cola-eventos	(ninguno)
+gateway	0.0.0.0:8000->8000/tcp, [::]:8000->8000/tcp
+historial	(ninguno)
+mongo1	(ninguno)
+mongo2	(ninguno)
+mongo3	(ninguno)
+registro	(ninguno)
+sesion	(ninguno)
+spark-master	(ninguno)
+spark-worker	(ninguno)
+valkey	(ninguno)
+
+Escuchando en el anfitrión (ss): 0.0.0.0:8000 [::]:8000 

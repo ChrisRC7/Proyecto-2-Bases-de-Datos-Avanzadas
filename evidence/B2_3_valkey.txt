@@ -1,0 +1,7 @@
+﻿OK | Abrir sesion
+OK | HSET sesion
+OK | ZADD editando
+OK | Token incorrecto no cierra sesion
+OK | Cerrar sesion y limpiar editando
+OK | Limpiar entradas vencidas
+B2.3_VALKEY_OK

@@ -1,0 +1,34 @@
+Desglose por servicio, misma ventana medida (log de cada servicio, mensaje 'peticion'; ms dentro de cada servicio)
+== 10u_c1 (2026-11-10T23:28:29Z a 2026-11-10T23:30:00Z)
+  gateway  POST /tareas/siguiente             n=  548 p50=    60.8 p95=   189.1 p99=   310.5 max=   479.8
+  gateway  POST /tareas/{id}/enviar           n=  551 p50=   123.5 p95=   372.3 p99=   701.5 max=   911.0
+  gateway  POST /tareas/{id}/revision         n=  249 p50=    39.4 p95=   121.8 p99=   271.3 max=   398.5
+  registro POST /tareas/asignar               n=  548 p50=    15.4 p95=    48.4 p99=    77.7 max=   118.4
+  registro POST /tareas/{id}/transicion       n=  799 p50=    15.5 p95=    48.0 p99=    76.7 max=   153.8
+  sesion   DELETE /borradores/{id}            n=  551 p50=     2.5 p95=     9.4 p99=    29.1 max=    87.1
+  sesion   POST /locks/{id}                   n= 1649 p50=     2.6 p95=    10.9 p99=    23.3 max=   103.8
+  sesion   POST /sesiones/{id}                n= 1099 p50=     3.6 p95=    12.9 p99=    30.4 max=   118.5
+== 40u_c1 (2026-11-10T23:35:18Z a 2026-11-10T23:36:50Z)
+  gateway  POST /tareas/siguiente             n= 1068 p50=   428.9 p95=  1226.9 p99=  2271.2 max=  4132.7
+  gateway  POST /tareas/{id}/enviar           n= 1094 p50=  1086.8 p95=  2281.9 p99=  3705.2 max=  6376.0
+  gateway  POST /tareas/{id}/revision         n=  509 p50=   301.7 p95=  1024.4 p99=  2238.4 max=  3758.1
+  registro POST /tareas/asignar               n= 1064 p50=    28.7 p95=    67.9 p99=   102.1 max=   187.2
+  registro POST /tareas/{id}/transicion       n= 1591 p50=    27.9 p95=    64.3 p99=    87.7 max=   189.7
+  sesion   DELETE /borradores/{id}            n= 1090 p50=     6.9 p95=    21.9 p99=    42.9 max=    87.0
+  sesion   POST /locks/{id}                   n= 3238 p50=     7.2 p95=    21.4 p99=    35.2 max=    71.2
+  sesion   POST /sesiones/{id}                n= 2160 p50=     8.2 p95=    23.0 p99=    38.7 max=   116.3
+== 100u_c1 (2026-11-10T23:42:09Z a 2026-11-10T23:43:46Z)
+  gateway  POST /tareas/siguiente             n=  939 p50=  1986.9 p95=  5092.5 p99=  6672.9 max= 11247.5
+  gateway  POST /tareas/{id}/enviar           n= 1005 p50=  4745.4 p95=  8393.1 p99= 10519.7 max= 13785.0
+  gateway  POST /tareas/{id}/revision         n=  723 p50=   779.8 p95=  1882.4 p99=  2528.1 max=  4197.6
+  registro POST /tareas/asignar               n=  918 p50=    36.5 p95=    78.8 p99=   104.0 max=   146.1
+  registro POST /tareas/{id}/transicion       n= 1671 p50=    35.4 p95=    75.1 p99=    97.6 max=   176.7
+  sesion   DELETE /borradores/{id}            n=  987 p50=    17.4 p95=    44.5 p99=    66.1 max=   131.5
+  sesion   POST /locks/{id}                   n= 2859 p50=    17.8 p95=    40.6 p99=    61.0 max=   149.5
+  sesion   POST /sesiones/{id}                n= 1906 p50=    19.5 p95=    45.0 p99=    66.8 max=   110.2
+
+Peticiones del cliente que llegaron a los 10 s (status 0) y lo que registró el gateway para esas mismas peticiones (ms >= 10000):
+  100u_c1: cliente 14 enviar + 2 siguiente sin respuesta · gateway: enviar 200 x14, siguiente 200 x2
+  100u_c2: cliente 16 enviar + 1 siguiente · gateway: enviar 200 x17, siguiente 200 x1
+  100u_c3: cliente 22 enviar + 1 siguiente · gateway: enviar 200 x23, siguiente 200 x1
+  (la ventana del log es un poco más ancha que la fase medida). Ningún 5xx ni «database is locked» en el log del gateway durante P6.

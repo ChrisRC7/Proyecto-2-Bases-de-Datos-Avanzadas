@@ -1,0 +1,8 @@
+HTTP/1.1 422 Unprocessable Entity
+date: Sun, 15 Nov 2026 17:54:29 GMT
+server: uvicorn
+content-length: 122
+content-type: application/json
+x-request-id: c4935906-b0f6-4675-9184-e512c0591621
+
+{"error":"validacion","detalle":[{"type":"missing","loc":["header","X-Anotador-Id"],"msg":"Field required","input":null}]}

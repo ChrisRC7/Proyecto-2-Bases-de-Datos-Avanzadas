@@ -1,0 +1,8 @@
+﻿OK | GET reintentado ante HTTP 503
+OK | PUT borrador reintentado sin alterar datos
+OK | POST enviar no se reintenta
+OK | Reintentos restringidos a operaciones permitidas
+OK | Error de conexi├│n tras agotar reintentos
+OK | HTTP 409 preservado sin reintento
+OK | X-Request-Id propagado al servicio interno
+B3.2_CLIENTE_INTERNO_OK

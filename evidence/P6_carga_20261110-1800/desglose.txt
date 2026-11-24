@@ -1,0 +1,30 @@
+Desglose por servicio en la ventana medida de la corrida 1 de cada nivel. Registro y sesión desde sus logs
+(mensaje 'peticion'); el gateway desde el CSV del cliente, porque su log se perdió al recrear el contenedor
+para el experimento de 2 procesos.
+== 10u_c1 (2026-11-11T00:00:49Z a 2026-11-11T00:02:21Z)
+  cliente  POST /tareas/siguiente             n=  563 p50=    61.7 p95=   157.9 p99=   205.7
+  cliente  POST /tareas/{id}/enviar           n=  572 p50=   116.5 p95=   262.2 p99=   350.2
+  cliente  POST /tareas/{id}/revision         n=  257 p50=    42.1 p95=   104.0 p99=   158.6
+  registro POST /tareas/asignar               n=  567 p50=    15.4 p95=    44.5 p99=    63.3
+  registro POST /tareas/{id}/transicion       n=  836 p50=    15.4 p95=    44.8 p99=    59.4
+  sesion   DELETE /borradores/{id}            n=  575 p50=     2.6 p95=     8.0 p99=    18.1
+  sesion   POST /locks/{id}                   n= 1715 p50=     2.6 p95=     9.2 p99=    16.9
+  sesion   POST /sesiones/{id}                n= 1142 p50=     3.6 p95=    11.1 p99=    18.3
+== 40u_c1 (2026-11-11T00:07:32Z a 2026-11-11T00:09:05Z)
+  cliente  POST /tareas/siguiente             n=  974 p50=   675.6 p95=  1356.4 p99=  1893.8
+  cliente  POST /tareas/{id}/enviar           n= 1000 p50=  1274.6 p95=  2440.3 p99=  3055.3
+  cliente  POST /tareas/{id}/revision         n=  609 p50=   272.6 p95=   515.7 p99=   762.2
+  registro POST /tareas/asignar               n=  966 p50=    32.0 p95=    80.2 p99=   118.2
+  registro POST /tareas/{id}/transicion       n= 1601 p50=    30.2 p95=    69.4 p99=   100.7
+  sesion   DELETE /borradores/{id}            n=  993 p50=    14.0 p95=    33.0 p99=    65.2
+  sesion   POST /locks/{id}                   n= 2954 p50=    14.4 p95=    35.3 p99=    68.4
+  sesion   POST /sesiones/{id}                n= 1974 p50=    15.9 p95=    40.0 p99=    77.2
+== 100u_c1 (2026-11-11T00:14:22Z a 2026-11-11T00:15:57Z)
+  cliente  POST /tareas/siguiente             n=  858 p50=  2817.4 p95=  5999.9 p99=  9083.1
+  cliente  POST /tareas/{id}/enviar           n=  908 p50=  5113.3 p95=  9308.8 p99= 10011.5
+  cliente  POST /tareas/{id}/revision         n=  869 p50=   678.1 p95=  1367.4 p99=  2008.9
+  registro POST /tareas/asignar               n=  835 p50=    41.4 p95=    82.4 p99=   122.0
+  registro POST /tareas/{id}/transicion       n= 1741 p50=    39.6 p95=    77.1 p99=   106.9
+  sesion   DELETE /borradores/{id}            n=  880 p50=    24.8 p95=    47.5 p99=    78.6
+  sesion   POST /locks/{id}                   n= 2612 p50=    25.3 p95=    50.1 p99=    84.3
+  sesion   POST /sesiones/{id}                n= 1762 p50=    27.4 p95=    53.4 p99=    78.2

@@ -1,0 +1,40 @@
+{
+ "_nota": "Calculado a mano desde la tabla de dataset/historico/prueba.py. Percentiles con la definición de percentile_approx de Spark: el menor valor v tal que al menos p de los valores son <= v (rango ceil(p*n)). Q3 viene ordenada por media_s descendente; en las demás el orden no importa.",
+ "q1": {
+  "parametros": {"desde": "2026-07-02T12:00:00Z", "hasta": "2026-09-30T12:00:00Z"},
+  "filas": [
+   {"dia": "2026-09-01", "modalidad": "texto", "aprobadas": 2},
+   {"dia": "2026-09-04", "modalidad": "texto", "aprobadas": 1},
+   {"dia": "2026-09-11", "modalidad": "lidar", "aprobadas": 1},
+   {"dia": "2026-09-30", "modalidad": "imagen", "aprobadas": 1}
+  ]
+ },
+ "q2": {
+  "filas": [
+   {"equipo_id": "e0000000-0000-4000-8000-000000000001", "mes": "2026-07", "aprobadas": 1, "revisadas": 2, "proporcion": 0.5},
+   {"equipo_id": "e0000000-0000-4000-8000-000000000001", "mes": "2026-09", "aprobadas": 3, "revisadas": 3, "proporcion": 1.0},
+   {"equipo_id": "e0000000-0000-4000-8000-000000000002", "mes": "2026-06", "aprobadas": 1, "revisadas": 2, "proporcion": 0.5},
+   {"equipo_id": "e0000000-0000-4000-8000-000000000002", "mes": "2026-09", "aprobadas": 2, "revisadas": 3, "proporcion": 0.6667}
+  ]
+ },
+ "q3": {
+  "filas": [
+   {"modalidad": "lidar", "tipo_tarea": "cuboide_3d", "anotadas": 1, "media_s": 3600.0, "p95_s": 3600.0},
+   {"modalidad": "imagen", "tipo_tarea": "bbox", "anotadas": 5, "media_s": 1404.0, "p95_s": 1800.0},
+   {"modalidad": "texto", "tipo_tarea": "span", "anotadas": 4, "media_s": 975.0, "p95_s": 1800.0}
+  ]
+ },
+ "q4": {
+  "filas": [
+   {"cliente_id": "c0000000-0000-4000-8000-000000000001", "proyecto_id": "90000000-0000-4000-8000-000000000001", "rechazadas": 1, "revisadas": 4, "proporcion": 0.25},
+   {"cliente_id": "c0000000-0000-4000-8000-000000000001", "proyecto_id": "90000000-0000-4000-8000-000000000002", "rechazadas": 0, "revisadas": 1, "proporcion": 0.0},
+   {"cliente_id": "c0000000-0000-4000-8000-000000000002", "proyecto_id": "90000000-0000-4000-8000-000000000003", "rechazadas": 2, "revisadas": 5, "proporcion": 0.4}
+  ]
+ },
+ "q5": {
+  "filas": [
+   {"cliente_id": "c0000000-0000-4000-8000-000000000001", "aprobadas": 4, "p50_h": 5.0, "p95_h": 28.0, "incumplen_sla": 1, "pct_incumple_sla": 25.0},
+   {"cliente_id": "c0000000-0000-4000-8000-000000000002", "aprobadas": 3, "p50_h": 3.0, "p95_h": 4.0, "incumplen_sla": 0, "pct_incumple_sla": 0.0}
+  ]
+ }
+}

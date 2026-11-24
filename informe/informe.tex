@@ -1,0 +1,1147 @@
+% Informe del Proyecto 2 (entrega en PDF, enunciado §11.2). Cada sección dice quién la escribe (TODO.md).
+% Compilar desde esta carpeta, dos veces para las referencias (sin instalar LaTeX):
+%   docker run --rm --user "$(id -u):$(id -g)" -e HOME=/tmp -v "$PWD":/w -w /w texlive/texlive:latest-small pdflatex informe.tex
+% \falta{...} marca lo que todavía no está; antes de entregar no debe quedar ninguno.
+\documentclass[10pt,letterpaper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[spanish,es-noquoting,es-noshorthands,es-tabla]{babel}
+\usepackage{lmodern}
+\usepackage[margin=1.9cm,top=1.5cm,bottom=1.6cm]{geometry}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{fancyvrb}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta}
+
+\definecolor{acc}{HTML}{1F4E79}
+\definecolor{gris}{HTML}{5B6672}
+
+\DeclareUnicodeCharacter{2192}{$\rightarrow$}
+\DeclareUnicodeCharacter{2264}{$\le$}
+
+% Marca de algo pendiente (sale en rojo). Antes de entregar no debe quedar ningún uso.
+\newcommand{\falta}[1]{{\color{red}\bfseries [FALTA: #1]}}
+% Archivo de evidence/ (toda cifra debe poder rastrearse hasta uno).
+\newcommand{\ev}[1]{{\footnotesize\texttt{evidence/\allowbreak #1}}}
+
+\setlength{\parskip}{3pt}
+\setlength{\parindent}{0pt}
+\renewcommand{\arraystretch}{1.05}
+\setlength{\emergencystretch}{4em}
+
+% Secciones y pie de pagina sin paquetes externos: solo LaTeX base.
+\makeatletter
+\renewcommand\section{\@startsection{section}{1}{\z@}%
+  {9pt \@plus 2pt \@minus 1pt}{3pt}%
+  {\normalfont\large\bfseries\color{acc}}}
+\renewcommand\subsection{\@startsection{subsection}{2}{\z@}%
+  {6pt \@plus 1pt}{2pt}%
+  {\normalfont\normalsize\bfseries\color{acc}}}
+\renewcommand\@seccntformat[1]{\csname the#1\endcsname.\quad}
+\renewcommand{\ps@plain}{%
+  \renewcommand{\@oddhead}{}\renewcommand{\@evenhead}{}%
+  \renewcommand{\@oddfoot}{\footnotesize\color{gris}%
+    TI-4601 $\cdot$ Proyecto 2 $\cdot$ Plataforma distribuida de anotación de datos
+    \hfill \thepage}%
+  \renewcommand{\@evenfoot}{\@oddfoot}}
+\makeatother
+\pagestyle{plain}
+
+\fvset{fontsize=\footnotesize,frame=leftline,framerule=0.6pt,rulecolor=\color{gris},xleftmargin=6pt}
+
+\begin{document}
+
+{\LARGE\bfseries\color{acc} Proyecto 2 --- Plataforma distribuida de anotación de datos}\\[2pt]
+{\footnotesize\color{gris} TI-4601 Bases de Datos Avanzadas $\cdot$ Prof. Manuel Zumbado Corrales $\cdot$ Grupo 3 $\cdot$ Fabricio Mena $\cdot$ Alisson Redondo $\cdot$ Christopher Rodriguez}\\
+{\footnotesize\color{gris} Repositorio: \texttt{https://github.com/ChrisRC7/Proyecto-2-Bases-de-Datos-Avanzadas}}
+
+\vspace{4pt}\hrule\vspace{6pt}
+
+\textbf{Entorno de las mediciones} (salvo donde la sección diga otra máquina; ver sección~8.2). Laptop AMD Ryzen 7 5700U, 16 GB de RAM (4 CPU y 9,7 GiB para
+WSL 2), Windows 11 Home con Ubuntu 24.04 en WSL 2 y Docker Desktop 29.5.2. Todos los servicios, los tres
+nodos de MongoDB y el simulador corren como contenedores en esa misma máquina. Cada cifra del informe cita
+el archivo de \texttt{evidence/} que la respalda; el Apéndice~A los reúne.
+
+\section{Arquitectura y recorrido de una tarea LiDAR}
+
+La plataforma son cinco servicios en Python (FastAPI y uvicorn) y un simulador, todos en Docker Compose.
+Cada motor de datos tiene un solo dueño y los servicios se hablan solo por HTTP. El gateway es la única
+entrada: publica el puerto 8000 y coordina a los demás, pero no tiene ningún motor propio salvo una cola
+local de eventos en SQLite (sección~4).
+
+\begin{center}\footnotesize
+\begin{tabular}{@{}>{\raggedright}p{0.13\textwidth}>{\raggedright}p{0.21\textwidth}>{\raggedright}p{0.17\textwidth}>{\raggedright\arraybackslash}p{0.41\textwidth}@{}}
+\toprule
+Servicio & Motor (dueño único) & Redes & Responsabilidad \\
+\midrule
+gateway & SQLite local (cola de eventos) & \texttt{borde}, \texttt{interna} & Única API pública; asigna (registro + lock), guarda borradores, envía, revisa, publica eventos y arma \texttt{/salud}. \\
+registro & MongoDB \texttt{rs0}, 3 nodos & \texttt{interna}, \texttt{mongo} & Fuente de verdad del estado de cada tarea; asignación exclusiva y transiciones (sección~2). \\
+sesion & Valkey (AOF \texttt{everysec}) & \texttt{interna}, \texttt{valkey} & Sesiones, locks, borradores, actividad y mensajes de salud (sección~3). No decide el estado de una tarea. \\
+historial & Valkey \texttt{cola-eventos} y lago Parquet & \texttt{interna}, \texttt{cola} & Recibe eventos, los pone en un Stream y los escribe en Parquet en micro-lotes (sección~4). \\
+analitica & Spark 3.5.1 (lago en solo lectura) & \texttt{interna}, \texttt{spark} & Q1--Q5 sobre el lago (sección~5). \\
+simulador & --- & \texttt{borde} & Usuarios virtuales que solo hablan con el gateway. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{center}
+\begin{tikzpicture}[
+  font=\footnotesize,
+  srv/.style={draw, rounded corners=2pt, fill=gray!12, minimum width=2.3cm, minimum height=0.6cm, align=center},
+  mot/.style={draw, minimum width=2.7cm, minimum height=0.85cm, align=center},
+  red/.style={font=\scriptsize\itshape, text=gray!70!black},
+  flecha/.style={-{Stealth[length=4pt]}, semithick},
+  node distance=0.6cm]
+  \node[srv, fill=none] (cli) at (0,0) {simulador / cliente};
+  \node[srv] (gw) at (0,-1.4) {gateway};
+  \node[mot, minimum width=2.6cm] (sqlite) at (4.8,-1.4) {SQLite\\[-1pt]\scriptsize(cola local de eventos)};
+  \draw[flecha] (cli) -- node[right, red]{HTTP :8000 (red \texttt{borde})} (gw);
+  \draw[semithick] (gw) -- (sqlite);
+  % bus de la red interna
+  \draw[semithick] (-5.4,-2.4) -- (5.4,-2.4) node[right, red, align=left]{red\\\texttt{interna}};
+  \draw[semithick] (gw) -- (0,-2.4);
+  \foreach \x/\n/\t in {-4.8/reg/registro, -1.6/ses/sesion, 1.6/his/historial, 4.8/ana/analitica}{
+    \node[srv] (\n) at (\x,-3.3) {\t};
+    \draw[semithick] (\x,-2.4) -- (\n);
+  }
+  \node[mot] (mongo) at (-4.8,-4.9) {MongoDB \texttt{rs0}\\[-1pt]\scriptsize(red \texttt{mongo})};
+  \node[mot] (valk)  at (-1.6,-4.9) {Valkey\\[-1pt]\scriptsize(red \texttt{valkey})};
+  \node[mot] (cola)  at ( 1.6,-4.9) {\texttt{cola-eventos}\\[-1pt]\scriptsize(red \texttt{cola})};
+  \node[mot] (spark) at ( 4.8,-4.9) {Spark master\,+\,worker\\[-1pt]\scriptsize(red \texttt{spark})};
+  \foreach \a/\b in {reg/mongo, ses/valk, his/cola, ana/spark} \draw[semithick] (\a) -- (\b);
+  \node[mot, fill=gray!6] (lago) at (3.2,-6.7) {lago Parquet\\[-1pt]\scriptsize(\texttt{/datalake})};
+  \draw[flecha] (his.east) -- (3.2,-3.3) -- node[left, red, pos=0.85]{escribe} (lago.north);
+  \draw[flecha] (lago.east) -| node[right, red, pos=0.75]{solo lectura} (spark.south);
+\end{tikzpicture}
+\end{center}
+
+\textbf{Por qué cada motor.} Cada uno guarda el tipo de dato que mejor le calza:
+\begin{itemize}\setlength{\itemsep}{1pt}
+\item \textbf{MongoDB} guarda el estado de las tareas. Una tarea es un documento con partes anidadas (archivo,
+asignación, anotación, revisión) y cambia de estado con una sola escritura atómica sobre ese documento,
+que es lo que da la exclusividad (sección~2.3). El replica set con \texttt{w: "majority"} hace que un 200 no
+se pierda en una elección (sección~7.1).
+\item \textbf{Valkey} guarda sesiones, locks y borradores: datos pequeños que cambian cada 2~s y caducan.
+\texttt{SET NX PX} y Lua dan un lock con vencimiento sin escribir en MongoDB en cada latido, y AOF
+\texttt{everysec} cuesta a lo sumo $\sim$1~s de trabajo si Valkey cae (sección~7.2).
+\item \textbf{Un Stream de Valkey aparte} (\texttt{cola-eventos}) hace de cola durable para el historial:
+grupos de consumidores, ACK y reclamo de pendientes (D3). Va en una instancia propia para que el historial
+no use el Valkey de la sesión.
+\item \textbf{Parquet} guarda el histórico inmutable. Al ser columnar y estar particionado por mes, Spark
+lee solo las columnas y los meses que pide cada consulta (sección~5.4).
+\item \textbf{Spark} corre Q1--Q5 sobre millones de filas (el conjunto grande tiene unos 10~M) sin
+cargarlas en el servicio.
+\end{itemize}
+Así ningún motor resuelve un problema para el que no fue pensado: no hay borradores en MongoDB ni KPIs
+sobre la base operacional.
+
+\subsection{Aislamiento modular}
+
+Las reglas del enunciado se cumplen por construcción, no por convención: un servicio no puede usar el
+motor de otro porque ni siquiera lo encuentra en la red. \texttt{pruebas/i4\_aislamiento.sh} lo comprueba
+sobre los contenedores en marcha (\ev{I4\_aislamiento\_20261115-2218.txt}):
+\begin{itemize}\setlength{\itemsep}{1pt}
+\item \textbf{Puertos.} De los doce contenedores, solo el gateway publica un puerto al anfitrión (8000).
+\item \textbf{Redes.} Cada motor está en una red propia con su único servicio dueño (D15): desde el registro,
+\texttt{valkey}, \texttt{cola-eventos} y \texttt{spark-master} no resuelven por DNS; desde la sesión,
+\texttt{mongo1} tampoco. El simulador solo resuelve \texttt{gateway}. Antes de D15 todo compartía la red
+\texttt{interna} y el registro sí resolvía \texttt{valkey}: la separación era solo de código.
+\item \textbf{Variables y bibliotecas.} El registro tiene \texttt{MONGO\_URI} y ninguna dirección de Valkey;
+la sesión solo \texttt{VALKEY\_URL}; el historial \texttt{COLA\_HOST}. \texttt{pymongo} solo está instalado en
+el registro, \texttt{valkey} en la sesión y el historial, \texttt{pyarrow} en el historial, \texttt{pyspark}
+en la analítica; el gateway no tiene cliente de ningún motor.
+\item \textbf{Lago.} El historial lo monta en lectura y escritura; la analítica y el worker de Spark en solo
+lectura, y un intento de escribir desde la analítica falla.
+\item \textbf{Código.} Las únicas menciones a Valkey dentro del registro son comentarios (el plazo de la
+asignación va junto con el lock, sección~2.5); la analítica no menciona MongoDB, Valkey ni el historial.
+\end{itemize}
+El registro sí conoce \texttt{SESION\_URL}, pero solo para publicar su mensaje de salud por HTTP
+con \texttt{POST sesion:/estado-capas}. No lee locks ni sesiones.
+
+\subsection{Recorrido de una tarea LiDAR}
+
+\texttt{pruebas/recorrido\_lidar.sh} crea por el gateway un proyecto con la taxonomía del enunciado y una
+sola tarea de tipo \texttt{cuboide\_3d}, y la lleva de punta a punta como lo haría un anotador. Las
+latencias son de una sola corrida en la laptop i7-6500U (\ev{I2\_recorrido\_lidar\_20261115-2217.txt}):
+
+\begin{center}\footnotesize
+\begin{tabular}{@{}>{\raggedright}p{0.32\textwidth}>{\raggedright}p{0.07\textwidth}>{\raggedright\arraybackslash}p{0.53\textwidth}@{}}
+\toprule
+Paso (ruta del gateway) & Código & Qué pasa por dentro \\
+\midrule
+\texttt{POST /tareas/siguiente} & 200 & Token nuevo; el registro asigna con \texttt{findOneAndUpdate}, la sesión toma el lock y abre la sesión; evento \texttt{abierta} a la cola (54~ms). \\
+El mismo, otro anotador & 204 & No queda otra tarea en el proyecto. \\
+\texttt{PUT /tareas/\{id\}/borrador} $\times 2$ & 200 & Primero \texttt{lidar\#peaton}, después lo corrige a \texttt{lidar\#ciclista} (un skater es ciclista). \\
+\texttt{POST /sesiones/latido} & 200 & Renueva el lock y, si queda menos de la mitad, el plazo en el registro (D16). \\
+\texttt{POST /sesiones/recuperar} & 200 & Devuelve la tarea, el token y el último borrador (\texttt{lidar\#ciclista}). \\
+\texttt{POST /tareas/\{id\}/enviar} & 200 & La sesión valida el token, MongoDB pasa a \texttt{anotada}; se borra el borrador, se suelta el lock y se cierra la sesión. \\
+El mismo envío otra vez & 409 & La tarea ya no está \texttt{abierta}: no hay transición ni fila nueva en el lago. \\
+\texttt{POST /tareas/\{id\}/revision} $\times 2$ & 200 & \texttt{empezar} y \texttt{aprobar}. \\
+\texttt{GET /proyectos/\{id\}/exportar} & 200 & La tarea aprobada sale con \texttt{lidar\#ciclista}. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Q1 por el gateway contaba 11 aprobadas LiDAR del día antes del recorrido y 12 después; el cambio se vio
+8,2~s después del 200 de aprobar, lo que cabe en la frescura medida en la sección~4.4. El mismo flujo con
+una tarea rechazada (MongoDB vuelve a \texttt{disponible}, el lago guarda \texttt{rechazada} y Q4 la cuenta)
+está en la prueba P4 (sección~4.3).
+
+Si un paso falla a la mitad, el gateway deshace lo que ya hizo: si el registro asignó pero el lock no se
+pudo tomar, devuelve la tarea con \texttt{liberar} y responde 503; un envío que MongoDB rechaza no deja
+evento. La exclusividad no depende del lock sino del filtro del registro (sección~2.3).
+
+\section{Registro: modelo, índices y asignación exclusiva}
+
+El registro es el único servicio que habla con MongoDB y la única fuente de verdad del estado de una
+tarea. No tiene la dirección de ningún Valkey: lo que necesita del lock se lo pasa el gateway (el token).
+
+\subsection{Modelo}
+
+MongoDB corre como replica set \texttt{rs0} de tres nodos (\texttt{mongo:7.0}) y el registro escribe con
+\texttt{w: "majority"}. La base \texttt{plataforma} tiene las colecciones \texttt{clientes},
+\texttt{proyectos}, \texttt{batches}, \texttt{anotadores} y \texttt{tareas}, todas con UUID como
+\texttt{\_id}. El documento de una tarea guarda la referencia al archivo (\texttt{uri}, \texttt{sha256},
+\texttt{bytes}, \texttt{mime}, \texttt{meta}), nunca el archivo; además el \texttt{estado}, la
+\texttt{version}, la \texttt{asignacion} vigente (anotador, equipo, token, \texttt{tomada\_en},
+\texttt{vence\_en}), la \texttt{anotacion} vigente, la \texttt{ultima\_revision} y el
+\texttt{ultimo\_evento\_id}. El \texttt{cliente\_id} y el \texttt{sla\_horas} del proyecto se copian en la
+tarea para armar el evento del lago sin otra consulta.
+
+Cada transición es un solo \texttt{findOneAndUpdate} cuyo filtro lleva el estado requerido (en
+\texttt{enviar} y \texttt{liberar}, también el token de la asignación; y la versión si viene en la petición). Si el filtro no encuentra el documento,
+la respuesta es 409 y no se escribe nada, tampoco en el lago. Si lo encuentra, cambia el estado, suma 1 a
+\texttt{version} y genera el \texttt{event\_id} que el gateway manda al historial.
+
+\begin{center}\footnotesize
+\begin{tabular}{@{}lllll@{}}
+\toprule
+Ruta del gateway & Acción (registro) & Estado requerido & MongoDB queda & Fila del lago \\
+\midrule
+\texttt{POST /tareas/siguiente} & asignar & \texttt{disponible} o \texttt{abierta} vencida & \texttt{abierta} & \texttt{abierta} \\
+\texttt{POST /tareas/\{id\}/enviar} & enviar & \texttt{abierta} + token & \texttt{anotada} & \texttt{anotada} \\
+\texttt{POST /tareas/\{id\}/revision} & empezar\_revision & \texttt{anotada} & \texttt{en\_revision} & \texttt{en\_revision} \\
+\texttt{POST /tareas/\{id\}/revision} & aprobar & \texttt{en\_revision} & \texttt{aprobada} & \texttt{aprobada} \\
+\texttt{POST /tareas/\{id\}/revision} & rechazar (con motivo) & \texttt{en\_revision} & \texttt{disponible} & \texttt{rechazada} \\
+\texttt{POST /tareas/\{id\}/liberar} & liberar & \texttt{abierta} + token & \texttt{disponible} & \texttt{liberada} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+La última fila no está en la tabla del enunciado: la agregamos porque la ruta \texttt{liberar} sí cambia el
+estado, y así queda trazada. Las consultas Q1--Q5 no la usan. En el rechazo, MongoDB devuelve la tarea a
+\texttt{disponible} y borra la asignación, y la fila del lago queda \texttt{rechazada} con su código de
+motivo (uno de cinco: \texttt{ETIQUETA\_INCORRECTA}, \texttt{GEOMETRIA\_IMPRECISA},
+\texttt{OBJETO\_OMITIDO}, \texttt{INSTRUCCION\_NO\_SEGUIDA}, \texttt{OTRO}); el gateway responde 422 si
+falta. La prueba de las rutas recorre una tarea LiDAR aprobada y otra rechazada, con todos los códigos de
+error del contrato (\ev{A4\_rutas\_gateway\_20261110-1446.txt} y
+\ev{A\_correcciones\_gateway\_20261110-1713.txt}).
+
+\textbf{Datos.} \texttt{dataset/generar.py} crea con la semilla 2026 los volúmenes del enunciado: 60
+clientes, 120 proyectos activos (los 60 cerrados solo existen en el historial), 600 batches, 60\,000 tareas
+(30\,\% texto, 30\,\% imagen, 20\,\% video y 20\,\% LiDAR, cada una con su tipo de geometría) y 300
+anotadores en 30 equipos, 30 de ellos revisores. El primer proyecto es el del enunciado: LiDAR urbano 2026,
+SLA de 48 h y la taxonomía \texttt{lidar\#peaton}, \texttt{lidar\#vehiculo}, \texttt{lidar\#ciclista} (un
+skater es ciclista) y \texttt{lidar\#signal}. \texttt{docker compose --profile datos run --rm dataset}
+borra y vuelve a cargar todo en unos 5~s, con los mismos ids en cualquier máquina (\texttt{datos/README.md}).
+
+\subsection{Índices}
+
+Se crean los cuatro obligatorios: en \texttt{tareas}, \texttt{\{proyecto\_id, estado, prioridad\}},
+\texttt{\{asignacion.anotador\_id, estado\}} y \texttt{\{batch\_id\}}; en \texttt{proyectos},
+\texttt{\{cliente\_id, estado\}}. Para decidir si hacía falta alguno más se corrió
+\texttt{explain("executionStats")} de las dos consultas que más se repiten, la asignación y la exportación
+(\ev{A3\_explain\_registro\_20261022-2003.md}):
+
+\begin{center}\small
+\begin{tabular}{@{}llrrr@{}}
+\toprule
+Consulta & Índices & Claves & Documentos & Devueltos \\
+\midrule
+Asignación con \texttt{proyecto\_id} & obligatorios & 1 & 1 & 1 \\
+Asignación sin \texttt{proyecto\_id} (cola global) & obligatorios & 0 & 60\,000 & 1 \\
+Asignación sin \texttt{proyecto\_id} (cola global) & + \texttt{\{estado, prioridad\}} & 1 & 1 & 1 \\
+Exportación, primera página de 100 & obligatorios & 300 & 300 & 100 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Con proyecto, el índice obligatorio basta: cada rama del \texttt{\$or} (\texttt{disponible}, o
+\texttt{abierta} vencida) es un rango del índice y \texttt{SORT\_MERGE} las une ya ordenadas por prioridad.
+Sin proyecto, que el contrato permite y que es lo que usa el simulador, ningún índice obligatorio empieza
+por \texttt{estado} y cada asignación recorría las 60\,000 tareas (\texttt{COLLSCAN} + \texttt{SORT}). Por
+eso se agregó \texttt{tareas \{estado: 1, prioridad: -1\}}, que lo deja en un documento examinado. La
+exportación no lleva índice propio: ordena en memoria las aprobadas de un proyecto, que son a lo sumo 500, y
+un índice más se actualizaría en cada transición, porque todas cambian \texttt{estado}.
+
+\subsection{Asignación exclusiva: 50 solicitudes contra 10 tareas}
+
+La asignación es una sola operación sobre un documento:
+
+\begin{Verbatim}
+tareas.find_one_and_update(
+    {"$or": [{"estado": "disponible"}, {"estado": "abierta", "asignacion.vence_en": {"$lt": ahora}}]},
+    {"$set": {"estado": "abierta", "asignacion": {..., "token": token}}, "$inc": {"version": 1}},
+    sort=[("prioridad", -1)])
+\end{Verbatim}
+
+MongoDB aplica cada actualización de un documento de forma atómica. Si dos peticiones apuntan a la misma
+tarea, solo una la encuentra en \texttt{disponible}; la otra sigue con la próxima tarea o recibe 204.
+El gateway usa el mismo token para el lock de Valkey y, si el lock falla, devuelve la tarea con
+\texttt{liberar}. Pero la exclusividad no depende del lock, sino de este filtro.
+
+La prueba P2 crea por el gateway un proyecto con un solo lote de exactamente 10 tareas y lanza 50
+solicitudes desde 50 procesos (\texttt{ProcessPoolExecutor}) que cruzan una \texttt{Barrier} juntos; salieron
+en una ventana de 68~ms. Corre en el contenedor del simulador, que solo ve al gateway
+(\ev{P2\_concurrencia\_gateway\_20261110-1714.md}):
+
+\begin{center}\small
+\begin{tabular}{@{}lr@{}}
+\toprule
+Resultado & Valor \\
+\midrule
+Respuestas 200 (tarea asignada) / 204 (sin tarea) & 10 / 40 \\
+Tareas con más de un anotador & 0 \\
+Envío con un token ajeno $\rightarrow$ 409 & 10 de 10 \\
+Primer envío $\rightarrow$ 200; segundo envío de la misma tarea $\rightarrow$ 409 & 10 de 10; 10 de 10 \\
+Exportación: aprobadas con el anotador que las tomó & 10 de 10 \\
+Latencia en el cliente, n = 50: p50 / p95 / p99 & 324 / 500 / 510 ms \\
+\texttt{POST /tareas/asignar} en el registro, n = 50: p50 / p95 / p99 & 16 / 82 / 93 ms \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+El token ajeno lo rechaza la sesión (no coincide con el lock) antes de llegar a MongoDB. El segundo envío lo
+rechaza el registro porque la tarea ya no está en \texttt{abierta}, y como no hubo transición tampoco se
+escribe fila en el lago. La misma prueba directa contra el registro, sin gateway, dio el mismo resultado
+(\ev{P2\_concurrencia\_registro\_20261022-2007.md}). La latencia se explica en la sección~6: antes de
+corregir el gateway, esta misma prueba tenía p50 de 3,4~s en el cliente.
+
+\subsection{\texttt{w: "majority"} frente a \texttt{w: 1}}
+
+Se midió con la misma carga y el mismo dataset, cambiando solo \texttt{MONGO\_W} en el registro y
+llamándolo directo, sin gateway ni Valkey, para aislar MongoDB. Cada ciclo hace cuatro escrituras (asignar,
+enviar, empezar revisión, aprobar) y el dataset se recargó antes de cada corrida
+(\ev{A7.4\_write\_concern\_20261022-2011.md}):
+
+\begin{center}\small
+\begin{tabular}{@{}lrr@{}}
+\toprule
+ & \texttt{majority} & \texttt{w: 1} \\
+\midrule
+1 hilo: \texttt{enviar} p50 / p95 / p99 & 11,8 / 17,1 / 23,5 ms & 8,8 / 13,3 / 20,3 ms \\
+1 hilo: ciclos por segundo & 20,9 & 27,6 \\
+20 hilos (3 corridas de 30 s): \texttt{enviar} p50 / p95 / p99 & 133,0 / 182,2 / 212,1 ms & 129,2 / 171,9 / 196,6 ms \\
+20 hilos: ciclos por segundo (corridas 1, 2, 3) & 39,0 $\cdot$ 37,9 $\cdot$ 38,4 & 39,9 $\cdot$ 39,8 $\cdot$ 39,3 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Sin cola (1 hilo) se ve el costo real: con \texttt{majority} el primario espera a que un secundario aplique
+la entrada del oplog, unos 3~ms más por escritura y 24\,\% menos ciclos por segundo. Con 20 hilos la
+diferencia baja a un 3\,\% porque manda la cola: el registro es un solo proceso de Python y el primario
+también usa casi un núcleo, con 4 CPU para todo. Esto no se puede llevar a un clúster real. Aquí los tres
+nodos están en la misma máquina y la réplica viaja por la red virtual de Docker; con nodos en otras máquinas,
+\texttt{majority} sumaría al menos un viaje de red por escritura y la diferencia sería mayor. Lo que
+\texttt{w: 1} ahorra en latencia lo pierde en durabilidad: una escritura confirmada solo por el primario se
+puede perder si ese primario cae antes de replicarla (sección~7.1).
+
+\subsection{Límites del registro}
+
+\begin{itemize}\setlength{\itemsep}{1pt}
+\item El plazo de la asignación (\texttt{vence\_en}) es de 120~s y se renueva junto con el lock de Valkey en
+cada latido y borrador (D16): el gateway le pide al registro la transición \texttt{renovar}, que no cambia el
+estado ni genera evento. Para no hacer una escritura \texttt{w: "majority"} en cada latido, el registro solo
+escribe cuando queda menos de la mitad del plazo. En la prueba de P3, un anotador mandó un latido cada 10~s
+durante 150~s: el registro escribió dos veces (a los 60 y a los 120~s), otro anotador recibió 204 todo ese
+tiempo y el envío final dio 200 (\ev{I5\_entorno\_limpio\_20261115-2205.log}). Queda una ventana: si el
+registro no responde, el latido igual da 200 (el lock ya se renovó) y la renovación se reintenta en el
+siguiente. Si sigue sin responder hasta que vence el plazo, la asignación vencida no se revive y el registro
+puede ofrecer la tarea a otro mientras el lock sigue tomado. No se probó con el registro caído.
+\item La exportación ordena en memoria; está bien para 500 aprobadas por proyecto, no para miles.
+\item Los explain y las mediciones son de una sola máquina con una colección pequeña: comparan documentos
+examinados y latencias relativas, no tiempos de un despliegue real.
+\end{itemize}
+
+
+\section{Sesión, borrador y reinicio de Valkey}
+
+La sesión es el único servicio que habla con el Valkey de sesiones. Guarda lo que vive poco y cambia
+mucho: quién está trabajando, en qué tarea, con qué token y qué lleva hecho. No decide el estado de una
+tarea: eso es del registro, y la sesión ni siquiera lo conoce (\ev{I4\_aislamiento\_20261115-2218.txt},
+punto 7). Valkey corre con \texttt{appendonly yes} y \texttt{appendfsync everysec} sobre el volumen
+\texttt{valkey\_sesion}.
+
+\subsection{Llaves}
+
+\begin{center}\footnotesize
+\begin{tabular}{@{}>{\raggedright}p{0.22\textwidth}>{\raggedright}p{0.09\textwidth}>{\raggedright}p{0.45\textwidth}>{\raggedright\arraybackslash}p{0.16\textwidth}@{}}
+\toprule
+Llave & Tipo & Contenido & Vida \\
+\midrule
+\texttt{lock:tarea:\{id\}} & string & Token de la asignación (el mismo que guarda MongoDB). & 120~s, se renueva \\
+\texttt{sesion:\{anotador\}} & hash & \texttt{tarea}, \texttt{proyecto}, \texttt{etapa}, \texttt{token}, \texttt{actualizada\_en}. & Hasta enviar o liberar \\
+\texttt{borrador:\{tarea\}} & hash & \texttt{contenido} (JSON), \texttt{anotador}, \texttt{token}, \texttt{guardado\_en}. & Hasta el envío con 200 \\
+\texttt{borrador:archivado:}\allowbreak\texttt{\{tarea\}:\{uuid\}} & hash & Borrador de un anotador cuyo lock venció y la tarea la tomó otro. & 7~días \\
+\texttt{editando:\{proyecto\}} & sorted set & Anotadores con su último latido (epoch ms como score). & Se podan los viejos \\
+\texttt{salud:\{servicio\}} & hash & Último mensaje de salud de cada capa (D4). & 15~s \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Lock: exclusividad de edición}
+
+Al pedir una tarea, el gateway genera un token UUID y lo usa dos veces: el registro lo guarda en la
+asignación y la sesión lo pone como valor del lock con \texttt{SET lock:tarea:\{id\} <token> NX PX 120000}.
+\texttt{NX} hace que no pise un lock vigente; \texttt{PX} hace que se libere solo si el anotador
+desaparece. Renovar y soltar son scripts Lua que primero comparan el token: un anotador no puede renovar
+ni soltar el lock de otro, y la comparación y la escritura no se pueden intercalar con otro cliente.
+
+Cada borrador y cada latido (\texttt{POST /sesiones/latido}) renuevan el lock y marcan la actividad en
+\texttt{editando:\{proyecto\}}; el gateway además le pide al registro que corra \texttt{vence\_en} cuando
+queda menos de la mitad del plazo (D16, sección~2.5). Si el anotador se va sin avisar, el lock vence a los
+120~s y la tarea vuelve a poder asignarse.
+
+El lock protege la edición, no la asignación: un token que no es el del lock recibe 409 al guardar un
+borrador, al mandar un latido o al enviar, antes de llegar a MongoDB (\ev{B5\_1\_sesiones.txt}). Que dos
+anotadores no reciban la misma tarea lo garantiza el filtro del registro (sección~2.3).
+
+\subsection{Borrador y recuperación de la sesión}
+
+Con \texttt{-{}-borradores}, cada usuario virtual del simulador guarda su borrador y manda un latido cada 2~s
+mientras anota. \texttt{PUT /tareas/\{id\}/borrador} solo se acepta si el token es el del lock vigente, y
+reemplaza el borrador entero con su \texttt{guardado\_en}. Tras el envío con 200 el gateway borra el
+borrador, suelta el lock y cierra la sesión. Si MongoDB responde 503, no toca nada: el borrador queda
+como el envío pendiente que pide el enunciado (no hay otra llave para eso) y el anotador puede reintentar
+con el mismo token. Se comprobó con un 503 simulado dentro de la sesión (\ev{B2\_6\_conservacion.txt}),
+no con MongoDB caído de verdad.
+
+\texttt{POST /sesiones/recuperar} es lo que llama un cliente que se cayó: devuelve la tarea, el token y el
+último borrador. Dos casos de borde:
+\begin{itemize}\setlength{\itemsep}{1pt}
+\item \textbf{Sesión de un lock vencido.} Si el lock ya no tiene el token de la sesión (venció o la tarea
+la tomó otro), un script Lua borra la sesión y la respuesta es 404 \texttt{sesion\_no\_existe}: no se le
+devuelve a nadie una tarea ajena. Va en Lua para no borrar una sesión que se acaba de reabrir con otro
+token entre la lectura y el borrado.
+\item \textbf{Borrador de otro anotador.} Si una tarea vuelve a la cola con el borrador del anotador
+anterior todavía en Valkey, al asignarla otro Lua lo mueve a \texttt{borrador:archivado:...} (solo si el
+nuevo anotador tiene el lock) y el nuevo empieza sin borrador. Ninguna ruta devuelve ese archivo
+(sección~8).
+\end{itemize}
+
+\subsection{P3: interrupción, reinicio de Valkey y vencimiento del lock}
+
+Tres pruebas por el gateway (\texttt{pruebas/b52\_*\_gateway.py}), cada una con su propio proyecto de una
+tarea LiDAR. Las corrió Alisson el 2026-11-15 en su máquina, con Docker Desktop en Windows (la evidencia no
+anota el procesador), y se repitieron en la corrida desde cero I5 en la laptop i7-6500U:
+
+\begin{center}\footnotesize
+\begin{tabular}{@{}>{\raggedright}p{0.38\textwidth}>{\raggedright}p{0.25\textwidth}>{\raggedright\arraybackslash}p{0.25\textwidth}@{}}
+\toprule
+Escenario & Corrida B5.2 & Corrida I5 \\
+\midrule
+Interrupción: guardar borrador, dejar de editar y \texttt{recuperar} & 200, mismo token y contenido, 0,047~s & 200, mismo token y contenido, 0,027~s \\
+Borrador confirmado + \texttt{docker compose restart valkey} + \texttt{recuperar} & token y contenido intactos & token y contenido intactos \\
+Lock vigente: otro anotador pide la tarea & no la recibe & no la recibe \\
+Tras 123~s sin latidos: el otro anotador & la recibe con otro token & la recibe con otro token \\
+Borrador con el token viejo / con el nuevo & 409 / 200 & 409 / 200 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Evidencia: \ev{B5\_2\_interrupcion.txt}, \ev{B5\_2\_persistencia.txt}, \ev{B5\_2\_vencimiento.txt} y la
+sección «P3» de \ev{I5\_entorno\_limpio\_20261115-2205.log}. El enunciado pide que el borrador
+recuperado tenga como máximo 5~s, es decir, que al volver se pierdan a lo sumo 5~s de trabajo. Con un
+borrador cada 2~s, lo que se pierde es lo hecho desde el último guardado confirmado. Aquí el borrador se
+recupera justo después de guardarlo: la llamada a \texttt{recuperar} tarda 0,047 y 0,027~s. En P8 el
+borrador recuperado después de reiniciar Valkey tenía 2,024 y 1,946~s (sección~7.2). Es una muestra por
+corrida y no da un percentil. La interrupción también se probó con el simulador real: un usuario virtual que
+guardaba borradores y latidos cada 2~s se mató con \texttt{docker kill} sin enviar, y al volver
+\texttt{recuperar} le devolvió la misma tarea, el mismo token y el último borrador
+(\ev{B4\_2\_interrupcion\_real.txt}, \ev{B4\_2\_borradores.txt}).
+
+En la primera corrida de vencimiento la sesión del primer anotador siguió en Valkey después de que otro tomó
+la tarea, y \texttt{recuperar} se la devolvía. Las pruebas la cerraban a mano. Ahora la borra el script Lua de la
+subsección anterior, y por eso \texttt{recuperar} responde 404.
+
+\section{Lago Parquet}
+
+Cada transición que MongoDB confirma deja una fila en el lago. El camino es: el gateway guarda el evento en
+su cola local (SQLite) antes de responder y lo manda en lotes a \texttt{POST historial:/eventos}; el
+historial lo pone en una cola durable y un consumidor lo escribe en Parquet; Spark lo lee. El historial es el
+único servicio con el lago en lectura y escritura; la analítica y los workers de Spark lo montan en solo
+lectura. Lo medido en esta sección es de la laptop Intel i7-6500U (sección~5.3).
+
+\subsection{Escritura: cola durable y micro-lotes atómicos}
+
+\textbf{Entrada.} \texttt{POST /eventos} valida el esquema y, en un solo script Lua, hace
+\texttt{SET visto:\{event\_id\} NX} y, solo si es nuevo, \texttt{XADD eventos:tareas}. La cola es una
+instancia Valkey propia (\texttt{cola-eventos}, AOF \texttt{everysec}), en una red que solo comparte con el
+historial: no es el Valkey de sesión. Responde 202 con cuántos aceptó y cuántos eran duplicados.
+
+\textbf{Micro-lotes.} Un consumidor del grupo lee el stream y junta 500 eventos o 5~s, lo que pase primero.
+El micro-lote se llama como su rango del stream (\texttt{<primer id>\_<último id>}), así que reprocesarlo
+produce el mismo nombre. Por cada mes que toca escribe
+\texttt{\_tmp/<nombre>.parquet} completo, hace \texttt{fsync} del archivo, lo publica con
+\texttt{os.replace} en \texttt{eventos/mes=AAAA-MM/part-<nombre>.parquet} y hace \texttt{fsync} de la
+carpeta; recién entonces \texttt{XACK}. El rename es atómico dentro del mismo sistema de archivos: un lector
+ve el archivo entero o no lo ve. La carpeta por mes es la partición que Spark usa para podar (sección~5.4).
+
+\textbf{Recuperación.} Al arrancar, el historial reclama con \texttt{XAUTOCLAIM} lo que quedó sin
+\texttt{XACK}, rehace con el mismo nombre los micro-lotes que empezó y no confirmó (los anota en
+\texttt{microlotes:abiertos} antes de escribir) y borra lo que quedó en \texttt{\_tmp/}.
+
+\subsection{Duplicados}
+
+Se evitan en dos lugares y se toleran en un tercero. En la entrada, un evento reenviado no vuelve a la cola:
+mandar otra vez el evento \texttt{rechazada} respondió \texttt{\{"aceptados": 0, "duplicados": 1\}} y quedó 1
+sola fila. En el lago, reprocesar un micro-lote de 500 eventos reescribió el mismo archivo con el mismo
+sha256: 166 archivos antes y después, 500 filas con esos \texttt{event\_id} antes y después
+(\ev{P4\_historial\_20261030-1431.md}). Lo que sí puede quedar repetido, como un micro-lote entregado dos veces
+desde fuera, lo quita Spark con \texttt{dropDuplicates(["event\_id"])}. El histórico trae 0,2\,\% de
+duplicados inyectados a propósito (1\,634 en \texttt{principal}) y Q1--Q5 los descartan (sección~5.2).
+
+\subsection{La fila rechazada}
+
+Recorrido completo por el gateway (\ev{P4\_gateway\_20261115-1102.txt}, sección 2): una tarea LiDAR se toma,
+se envía, entra a revisión y se rechaza con \texttt{GEOMETRIA\_IMPRECISA}.
+
+\begin{center}\footnotesize
+\begin{tabular}{@{}ll@{}}
+\toprule
+Dónde & Qué quedó \\
+\midrule
+Gateway & \texttt{200 \{"estado": "disponible", "version": 4, "event\_id": "75dd8534-..."\}} \\
+MongoDB & \texttt{estado: disponible}, \texttt{version: 4}, \texttt{asignacion: null},
+\texttt{ultima\_revision.resultado: rechazada} \\
+Lago (4 filas) & \texttt{abierta} v1, \texttt{anotada} v2, \texttt{en\_revision} v3, \texttt{rechazada} v4 con
+motivo y revisor \\
+Enlace & \texttt{ultimo\_evento\_id} de MongoDB = \texttt{event\_id} de la fila \texttt{rechazada} \\
+Segundo envío con el token viejo & 409 \texttt{conflicto\_lock}, sin fila nueva (siguen 4) \\
+Q4 del proyecto, por el gateway & rechazadas 0 $\rightarrow$ 1, revisadas 5 $\rightarrow$ 6 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+MongoDB guarda el estado vigente: la tarea vuelve a la cola sin asignación, para que otro la tome. El lago
+guarda el hecho, con el equipo y la toma de la asignación que se acaba de borrar (el registro arma el evento
+con el documento de antes del cambio). Por eso Q4 cuenta rechazos que MongoDB ya no muestra.
+
+\subsection{Frescura}
+
+Segundos entre el 200 del gateway (aprobar) y la primera Q1 que cuenta esa aprobación, pidiendo Q1 al
+gateway sin pausa (\ev{P4\_gateway\_20261115-1102.txt}, sección 1; el CSV \texttt{p4\_frescura.csv} en la
+carpeta del mismo nombre):
+
+\begin{center}\footnotesize
+\begin{tabular}{@{}lrrrrl@{}}
+\toprule
+Camino & n & mín & mediana & máx & Q1 hasta verlo \\
+\midrule
+Gateway $\rightarrow$ historial, esperando el cierre del micro-lote & 5 & 6,65~s & 7,44~s & 11,42~s & 3--6 \\
+Directo al historial, esperando el cierre del micro-lote & 5 & 6,55~s & 7,42~s & 11,25~s & 3--5 \\
+Directo al historial con \texttt{POST /flush} después del 200 & 5 & 1,22~s & 1,32~s & 1,54~s & 1 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Las dos últimas filas son de la corrida directa (\ev{P4\_historial\_20261030-1431.md}). El gateway no suma
+casi nada: su publicador manda el evento en cuanto lo guarda. La frescura la manda la ventana de 5~s del
+micro-lote más lo que tarda una Q1 (de 1,1 a 3,4~s de media); el máximo es siempre la primera repetición,
+con la Q1 todavía fría. Con \texttt{/flush} queda en el costo de una consulta.
+
+\subsection{Sin lecturas a medias y sin pérdidas por el flujo real}
+
+\textbf{Spark leyendo mientras se escribe.} Un lector con Spark local vuelve a listar y contar el lago sin
+pausa durante 120~s mientras el simulador (10 usuarios, 60~s) escribe por el gateway. Si Spark abriera un
+Parquet a medio escribir, la vuelta fallaría por un pie de archivo inválido. Resultado: 39 vueltas, 0
+errores, y la cuenta de filas subió de 810\,361 a 810\,882 sin bajar nunca. En la corrida directa, con 40
+micro-lotes de 500 eventos escritos en 10,5~s, también 39 vueltas sin error
+(\ev{P4\_gateway\_20261115-1102.md} y \ev{P4\_historial\_20261030-1431.md}).
+
+\textbf{Caída del historial.} Con el simulador corriendo, se mata el historial con \texttt{docker kill} y se
+vuelve a encender 15~s después:
+
+\begin{center}\footnotesize
+\begin{tabular}{@{}lr@{}}
+\toprule
+Resultado & Valor \\
+\midrule
+Eventos esperando en el SQLite del gateway tras 15~s con el historial caído & 149 \\
+\texttt{GET /salud} del gateway durante la caída & 200, \texttt{degradado} (historial \texttt{caido}) \\
+Errores que vio el simulador (45~s, 10 usuarios) & 0 \\
+Aceptados por el historial y sin \texttt{XACK} al morir, recuperados al volver & 67 \\
+Respuestas 200 del simulador / \texttt{event\_id} distintos en el lago & 560 / 560 \\
+Atraso al lago p50 / p95 / máx. & 4,4 / 33,0 / 34,3~s \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Una caída del historial no llega al usuario ni pierde eventos: los que no se entregaron esperan en el
+gateway, y los que el historial ya había aceptado siguen en el stream con AOF y se publican una sola vez al
+volver. Lo que cambia es el atraso: el p95 de 33~s es lo que esperaron esos eventos. En la corrida directa,
+matar el historial con 300 eventos en un micro-lote abierto dio 0 perdidos y 0 repetidos.
+
+En la fase con el lector, 31 peticiones respondieron 503 y 8 no respondieron en 10~s: son el límite de 1~s
+del gateway a sus servicios internos cuando el lector de Spark (2 hilos), el clúster de Spark y el simulador
+compiten por los 2 núcleos físicos; ningún servicio interno respondió 5xx. Las 518 respuestas 200 están en
+el lago, más 3 de las 8 sin respuesta que el gateway terminó después.
+
+\subsection{Compactación}
+
+Con micro-lotes de 5~s, cada mes en operación acumula muchos archivos pequeños: después de P4,
+\texttt{mes=2026-11} tenía 22 archivos con 1\,105 filas. Los archivos pequeños cuestan en Spark (listar y
+abrir cada uno, leer cada pie) más que su contenido. \texttt{python -m app.compactar --mes AAAA-MM} corre en
+el historial, el único con el lago en escritura:
+\begin{enumerate}\setlength{\itemsep}{0pt}
+\item lista y lee los archivos del mes (lo que se publique después no se toca);
+\item quita los \texttt{event\_id} repetidos, quedándose con la primera aparición;
+\item escribe \texttt{part-compacto-<fecha>.parquet} con el mismo procedimiento atómico (\texttt{\_tmp} +
+rename);
+\item recién entonces borra los archivos que leyó.
+\end{enumerate}
+Entre 3 y 4 hay un momento con filas en dos archivos, que Spark deduplica, así que Q1--Q5 no cambian. Una
+consulta que ya listó los archivos viejos y los abre después del paso 4 falla con \emph{file not found}: por
+eso es mantenimiento manual, sin consultas corriendo. Resultado sobre \texttt{mes=2026-11}: 22 archivos
+(0,21~MB) $\rightarrow$ 1 (0,08~MB), las mismas 1\,105 filas, en 0,55~s, y Q1--Q5 por el gateway iguales
+antes y después (\ev{C2.6\_compactacion\_20261115-1113.txt}).
+
+\subsection{Límites del lago}
+
+\begin{itemize}\setlength{\itemsep}{1pt}
+\item La frescura tiene un piso de $\sim$5~s (la ventana del micro-lote) más una consulta. Achicar la ventana
+genera más archivos pequeños.
+\item Spark relee y deduplica todo el conjunto en cada consulta: no hay tablas agregadas ni incrementales.
+\item La compactación es manual y por mes; no corre sola ni junto con consultas.
+\item Si el gateway muere entre el 200 de MongoDB y guardar el evento en SQLite, esa fila no llega al lago
+(sección~8).
+\item Una corrida por fase en una laptop de 2 núcleos; con más carga el atraso crece (P6 midió 2,6--3,8~s
+de p50 con 10 a 100 usuarios, sección~6.2).
+\end{itemize}
+
+\section{Analítica con Spark}
+
+La analítica es un servicio FastAPI con una sola \texttt{SparkSession} por proceso, conectada a un Spark
+standalone 3.5.1 (\texttt{spark-master} y un \texttt{spark-worker} de 2 núcleos y 2~GB; el perfil
+\texttt{spark2} agrega un segundo worker igual). La sesión se crea al arrancar, en un hilo aparte, para que
+\texttt{/salud} responda aunque Spark tarde o no esté. El lago está montado en solo lectura en la analítica y
+en los workers, en la misma ruta (\texttt{/datalake}); la analítica no tiene la dirección de MongoDB, de
+Valkey ni del historial, y solo ella está en la red \texttt{spark}. El gateway la expone como
+\texttt{GET /analitica/\{q1..q5\}?conjunto=principal|grande|prueba}, con un límite de 180~s y sin reintento,
+porque repetir una consulta después de un timeout volvería a lanzarla en Spark.
+
+\subsection{Definición de las consultas}
+
+Todas leen el conjunto, filtran los estados que usan y después quitan duplicados con
+\texttt{dropDuplicates(["event\_id"])}. Filtrar primero da el mismo resultado, porque las copias de un
+\texttt{event\_id} son la misma fila (misma transición, mismo estado y mismo \texttt{ts}), y el shuffle de
+la deduplicación mueve solo las filas que la consulta necesita. Las filas \texttt{liberada} no entran en
+ninguna. \emph{Revisadas} es \texttt{aprobada} + \texttt{rechazada}.
+
+\begin{center}\footnotesize
+\begin{tabular}{@{}l>{\raggedright\arraybackslash}p{0.78\textwidth}@{}}
+\toprule
+Q & Definición \\
+\midrule
+Q1 & Filas \texttt{aprobada} con \texttt{ts} en los 90 días anteriores al evento más reciente del conjunto,
+agrupadas por \texttt{to\_date(ts)} y modalidad. Se toma \texttt{max(ts)} y no la fecha de hoy porque el
+histórico es sintético y termina en 2026-09: con la fecha de hoy el resultado cambiaría según el día. \\
+Q2 & Por equipo del anotador y mes: aprobadas / revisadas. \\
+Q3 & Por cada fila \texttt{anotada}: \texttt{ts} $-$ \texttt{tomada\_ts} (la toma vigente). Media y p95
+(\texttt{percentile\_approx}) por modalidad y tipo de tarea, ordenado por media descendente. \\
+Q4 & Por cliente y proyecto: rechazadas / revisadas. Cuenta las filas \texttt{rechazada} del lago (en
+MongoDB esas tareas están \texttt{disponible}). \\
+Q5 & Por cada fila \texttt{aprobada}: horas desde \texttt{tomada\_ts}. Por cliente, p50, p95 y \% con más
+horas que el \texttt{sla\_horas} del proyecto. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Validación con casos conocidos}
+
+El conjunto \texttt{prueba} tiene 7 tareas y 42 eventos más una copia repetida, con el resultado de las cinco
+consultas calculado a mano en \texttt{dataset/historico/esperado\_prueba.json}. Cada caso prueba algo: la
+aprobada repetida en otro archivo cuenta una vez en Q1 (si no, daría 3 y no 2); una aprobada una hora antes del
+inicio de la ventana queda fuera; la liberada no entra en Q3; la duración usa la toma vigente y no la primera;
+el rechazo cuenta para el equipo del anotador que tenía la tarea. Las cinco dieron exactamente lo esperado,
+directo a la analítica (\ev{P5\_analitica\_20261030-1410.md}) y por el gateway
+(\ev{C4.9\_analitica\_gateway\_20261115-1057.txt}).
+
+\subsection{Tiempos}
+
+Medidos en otra máquina que el resto del informe: laptop Intel Core i7-6500U (2 núcleos físicos, 4 hilos),
+11~GiB de RAM, Ubuntu 24.04 nativo. Cada consulta corrió 6 veces seguidas; \texttt{ms} es lo que tarda dentro
+de la analítica. Conjunto \texttt{principal}: 808\,703 eventos, 115 archivos, 47~MB. \texttt{grande}:
+10\,107\,232 eventos, 271 archivos, 553~MB (\ev{P5\_analitica\_20261030-1410.md}):
+
+\begin{center}\footnotesize
+\begin{tabular}{@{}llrrrrr@{}}
+\toprule
+ & & \multicolumn{2}{c}{1 worker (ms)} & \multicolumn{2}{c}{2 workers (ms)} & \\
+\cmidrule(lr){3-4}\cmidrule(lr){5-6}
+Conjunto & Q & 1ª & mediana 2ª--6ª & 1ª & mediana 2ª--6ª & Filas \\
+\midrule
+principal & Q1 & 3\,218 & 1\,556 & 14\,405 & 3\,848 & 361 \\
+principal & Q2 & 2\,758 & 1\,766 & 4\,864 & 2\,752 & 360 \\
+principal & Q3 & 2\,953 & 1\,676 & 6\,904 & 2\,521 & 5 \\
+principal & Q4 & 1\,782 & 1\,602 & 2\,496 & 1\,650 & 60 \\
+principal & Q5 & 2\,232 & 1\,417 & 3\,478 & 1\,972 & 60 \\
+\midrule
+grande & Q1 & 3\,988 & 3\,103 & 4\,907 & 3\,247 & 362 \\
+grande & Q2 & 15\,614 & 8\,779 & 7\,596 & 9\,706 & 360 \\
+grande & Q3 & 10\,389 & 12\,828 & 15\,397 & 9\,490 & 5 \\
+grande & Q4 & 11\,330 & 14\,370 & 10\,488 & 8\,539 & 60 \\
+grande & Q5 & 12\,129 & 7\,522 & 7\,702 & 8\,204 & 60 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{itemize}\setlength{\itemsep}{1pt}
+\item \textbf{Primera ejecución contra las siguientes.} No se cachea ningún DataFrame, así que la diferencia
+no son datos en memoria sino arranque: JVM de los ejecutores, carga de clases, generación de código y listado
+de archivos. En \texttt{principal} la 1ª cuesta de 1,1 a 2,1 veces la mediana de las siguientes, y 3,7 veces
+cuando incluye arrancar los ejecutores (Q1 con 2 workers, que fue la primera consulta de ese proceso; con 1
+worker la primera fue la validación sobre \texttt{prueba}, que tardó 8\,750~ms con 42 filas). En
+\texttt{grande} la diferencia casi desaparece: manda el procesamiento, y la variación entre ejecuciones es
+mayor que el arranque.
+\item \textbf{Principal contra grande.} 12,5 veces más filas cuestan de 2 a 9 veces más tiempo. Q1 casi no
+crece (1,6 a 3,1~s) porque solo lee los meses de la ventana y \texttt{max(ts)} sale de las estadísticas de
+los pies de los archivos Parquet sin leer filas (\texttt{spark.sql.parquet.aggregatePushdown}). Las demás leen
+los 12 meses y deduplican de 1 a 2,3 millones de filas con un shuffle.
+\item \textbf{Uno contra dos workers.} En \texttt{principal}, dos workers es más lento (Q1 1,6 $\rightarrow$
+3,8~s): el trabajo cabe en 2 núcleos y el segundo ejecutor solo agrega coordinación y shuffle entre
+contenedores. En \texttt{grande} mejoran Q3 (12,8 $\rightarrow$ 9,5~s) y Q4 (14,4 $\rightarrow$ 8,5~s) y
+empeoran un poco Q2 y Q5. La máquina tiene 2 núcleos físicos: los dos workers de 2 núcleos le hacen creer a
+Spark que hay 4, pero comparten el mismo CPU con MongoDB y los demás servicios. No es una medición de
+escalabilidad horizontal; muestra que en una máquina agregar un worker no agrega CPU.
+\item \textbf{Por el gateway.} Pasar por \texttt{GET /analitica} suma una mediana de 148~ms (de 85 a 319,
+n = 20) a lo que tarda Spark en \texttt{principal} (\ev{C4.9\_analitica\_gateway\_20261115-1057.txt}).
+\end{itemize}
+
+\subsection{Planes de Q1 y Q3}
+
+\textbf{Q1} (\ev{P5\_analitica\_20261030-1410\_plan\_q1.txt}). El \texttt{Scan parquet} lleva
+\texttt{PartitionFilters: [isnotnull(mes), (mes >= 2026-07)]}: solo se listan y leen las carpetas de julio a
+septiembre, no las 12. \texttt{PushedFilters} baja \texttt{estado = aprobada} y \texttt{ts >= ...} al lector
+de Parquet, que se salta grupos de filas con las estadísticas de cada columna. Después vienen la
+deduplicación (\texttt{Exchange hashpartitioning(event\_id, 16)} y \texttt{SortAggregate}), la agregación por
+(día, modalidad) en dos pasos, parcial y final, con otro \texttt{Exchange}, y \texttt{rangepartitioning} +
+\texttt{Sort} para el \texttt{orderBy}. La partición por mes solo decide qué archivos se leen: la agrupación
+por día no la aprovecha más allá de eso.
+
+\textbf{Q3} (\ev{P5\_analitica\_20261030-1410\_plan\_q3.txt}). Sin \texttt{PartitionFilters}: lee los 12
+meses, con \texttt{PushedFilters: estado = anotada}. La misma deduplicación, un
+\texttt{ObjectHashAggregate} con \texttt{percentile\_approx(duracion\_s, 0.95, 10000)} parcial y final, y al
+final \texttt{Exchange rangepartitioning(media\_s DESC, 16)} + \texttt{Sort}. El ordenamiento es un shuffle
+por rangos más, pero sobre 5 filas ya agregadas, así que no pesa; lo caro es leer y deduplicar.
+
+\subsection{Límites de la analítica}
+
+\begin{itemize}\setlength{\itemsep}{1pt}
+\item Las consultas se atienden de a una (un candado en la analítica) para que los tiempos sean comparables;
+con varios usuarios pidiendo KPIs a la vez harían fila.
+\item \texttt{percentile\_approx} es aproximado (precisión 10\,000); con los casos de prueba coincide con el
+percentil exacto de rango.
+\item Una sola corrida de 6 ejecuciones por consulta y configuración; los tiempos de \texttt{grande} varían
+mucho entre ejecuciones (máximo de Q2 con 1 worker: 35\,308~ms, en el CSV).
+\item Todo en una laptop de 2 núcleos físicos: no se puede extrapolar a un clúster con nodos separados.
+\end{itemize}
+
+\section{Carga y cuellos de botella}
+
+\subsection{Cómo se midió}
+
+\texttt{pruebas/p6\_carga.sh} corre el simulador con 10, 40 y 100 usuarios virtuales: tres corridas por
+nivel, cada una con 30~s de calentamiento y 90~s medidos. Antes de cada corrida recarga el dataset y borra
+de Valkey los locks, sesiones y borradores de la corrida anterior, para que las nueve empiecen igual.
+Mientras corre, guarda \texttt{docker stats} cada $\sim$2~s.
+
+El simulador corre en su contenedor, en la red \texttt{borde}, y solo habla con el gateway. Cada usuario es
+un hilo. El 90\,\% son anotadores: piden tarea de la cola global, tardan entre 0,5 y 2~s en anotar y
+envían. El 10\,\% son revisores: toman una tarea enviada, empiezan la revisión y la aprueban, o la rechazan
+con un motivo al azar el 20\,\% de las veces. El cliente espera cada respuesta hasta 10~s. Cada petición
+queda en un CSV con su fase, endpoint, código y milisegundos. Los percentiles son por rango más cercano,
+juntando las tres corridas de cada nivel (solo la fase medida). P6 se corrió antes de integrar los
+borradores de B4.2 (opción \texttt{-{}-borradores}), así que esta carga no incluye
+\texttt{PUT /tareas/\{id\}/borrador} ni los latidos.
+
+\subsection{Resultados}
+
+Corrida final, con el gateway corregido (\ev{P6\_carga\_20261110-1800.md}):
+
+\begin{center}\small
+\begin{tabular}{@{}rlrrrrr@{}}
+\toprule
+Usuarios & Endpoint & n & p50 (ms) & p95 (ms) & p99 (ms) & Sin respuesta \\
+\midrule
+10 & \texttt{POST /tareas/siguiente} & 1\,660 & 61,7 & 167,3 & 250,4 & 0 \\
+10 & \texttt{POST /tareas/\{id\}/enviar} & 1\,686 & 117,5 & 297,3 & 395,6 & 0 \\
+10 & \texttt{POST /tareas/\{id\}/revision} & 765 & 41,9 & 110,2 & 162,1 & 0 \\
+\midrule
+40 & \texttt{POST /tareas/siguiente} & 2\,910 & 681,4 & 1\,448,0 & 2\,005,9 & 0 \\
+40 & \texttt{POST /tareas/\{id\}/enviar} & 2\,990 & 1\,297,7 & 2\,406,1 & 2\,911,6 & 0 \\
+40 & \texttt{POST /tareas/\{id\}/revision} & 1\,812 & 273,9 & 533,5 & 775,5 & 0 \\
+\midrule
+100 & \texttt{POST /tareas/siguiente} & 2\,526 & 2\,868,9 & 6\,046,6 & 8\,393,2 & 5 \\
+100 & \texttt{POST /tareas/\{id\}/enviar} & 2\,705 & 5\,177,1 & 9\,383,6 & 10\,011,8 & 93 \\
+100 & \texttt{POST /tareas/\{id\}/revision} & 2\,542 & 702,2 & 1\,452,3 & 2\,055,5 & 0 \\
+\bottomrule
+\end{tabular}
+
+\vspace{4pt}
+\begin{tabular}{@{}rrrrrr@{}}
+\toprule
+Usuarios & Envíos/min (3 corridas) & Media & Peticiones/s & CPU del gateway, media / máx. & Atraso al lago, p50 \\
+\midrule
+10 & 381 $\cdot$ 369 $\cdot$ 374 & 374,7 & 15,2 & 40 / 64\,\% & 2,6--2,7 s \\
+40 & 667 $\cdot$ 655 $\cdot$ 672 & 664,4 & 28,6 & 93 / 114\,\% & 3,0--3,1 s \\
+100 & 587 $\cdot$ 592 $\cdot$ 563 & 580,4 & 28,8 & 99 / 123\,\% & 3,6--3,8 s \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+No hubo ningún 4xx ni 5xx en las nueve corridas. Las 98 peticiones «sin respuesta» con 100 usuarios son
+las que el simulador dejó de esperar a los 10~s. El gateway también las terminó con 200: en el lago, los
+eventos distintos de cada corrida son exactamente las respuestas 200 más esas peticiones (por ejemplo
+3\,365 + 37 = 3\,402), sin perder ni duplicar ninguno (\texttt{lago.txt}). El CPU está en \% de un núcleo,
+y la máquina tiene 4. El atraso al lago es el tiempo desde la transición en el registro hasta que el
+archivo Parquet queda publicado; con micro-lotes de 5~s, unos 2,6~s es el mínimo.
+
+\subsection{Cuellos de botella}
+
+\textbf{Encontrados y corregidos antes de medir.} La primera vez que el simulador pasó por el gateway, 79
+de 139 pedidos de tarea dieron 503 con solo 10 usuarios (\ev{A6.2\_simulador\_gateway\_20261110-1501.txt}).
+Con 10 usuarios y el mismo comando quedó en 0 errores y 372 envíos por minuto
+(\ev{A6.2\_simulador\_gateway\_20261110-1726.txt}) después de corregir, en la rama de integración, cinco
+cosas del gateway (\ev{A\_correcciones\_gateway\_20261110-1713.txt}):
+\begin{itemize}\setlength{\itemsep}{1pt}
+\item \textbf{Un cliente HTTP nuevo en cada llamada interna.} Crear uno cuesta de 9 a 35~ms de CPU según la
+carga, y ese trabajo bloquea el único proceso del gateway. En la P2 el registro respondía en 52~ms y el
+usuario esperaba 3,4~s; con un cliente compartido, 0,32~s.
+\item \textbf{Limpiezas en segundo plano.} El lock de una tarea enviada se soltaba cada 2~s desde un
+trabajador. Si el revisor la rechazaba antes, la tarea volvía a la cola con el lock viejo, y cada
+\texttt{/tareas/siguiente} la tomaba, fallaba el lock y respondía 503. Ahora se suelta antes de responder.
+\item \textbf{Limpiezas reintentadas para siempre.} Las que recibían 404 o 409, que ya no se pueden completar,
+se reprogramaban sin fin: había 637 atascadas. Ahora se cierran.
+\item \textbf{SQLite bloqueado.} Con varias escrituras a la vez aparecían esperas de 10~s y
+\texttt{database is locked}. Con WAL cada commit cuesta $\sim$10~ms en lugar de $\sim$22~ms, leer no bloquea a
+quien escribe y las conexiones se cierran siempre (\ev{A6.2\_simulador\_gateway\_20261110-1721.txt}).
+\item \textbf{Regla de \texttt{/salud}:} no afectaba la carga, pero marcaba \texttt{degradado} con MongoDB
+sin primario; ahora es \texttt{caido}.
+\end{itemize}
+
+\textbf{Encontrado con la primera P6: el publicador de eventos.} En la primera corrida completa
+(\ev{P6\_carga\_20261110-1727.md}) los eventos se mandaban al historial de a uno por POST. Con 100 usuarios
+se generaban 27--29 eventos por segundo y llegaban 8--11, y el atraso al lago fue de 3 a 6 minutos (p50 de
+199 a 324~s). Ningún evento se perdía, pero Q1 los habría visto muy tarde. Ahora van hasta 50 en un solo
+POST, y el atraso con 100 usuarios es de 3,7~s. La corrida final da 6--12\,\% menos envíos por minuto que la
+primera con 40 y 100 usuarios: antes el gateway dejaba ese trabajo para después de la medición, y ahora lo
+hace en el momento.
+
+\textbf{El que queda: el proceso del gateway.} De 10 a 40 usuarios las peticiones por segundo casi se
+duplican (15,2 $\rightarrow$ 28,6); de 40 a 100 no suben (28,8). El gateway está en 93--99\,\% de un núcleo
+y cada petición pública le cuesta unos 26--34~ms de CPU: sus llamadas internas, guardar en SQLite y mandar el
+evento. Con un solo proceso de uvicorn no pasa de $\sim$30 peticiones por segundo. MongoDB y Valkey no son el
+límite: con 100 usuarios el registro resuelve la transición en p50 40~ms y la sesión el lock en 25~ms,
+mientras el cliente espera 5,1~s el envío (\texttt{desglose.txt}). Las cinco llamadas internas del envío
+suman $\sim$150~ms; el resto es esperar turno dentro del gateway. Los tres nodos de MongoDB suman
+$\sim$100\,\% de CPU y ninguno se satura. El envío es la ruta más cara porque hace más trabajo dentro del
+gateway: renovar el lock, la transición, tres escrituras en SQLite con \texttt{fsync} y tres limpiezas en
+sesión.
+
+Para comprobarlo se repitió una corrida de 40 y una de 100 usuarios con el gateway en 2 procesos
+(\texttt{uvicorn --workers 2}, sin cambiar código; \ev{P6\_gateway\_2procesos\_20261110-1820/}):
+
+\begin{center}\small
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+ & 40 u, 1 proceso & 40 u, 2 procesos & 100 u, 1 proceso & 100 u, 2 procesos \\
+\midrule
+Envíos/min & 664 & 917 & 580 & 887 \\
+\texttt{enviar} p50 / p99 (ms) & 1\,298 / 2\,912 & 637 / 3\,211 & 5\,177 / 10\,012 & 3\,242 / 7\,960 \\
+Sin respuesta en 10 s & 0 & 0 & 98 & 2 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Con dos procesos salen 38--53\,\% más envíos por minuto. No llega al doble porque con 100 usuarios la
+máquina completa queda en $\sim$320\,\% de sus 400\,\%: el siguiente límite sería el CPU de una sola máquina
+compartido por los tres nodos de MongoDB, los servicios y el simulador. No lo dejamos como configuración
+porque cada proceso correría su propio publicador de eventos y su trabajador de limpiezas sobre el mismo
+SQLite, y eso solo se probó en este experimento.
+
+\subsection{Límites de la medición}
+
+\begin{itemize}\setlength{\itemsep}{1pt}
+\item Todo corre en una laptop: el simulador compite por CPU con los servicios, y la red entre contenedores
+es virtual. Los números sirven para comparar niveles y encontrar el cuello de botella, no para estimar un
+despliegue en varias máquinas.
+\item P6 no usa los borradores cada 2~s de B4.2; con ellos la carga de un anotador sería mayor en sesión y
+en el gateway. Una corrida corta con borradores (10 usuarios, 30~s) dio 113 borradores, 113 latidos y 99
+revisiones, todas con 200 (\ev{A6.2\_simulador\_borradores\_20261114-2318.txt}).
+\item Tres corridas de 90~s por nivel (los envíos por minuto varían menos de $\pm$4\,\% entre ellas) y una
+sola corrida en el experimento de 2 procesos.
+\item Con 10\,\% de revisores se revisa alrededor de la mitad de lo que se envía; las tareas no se agotaron en
+ninguna corrida (0 respuestas 204).
+\end{itemize}
+
+
+\section{Fallas, recuperación, RTO y RPO}
+
+\subsection{MongoDB: cae un secundario, el primario y dos nodos}
+
+\textbf{Configuración.} Replica set de tres nodos con voto, \texttt{electionTimeoutMillis} de 10~s (por
+defecto). El registro escribe con \texttt{w: "majority"} y \texttt{wtimeout} de 5~s, y deja de esperar un
+primario a los 2~s (\texttt{serverSelectionTimeoutMS}); el gateway corta cada llamada interna a 1~s. Sin
+primario el registro responde 503 (\texttt{mongodb\_no\_disponible}); si la mayoría no confirma, 503
+(\texttt{mongodb\_sin\_mayoria}). El gateway convierte los dos en \texttt{503 servicio\_no\_disponible}.
+
+\textbf{Método.} \texttt{pruebas/p8\_mongo.sh} recarga el dataset y arranca una sonda en el contenedor
+del simulador que, como un usuario, pide una tarea y la envía por el gateway cada $\sim$0,2~s y anota cada
+respuesta en un CSV. A los 8~s mata los nodos con \texttt{docker compose kill} (SIGKILL) y guarda la marca de
+tiempo. A los 15~s guarda el estado del conjunto, vuelve a encender los nodos y espera 1 PRIMARY + 2
+SECONDARY. Después \texttt{p8\_verificar.py} busca en MongoDB cada envío que respondió 200. Definimos:
+\begin{itemize}\setlength{\itemsep}{1pt}
+\item \textbf{RPO}: envíos que respondieron 200 y no están en MongoDB, o no están en la versión esperada
+(si estuvieran aplicados dos veces, la versión sería otra).
+\item \textbf{RTO}: desde la marca de la falla hasta el primer envío con 200 después del último error,
+tomados de filas del CSV.
+\end{itemize}
+
+\textbf{Resultado} (\ev{P8\_mongo\_gateway\_20261110-1715.md}):
+
+\begin{center}\footnotesize
+\begin{tabular}{@{}>{\raggedright}p{0.25\textwidth}>{\raggedright}p{0.2\textwidth}>{\raggedright}p{0.22\textwidth}>{\raggedright\arraybackslash}p{0.25\textwidth}@{}}
+\toprule
+ & Cae un secundario & Cae el primario & Caen dos (sin mayoría) \\
+\midrule
+Durante la falla & sigue el mismo PRIMARY & otro PRIMARY, term 14 $\rightarrow$ 15 & el que queda pasa a SECONDARY \\
+Errores después de la marca & 0 & 8 $\times$ 503 & 27 $\times$ 503 \\
+Envíos confirmados (200) & 122 & 132 & 164 \\
+Confirmados en MongoDB, versión esperada & 122 de 122 & 132 de 132 & 164 de 164 \\
+\textbf{RPO} & \textbf{0} & \textbf{0} & \textbf{0} \\
+Errores que sí quedaron escritos & --- & 0 & 10 asignaciones \\
+\textbf{RTO} & no se interrumpe & \textbf{10,45 s} & 32,40 s; \textbf{10,24 s} desde que vuelven los nodos \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{itemize}\setlength{\itemsep}{1pt}
+\item \textbf{Secundario.} Quedan 2 de 3 nodos, que siguen siendo mayoría: \texttt{majority} se cumple con el
+primario y el otro secundario, y la escritura no se interrumpe.
+\item \textbf{Primario.} Los secundarios dejan de recibir sus latidos, esperan los 10~s de
+\texttt{electionTimeoutMillis} y uno gana la elección con 2 de 3 votos. El RTO (10,45~s) es casi exactamente
+ese plazo: lo manda la elección, no el gateway. Directo al registro dio 10,36~s
+(\ev{P8\_mongo\_20261022-2028.md}). Lo que respondió 200 sigue en MongoDB una sola vez después de la
+elección.
+\item \textbf{Sin mayoría.} El primario que queda solo se degrada a SECONDARY y nada se confirma: el sistema
+prefiere no escribir antes que escribir sin réplica. El RTO total depende de cuándo la prueba enciende los
+nodos (22~s después de la falla). Lo que mide al sistema son los 10,24~s desde que se encienden hasta el
+primer 200: arrancan, se ponen al día y hay otra elección (term 16).
+\item \textbf{Error no es lo mismo que no escrito.} Antes de degradarse, el primario aplica la asignación en
+su copia y espera la mayoría hasta el \texttt{wtimeout}. El gateway corta al segundo, la sonda vuelve a
+pedir y cada intento deja otra tarea \texttt{abierta}: 10 en esta corrida. Al volver la mayoría ese nodo
+siguió de primario y las conservó. No se pierden: su plazo vence a los 120~s y vuelven a ofrecerse. Por eso
+el RPO se cuenta solo sobre lo que respondió 200. Con \texttt{w: 1} el riesgo sería el contrario (no lo
+medimos): un 200 que solo estaba en el primario caído podría perderse en la elección (\emph{rollback}).
+\end{itemize}
+
+\textbf{Recuperación.} Cada escenario termina con \texttt{docker compose start} de los nodos y espera a 1
+PRIMARY + 2 SECONDARY (sección «Después» de cada \texttt{.txt}); el siguiente empieza con el dataset
+recargado. \texttt{pruebas/estado\_rs.sh} muestra el estado del conjunto en cualquier momento.
+
+\textbf{Límites.} Los tres nodos están en la misma máquina y la falla es \texttt{docker kill}, no una
+partición de red ni un disco lento. Hay una sola sonda, y el gateway no le dice al usuario cuál de los dos
+503 del registro fue; eso solo queda en el log del registro.
+
+\subsection{Valkey y sesión}
+
+\textbf{Método.} \texttt{pruebas/b53\_fallo\_valkey.py} asigna una tarea por el gateway, guarda un borrador y
+arranca un hilo que manda un latido cada $\sim$0,3~s. Un segundo después ejecuta
+\texttt{docker compose restart valkey}, guarda la marca y llama a \texttt{recuperar} cada 0,25~s hasta que
+vuelve la sesión con su borrador. Definimos:
+\begin{itemize}\setlength{\itemsep}{1pt}
+\item \textbf{RTO}: desde la marca del reinicio hasta la primera \texttt{recuperar} con 200 que trae el
+borrador.
+\item \textbf{RPO}: borradores confirmados con 200 que no vuelven, o vuelven con otro contenido.
+\end{itemize}
+
+\textbf{Resultado} (\ev{B5\_3\_P8.txt} y la sección «P8 Valkey» de \ev{I5\_entorno\_limpio\_20261115-2205.log}):
+
+\begin{center}\small
+\begin{tabular}{@{}lrr@{}}
+\toprule
+ & Corrida B5.3 & Corrida I5 \\
+\midrule
+Latidos durante la prueba (200 / 503) & 5 / 2 & 6 / 1 \\
+\textbf{RTO} & \textbf{1,016 s} & \textbf{0,930 s} \\
+\textbf{RPO}: borrador confirmado que volvió igual & \textbf{1 de 1} & \textbf{1 de 1} \\
+Edad del borrador al recuperarlo & 2,024 s & 1,946 s \\
+Sesión y token después & los mismos & los mismos \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Durante el reinicio la sesión no llega a Valkey y el gateway responde 503 \texttt{servicio\_no\_disponible};
+apenas Valkey vuelve a aceptar conexiones, todo sigue. El RTO es casi solo el tiempo de arranque de Valkey
+leyendo el AOF, que aquí es pequeño. La «edad» del borrador es cuánto hacía que se había guardado cuando se
+recuperó; no es pérdida, porque el contenido es exactamente el confirmado.
+
+\textbf{Lo que este RPO no demuestra.} \texttt{docker compose restart} manda SIGTERM, y Valkey al apagarse
+limpio escribe y sincroniza el AOF: con ese apagado el RPO esperado es 0. El riesgo de
+\texttt{appendfsync everysec} está en una caída sin aviso (\texttt{docker kill}, corte de luz, kernel): se
+puede perder hasta $\sim$1~s de escrituras que ya respondieron 200, es decir, el último borrador (se
+guardan cada 2~s) y una renovación del lock. No se midió con \texttt{docker kill} de Valkey. Perder un
+borrador se acota a 2~s de trabajo y lo vuelve a escribir el siguiente; perder una renovación del lock solo
+acorta su plazo. Para no perder nada habría que usar \texttt{appendfsync always} y pagar un \texttt{fsync}
+por escritura en cada latido y borrador; para datos que se reescriben cada 2~s no lo vale.
+
+\textbf{Valkey caído más tiempo.} Sin Valkey no se puede tomar una tarea ni guardar borradores (503), pero
+MongoDB no se entera: las asignaciones abiertas siguen con su plazo y las que venzan quedan libres para cuando Valkey vuelva. Un
+envío exige validar el token contra el lock, así que también da 503 y se reintenta. \texttt{/salud} pasa a
+\texttt{caido} porque la sesión no responde (\ev{B5\_1\_salud\_sin\_valkey.txt}) y se arma solo con la
+consulta directa (sección~8.1, \ev{P1\_salud\_20261115-2307.txt}).
+
+
+\section{Limitaciones de la solución}
+
+Cada sección cierra con los límites de su parte; aquí se juntan los que afectan a la solución completa,
+separando lo que el sistema no hace de lo que las mediciones no pueden decir.
+
+\subsection{Del diseño y la implementación}
+
+\begin{itemize}\setlength{\itemsep}{1pt}
+\item \textbf{El gateway es un solo proceso.} Es el cuello de botella de la carga: no pasa de $\sim$30
+peticiones por segundo (sección~6.3). Con dos procesos de uvicorn sale un 38--53\,\% más, pero no se dejó así
+porque cada proceso correría su propio publicador de eventos y sus limpiezas sobre el mismo SQLite.
+\item \textbf{Plazo de la asignación con el registro caído.} El \texttt{vence\_en} de MongoDB se renueva
+junto con el lock de Valkey en cada latido y borrador (D16, sección~2.5). La ventana que queda es la del
+registro sin responder: el latido igual da 200 porque el lock ya se renovó, y si el registro sigue caído
+hasta que vence el plazo, puede ofrecer la tarea a otro con el lock todavía tomado. El gateway no consigue el
+lock, devuelve la tarea y responde 503: no hay doble dueño, pero la tarea queda atascada hasta que el lock
+vence. Este caso no se probó con el registro caído.
+\item \textbf{El borrador de un anotador vencido no se recupera.} Cuando una tarea vuelve a la cola con el
+borrador de otro anotador todavía en Valkey, la sesión lo mueve con un script Lua (solo si el nuevo anotador
+tiene el lock vigente) a \texttt{borrador:archivado:\{tarea\}:\{uuid\}} por 7~días, y el nuevo empieza sin
+borrador. Así la tarea ya no se atasca (prueba de borradores huérfanos, repetida en
+\ev{I5\_entorno\_limpio\_20261115-2205.txt}), pero ninguna ruta devuelve ese borrador archivado: el trabajo
+del primer anotador solo se puede revisar a mano en Valkey.
+\item \textbf{\texttt{/salud} depende de Valkey para los mensajes.} El gateway combina los mensajes de
+\texttt{sesion:/estado-capas} (cada 5~s, TTL de 15~s) con un \texttt{GET /salud} directo a cada servicio, y
+gana el peor (D4). Una capa sin mensaje vigente sale \texttt{caido}. Con Valkey caído no hay mensajes y
+\texttt{/salud} se arma solo con la consulta directa (\texttt{mensajes\_valkey: false}); la sesión no publica
+mensaje propio y su estado sale siempre de la consulta directa. Un servicio parado se ve al instante por la
+consulta directa y a los 16~s también por Valkey (\ev{P1\_salud\_20261115-2307.txt}).
+\item \textbf{Ventana entre MongoDB y la cola del gateway.} El evento se guarda en SQLite después del 200 de
+MongoDB. Si el proceso del gateway muere justo entre las dos cosas, la transición queda hecha y su fila no
+llega al lago; si lo que falla es la escritura en SQLite, el usuario recibe error aunque MongoDB confirmó.
+Cerrarla pediría guardar el evento en el mismo documento de MongoDB (un \emph{outbox}) y que alguien lo
+publique desde ahí; el diseño deja al registro sin conexión con el historial y no se hizo.
+\item \textbf{Frescura acotada por el micro-lote.} Un evento se ve en Spark entre 6 y 12~s después del 200
+(sección~4.4). Bajar los 5~s del micro-lote la mejora a cambio de más archivos pequeños.
+\item \textbf{Compactación manual.} Una consulta que ya listó los archivos viejos y los lee después de que la
+compactación los borra falla con \emph{file not found}. Por eso es mantenimiento manual y fuera de las
+mediciones, no un proceso automático.
+\item \textbf{Analítica de a una consulta.} El candado que hace comparables los tiempos también hace que dos
+pedidos de KPIs a la vez esperen uno al otro.
+\item \textbf{Exportación ordenada en memoria}, adecuada para 500 aprobadas por proyecto, no para miles.
+\end{itemize}
+
+\subsection{De las mediciones}
+
+\begin{itemize}\setlength{\itemsep}{1pt}
+\item \textbf{Una máquina.} Los tres nodos de MongoDB, Valkey, Spark, los servicios y el simulador comparten la
+misma laptop y una red virtual. Las cifras comparan configuraciones y muestran cuellos de botella; no estiman
+un despliegue en varias máquinas. En particular, la diferencia entre \texttt{w: "majority"} y
+\texttt{w: 1} sería mayor con nodos en máquinas distintas, y la comparación de uno y dos workers de Spark no
+mide escalabilidad horizontal porque ambos usan los mismos 2 núcleos físicos.
+\item \textbf{Tres máquinas distintas.} Registro, carga y fallas de MongoDB se midieron en un Ryzen 7 5700U con
+WSL~2; lago y analítica en un Intel i7-6500U con Ubuntu nativo; las pruebas de sesión y Valkey (B5) en la
+máquina de Alisson con Docker Desktop en Windows, sin el procesador anotado, y repetidas en la i7-6500U
+dentro de la corrida I5. Cada sección dice cuál; las cifras de una no se comparan con las de otra.
+\item \textbf{Pocas repeticiones.} Tres corridas por nivel en P6, una en el experimento de dos procesos, cinco
+en la frescura del lago y seis por consulta en P5.
+\item \textbf{Fallas simuladas con \texttt{docker kill}.} No se probaron particiones de red, discos lentos ni
+relojes desfasados entre nodos.
+\item \textbf{P6 sin borradores.} La carga se midió antes de integrar los borradores cada 2~s; con ellos la
+sesión y el gateway tendrían más trabajo por usuario.
+\item \textbf{P7 no existe en el enunciado} (la numeración salta de P6 a P8). No se inventó una prueba para
+ese número.
+\item \textbf{Datos sintéticos.} El histórico y el dataset operacional salen de generadores con semilla fija:
+sirven para validar la lógica y medir volúmenes, no para sacar conclusiones sobre productividad real.
+\end{itemize}
+
+\appendix
+\section{Evidencia citada}
+
+Cada archivo está en \texttt{evidence/} del repositorio. Los \texttt{.md} siguen la plantilla
+(\texttt{evidence/\_PLANTILLA.md}): fecha y hora, objetivo, configuración, comando, resultado,
+interpretación y archivos crudos. Los \texttt{.txt} y \texttt{.csv} son la salida original.
+
+{\small
+\begin{longtable}{@{}p{0.47\textwidth}p{0.47\textwidth}@{}}
+\toprule
+Archivo & Qué respalda \\
+\midrule
+\endhead
+\texttt{A3\_explain\_registro\_20261022-2003.md} (y \texttt{.txt}) & Índices: explain de la asignación y la exportación (sección 2.2). \\
+\texttt{A4\_rutas\_gateway\_20261110-1446.txt} & Rutas de proyectos, lotes, exportación y revisión por el gateway, con sus errores (2.1). \\
+\texttt{P2\_concurrencia\_gateway\_20261110-1714.md} (\texttt{.txt}, \texttt{.csv}) & P2: 50 solicitudes contra 10 tareas, cero dobles, 409 (2.3). \\
+\texttt{P2\_concurrencia\_gateway\_20261110-1450.md} & La misma P2 antes de corregir el gateway (p50 3,4~s) (2.3 y 6.3). \\
+\texttt{P2\_concurrencia\_registro\_20261022-2007.md} & P2 directa contra el registro, sin gateway (2.3). \\
+\texttt{A7.4\_write\_concern\_20261022-2011.md} (\texttt{.txt}, \texttt{.csv}) & \texttt{w: "majority"} frente a \texttt{w: 1} (2.4). \\
+\texttt{A\_correcciones\_gateway\_20261110-1713.txt} & Correcciones al gateway: cliente HTTP, limpiezas, \texttt{/salud}; pruebas de B y de A4 después (2.1 y 6.3). \\
+\texttt{A6.2\_simulador\_gateway\_20261110-1501.txt} (\texttt{.csv}) & 79 de 139 \texttt{/tareas/siguiente} con 503 por locks viejos (6.3). \\
+\texttt{A6.2\_simulador\_gateway\_20261110-1721.txt} (\texttt{.csv}) & Esperas de 10~s por \texttt{database is locked} en SQLite y la medición de WAL (6.3). \\
+\texttt{A6.2\_simulador\_gateway\_20261110-1726.txt} (\texttt{.csv}) & El mismo simulador sin errores después de las correcciones (6.3). \\
+\texttt{A6.2\_simulador\_borradores\_20261114-2318.txt} (\texttt{.csv}) & El simulador con los borradores y latidos de B4.2 ya integrados: revisión en 200 y sin errores (6.4). \\
+\texttt{P6\_carga\_20261110-1800.md} y su carpeta (\texttt{resumen.txt}, \texttt{desglose.txt}, \texttt{lago.txt}, CSV por corrida) & P6 final: latencias, envíos por minuto, \texttt{docker stats}, eventos en el lago y su atraso (6.2 y 6.3). \\
+\texttt{P6\_carga\_20261110-1727.md} y su carpeta (\texttt{eventos.txt}) & Primera P6: el publicador de eventos atrasado (6.3). \\
+\texttt{P6\_gateway\_2procesos\_20261110-1820/} & Experimento con el gateway en 2 procesos (6.3). \\
+\texttt{P8\_mongo\_gateway\_20261110-1715.md} y sus \texttt{.txt}/\texttt{.csv} por escenario & P8 de MongoDB: RTO y RPO de los tres escenarios (7.1). \\
+\texttt{P8\_mongo\_gateway\_20261110-1453.md}, \texttt{P8\_mongo\_20261022-2028.md} & P8 antes de corregir el gateway y directa al registro (7.1). \\
+\texttt{P4\_gateway\_20261115-1102.md} (\texttt{.txt} y su carpeta) & P4 por el gateway: frescura, fila rechazada y Q4, lector Spark en bucle, reprocesar, caída del historial (4.3--4.5). \\
+\texttt{P4\_historial\_20261030-1431.md} (\texttt{.txt}, \texttt{.csv}, \texttt{.json}) & P4 directa al historial: reenvío del mismo evento, reprocesar, frescura con \texttt{/flush}, caída con un micro-lote abierto (4.2, 4.4, 4.5). \\
+\texttt{C2.6\_compactacion\_20261115-1113.txt} & Compactación de un mes: archivos antes y después, Q1--Q5 iguales (4.6). \\
+\texttt{C2.7\_latidos\_estado\_capas\_20261115-1059.txt} & Latidos de historial y analítica en \texttt{sesion:/estado-capas} (8.1). \\
+\texttt{P5\_analitica\_20261030-1410.md} (\texttt{.txt}, \texttt{.csv}, planes de Q1 y Q3) & P5: validación contra \texttt{prueba}, tiempos, 1 y 2 workers, principal y grande, planes (5.2--5.4). \\
+\texttt{C4.9\_analitica\_gateway\_20261115-1057.txt} (\texttt{.csv}) & Q1--Q5 por el gateway: validación, costo del gateway y errores 422, 404 y 503 (5.2 y 5.3). \\
+\texttt{I2\_recorrido\_lidar\_20261115-2217.txt} & Recorrido completo de una tarea LiDAR: siguiente, borradores, recuperar, enviar, segundo envío 409, revisión, exportar, visible en Q1 8,2~s después de aprobar (1). \\
+\texttt{I4\_aislamiento\_20261115-2218.txt} & Aislamiento modular: solo el gateway publica el 8000, redes por motor (D15), bibliotecas de cliente por servicio, lago en solo lectura para la analítica (1). \\
+\texttt{I5\_entorno\_limpio\_20261115-2205.txt} (y \texttt{.log}) & Todas las pruebas en orden desde \texttt{docker compose down -v} siguiendo el README; incluye la renovación del plazo (2.5), la prueba de borradores huérfanos (8.1) y P8 de Valkey (7.2). \\
+\texttt{I5\_entorno\_limpio\_20261121-2215.txt} (y \texttt{.log}, y los archivos de esa hora) & Segunda corrida completa desde \texttt{down -v} con el código final (sesión con seis rutas, D17): todas las pruebas con exit 0; P8 de MongoDB con RPO 0 en los tres escenarios. \\
+\texttt{P1\_salud\_20261115-2307.txt} & \texttt{/salud} con los mensajes de Valkey y la consulta directa: normal, degradado con historial o analítica parados, caído con Valkey parado o MongoDB sin mayoría (7.2 y 8.1). \\
+\texttt{C4.9\_analitica\_gateway\_20261115-2218.txt}, \texttt{P4\_gateway\_20261115-2220.txt}, \texttt{C2.6\_compactacion\_20261115-2227.txt}, \texttt{P5\_analitica\_20261115-2227.txt} (con sus \texttt{.csv}, planes y carpetas) & Las mismas pruebas de C repetidas en la corrida desde cero (I5), todas con exit 0 (4 y 5). \\
+\texttt{P2\_concurrencia\_gateway\_20261115-2213.csv}, \texttt{P8\_mongo\_gateway\_*\_20261115-224*}, \texttt{P6\_carga\_20261115-2246/} & P2, P8 de MongoDB y P6 repetidas en la corrida desde cero (I5), todas con exit 0 (2, 6 y 7.1). \\
+\bottomrule
+\end{longtable}
+}
+
+Archivos de B, de las corridas en la máquina de Alisson (2026-11-14 y 15):
+
+{\small
+\begin{longtable}{@{}p{0.47\textwidth}p{0.47\textwidth}@{}}
+\toprule
+Archivo & Qué respalda \\
+\midrule
+\endhead
+\texttt{B5\_sesion\_valkey\_20261115.md} & Ficha de las pruebas B5.1--B5.3 con la plantilla: fecha, objetivo, configuración, comandos, resultados e interpretación. \\
+\texttt{B5\_1\_sesiones.txt} & P1: asignar, borrador y latido con token ajeno (409) y válido (200), recuperar con tarea, token y borrador iguales (3.2). \\
+\texttt{B5\_1\_A4\_gateway.txt}, \texttt{B5\_1\_*\_invalido.txt}, \texttt{B5\_1\_siguiente\_sin\_anotador.txt}, \texttt{B5\_1\_recuperar\_sin\_sesion.txt} & P1: rutas del gateway y sus errores 404, 409 y 422. \\
+\texttt{B5\_1\_puertos.txt}, \texttt{B5\_1\_salud\_*.json} y \texttt{.txt} & P1: solo el gateway publica el 8000; \texttt{/salud} normal, sin historial (degradado) y sin Valkey (caído) (7.2). \\
+\texttt{B5\_2\_interrupcion.txt} & P3: recuperar la sesión con su borrador en 0,047~s (3.4). \\
+\texttt{B5\_2\_persistencia.txt} & P3: token y borrador intactos tras reiniciar Valkey (3.4). \\
+\texttt{B5\_2\_vencimiento.txt} & P3: exclusividad con el lock vigente, reasignación tras 123~s, 409 al token viejo (3.4). \\
+\texttt{B4\_2\_interrupcion\_real.txt}, \texttt{B4\_2\_borradores.txt}, \texttt{B4\_2\_integracion.txt} & Usuario virtual con borradores y latidos cada 2~s, matado con \texttt{docker kill} y recuperado (3.4). \\
+\texttt{B5\_3\_P8.txt} & P8 de Valkey: RTO 1,016~s, borrador confirmado sin pérdida (7.2). \\
+\bottomrule
+\end{longtable}
+}
+
+
+\end{document}

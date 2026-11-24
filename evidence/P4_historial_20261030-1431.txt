@@ -1,0 +1,67 @@
+# P4 historial · 2026-10-30T20:31:45Z · commit d9760ed
+
+## 0. Estado conocido
+Semilla 2026 · carga con w=majority en 12.2 s
+  tareas        60000
+  eventos                808703
+  duplicados_inyectados  1634
+  archivos               115
+OK
+historial y analítica listos
+
+## 1. Frescura (HTTP 200 del registro -> fila visible en Q1 de Spark)
+{"modo": "espera_micro_lote", "rep": 1, "tarea_id": "5c8c17b6-a967-4916-8d2a-cb88b96c0240", "event_id": "6bcb8a0e-4edc-4448-b5cd-bee50d2cf7d0", "t_200": 1793392386.155, "t_inicio_consulta_que_lo_vio": 1793392395.042, "t_visible": 1793392397.401, "segundos_hasta_visible": 11.25, "segundos_hasta_consulta_que_lo_vio": 8.89, "consultas_q1": 3, "ms_q1_media": 3451.3}
+{"modo": "espera_micro_lote", "rep": 2, "tarea_id": "b2297a1d-43d3-4acd-ad59-166a5677cd38", "event_id": "7c1b2d07-b2cc-4e53-9549-f0ea1ae8caaa", "t_200": 1793392399.902, "t_inicio_consulta_que_lo_vio": 1793392405.67, "t_visible": 1793392407.929, "segundos_hasta_visible": 8.03, "segundos_hasta_consulta_que_lo_vio": 5.77, "consultas_q1": 4, "ms_q1_media": 1838.2}
+{"modo": "espera_micro_lote", "rep": 3, "tarea_id": "76f1e944-7bf1-45f7-981d-bb018b3592a5", "event_id": "1b89cc25-e934-4774-9e54-793665d7d02c", "t_200": 1793392409.636, "t_inicio_consulta_que_lo_vio": 1793392415.692, "t_visible": 1793392417.059, "segundos_hasta_visible": 7.42, "segundos_hasta_consulta_que_lo_vio": 6.06, "consultas_q1": 5, "ms_q1_media": 1255.4}
+{"modo": "espera_micro_lote", "rep": 4, "tarea_id": "d0d52c67-ce81-4ef5-8e1e-9051990c82e9", "event_id": "5c304d6f-4567-4f47-8775-ff6f9ea41837", "t_200": 1793392418.527, "t_inicio_consulta_que_lo_vio": 1793392423.83, "t_visible": 1793392425.708, "segundos_hasta_visible": 7.18, "segundos_hasta_consulta_que_lo_vio": 5.3, "consultas_q1": 5, "ms_q1_media": 1225.5}
+{"modo": "espera_micro_lote", "rep": 5, "tarea_id": "6bbebbb8-d391-48a7-a0a2-1cf1eb0e2e1f", "event_id": "a17e5af4-fd64-439a-b684-ea0deafae2a1", "t_200": 1793392426.999, "t_inicio_consulta_que_lo_vio": 1793392432.105, "t_visible": 1793392433.544, "segundos_hasta_visible": 6.55, "segundos_hasta_consulta_que_lo_vio": 5.11, "consultas_q1": 5, "ms_q1_media": 1160.3}
+{"modo": "con_flush", "rep": 1, "tarea_id": "ba0b2c68-68b7-4bbb-946c-d28a5a9aadef", "event_id": "c147888d-047d-49f3-956e-e8a12f66401f", "t_200": 1793392435.053, "t_inicio_consulta_que_lo_vio": 1793392435.357, "t_visible": 1793392436.597, "segundos_hasta_visible": 1.54, "segundos_hasta_consulta_que_lo_vio": 0.3, "consultas_q1": 1, "ms_q1_media": 1165.7}
+{"modo": "con_flush", "rep": 2, "tarea_id": "ce52ed72-2bc1-4b39-ae45-b3399298ee63", "event_id": "5a8333cd-06f8-439c-b801-6dd81e2a86a7", "t_200": 1793392438.201, "t_inicio_consulta_que_lo_vio": 1793392438.491, "t_visible": 1793392439.417, "segundos_hasta_visible": 1.22, "segundos_hasta_consulta_que_lo_vio": 0.29, "consultas_q1": 1, "ms_q1_media": 849.0}
+{"modo": "con_flush", "rep": 3, "tarea_id": "9dd481b6-b7cf-4a7c-beef-1fe0e96fc587", "event_id": "fda99270-3e17-4991-8712-102044347bc2", "t_200": 1793392440.715, "t_inicio_consulta_que_lo_vio": 1793392441.015, "t_visible": 1793392442.068, "segundos_hasta_visible": 1.35, "segundos_hasta_consulta_que_lo_vio": 0.3, "consultas_q1": 1, "ms_q1_media": 951.2}
+{"modo": "con_flush", "rep": 4, "tarea_id": "2d12a936-078a-42bb-85bb-ce35ab4916ee", "event_id": "9f533f62-e1ce-42a3-a295-8a97774fee64", "t_200": 1793392443.584, "t_inicio_consulta_que_lo_vio": 1793392443.942, "t_visible": 1793392444.862, "segundos_hasta_visible": 1.28, "segundos_hasta_consulta_que_lo_vio": 0.36, "consultas_q1": 1, "ms_q1_media": 754.2}
+{"modo": "con_flush", "rep": 5, "tarea_id": "6ca199b1-cda6-4a38-abb6-a57ea0e2e6c5", "event_id": "87194c30-272c-4558-8288-c6706976d9a4", "t_200": 1793392445.969, "t_inicio_consulta_que_lo_vio": 1793392446.266, "t_visible": 1793392447.294, "segundos_hasta_visible": 1.32, "segundos_hasta_consulta_que_lo_vio": 0.3, "consultas_q1": 1, "ms_q1_media": 934.0}
+espera_micro_lote: n=5 min=6.55 mediana=7.42 max=11.25 s
+con_flush: n=5 min=1.22 mediana=1.32 max=1.54 s
+
+## 2. Fila rechazada en Parquet vs disponible en MongoDB
+registro respondió: {"tarea_id": "611cb84f-b3b3-41d8-8d1a-a1c124b8094f", "estado": "disponible", "version": 4}
+flush: 200 {"micro_lotes": [{"micro_lote_id": "1793392448558-0_1793392448596-0", "filas": 4, "archivos": [{"archivo": "eventos/mes=2026-10/part-1793392448558-0_1793392448596-0.parquet", "filas": 4}]}]}
+
+Parquet (todas las filas de la tarea):
+   {"event_id": "3812d1ad-58b0-45df-8230-0e3fda9661d8", "ts": "2026-10-30 20:34:08.548000+00:00", "tarea_id": "611cb84f-b3b3-41d8-8d1a-a1c124b8094f", "estado": "abierta", "version": 1, "motivo_rechazo": null, "anotador_id": "adbafed0-b600-460c-bbdc-fd55304374b3", "revisor_id": null, "micro_lote_id": "1793392448558-0_1793392448596-0", "mes": "2026-10"}
+   {"event_id": "7619761c-20b1-4221-87cd-8b992dd08bc1", "ts": "2026-10-30 20:34:08.561000+00:00", "tarea_id": "611cb84f-b3b3-41d8-8d1a-a1c124b8094f", "estado": "anotada", "version": 2, "motivo_rechazo": null, "anotador_id": "adbafed0-b600-460c-bbdc-fd55304374b3", "revisor_id": null, "micro_lote_id": "1793392448558-0_1793392448596-0", "mes": "2026-10"}
+   {"event_id": "3bec505f-8249-49e9-816a-669e1f479750", "ts": "2026-10-30 20:34:08.574000+00:00", "tarea_id": "611cb84f-b3b3-41d8-8d1a-a1c124b8094f", "estado": "en_revision", "version": 3, "motivo_rechazo": null, "anotador_id": "adbafed0-b600-460c-bbdc-fd55304374b3", "revisor_id": "a40eecb5-c134-479b-9e3b-7dd373aa881e", "micro_lote_id": "1793392448558-0_1793392448596-0", "mes": "2026-10"}
+   {"event_id": "e5c38980-3bb2-4123-8de2-b53f3ff79150", "ts": "2026-10-30 20:34:08.586000+00:00", "tarea_id": "611cb84f-b3b3-41d8-8d1a-a1c124b8094f", "estado": "rechazada", "version": 4, "motivo_rechazo": "GEOMETRIA_IMPRECISA", "anotador_id": "adbafed0-b600-460c-bbdc-fd55304374b3", "revisor_id": "a40eecb5-c134-479b-9e3b-7dd373aa881e", "micro_lote_id": "1793392448558-0_1793392448596-0", "mes": "2026-10"}
+
+MongoDB (registro): {"_id": "611cb84f-b3b3-41d8-8d1a-a1c124b8094f", "estado": "disponible", "version": 4, "asignacion": null, "ultima_revision": {"revisor_id": "a40eecb5-c134-479b-9e3b-7dd373aa881e", "resultado": "rechazada", "motivo": "GEOMETRIA_IMPRECISA", "en": "2026-10-30 20:34:08.586000+00:00"}, "ultimo_evento_id": "e5c38980-3bb2-4123-8de2-b53f3ff79150"}
+ultimo_evento_id == event_id de la fila rechazada: True
+
+Idempotencia: se vuelve a mandar el mismo evento rechazada
+  POST /eventos: {"aceptados": 0, "duplicados": 1}
+  filas en el lago con ese event_id: 1
+
+Q4 (principal) para el proyecto LiDAR de ejemplo: {"cliente_id": "f38b2ffc-80a4-4f5a-91c9-bc701e7ea419", "proyecto_id": "18da990c-9704-464a-b54b-82d3b6e57418", "rechazadas": 1, "revisadas": 11, "proporcion": 0.0909}
+
+## 3. Spark leyendo en bucle mientras el historial escribe; reprocesar un micro-lote
+inicio de escritura: 1793392479.066
+20000 eventos enviados en 10.5 s
+micro-lotes publicados: 40 · filas: 20000 · archivos: 40
+fin de escritura: 1793392499.555
+POST /reprocesar: 200 {"micro_lote_id": "1793392491704-0_1793392491844-4", "filas": 500, "archivos": [{"archivo": "eventos/mes=2026-10/part-1793392491704-0_1793392491844-4.parquet", "filas": 500}], "reprocesado_en": 1793392509390}
+micro-lote 1793392491704-0_1793392491844-4 (500 eventos)
+  /datalake/eventos/mes=2026-10/part-1793392491704-0_1793392491844-4.parquet: sha256 e07f166d41824b91 -> e07f166d41824b91 · mtime cambió: True
+archivos .parquet en eventos/: 166 -> 166
+filas en el lago con esos event_id: 500 -> 500 (eventos del micro-lote: 500)
+lector: 39 vueltas, 0 con error, filas de 810381 a 830381, 0 veces bajó la cuenta, 2852 ms por vuelta
+
+## 4. Caída del historial con un micro-lote abierto
+300 eventos aceptados (202) a las 1793392574.050; menos de un micro-lote, quedan en memoria del consumidor y pendientes sin ACK en el stream
+docker kill historial: 1793392574.243
+historial healthy: 1793392585.922
+{"ts": "2026-10-30T20:36:15.654729+00:00", "nivel": "INFO", "servicio": "historial", "msg": "recuperacion", "tmp_huerfanos": [], "reclamados": 300, "micro_lotes_rehechos": [], "pendientes_publicados": 300}
+eventos aceptados antes de la caída: 300
+en el lago después de reiniciar: 300 event_id distintos, 300 filas
+perdidos: 0 · repetidos: 0
+micro-lotes que los contienen: ['1793392574033-0_1793392574045-0']
+_tmp/ después de reiniciar: []
+historial /salud: {"estado": "operativo", "eventos_en_stream": 20344, "pendientes_sin_ack": 0, "micro_lotes_abiertos": 0}

@@ -1,0 +1,5 @@
+﻿OK | Primer anotador guarda borrador
+OK | Tarea reasignada con otro token
+OK | Sobrescritura de otro anotador rechazada
+OK | Borrador original conservado
+B2.4_PROPIETARIO_OK

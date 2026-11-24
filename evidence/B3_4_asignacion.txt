@@ -1,0 +1,6 @@
+﻿{"ts": "2026-11-09T21:30:39.615531+00:00", "nivel": "ERROR", "servicio": "gateway", "msg": "asignacion_fallida", "tarea_id": "f0b81514-fbca-41db-b7fb-3ba9a448b52c"}
+OK | Sin tareas disponibles: 204
+OK | Asignaci├│n, lock, sesi├│n y borrador
+OK | Fallo de lock: compensaci├│n en Registro
+OK | Registro ca├¡do: sin reintento autom├ítico
+B3.4_ASIGNACION_OK

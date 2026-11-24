@@ -1,0 +1,90 @@
+
+=== 10 usuarios virtuales (3 corridas de 90 s medidos)
+endpoint                            n      p50      p95      p99    2xx   4xx  5xx/0
+POST /tareas/siguiente           1528     61.1    276.6   1023.6   1528     0      0
+POST /tareas/{id}/enviar         1554    118.7    764.2   1567.1   1541     0     13
+POST /tareas/{id}/revision        683     43.5    243.9    990.5    682     0      1
+por corrida: peticiones · envíos 200 · envíos/min · errores 5xx o sin respuesta
+  10u_c1     1226 ·   503 ·   335.3 · 5
+  10u_c2     1283 ·   529 ·   352.7 · 1
+  10u_c3     1256 ·   509 ·   339.3 · 8
+envíos/min: media 342.4, mín. 335.3, máx. 352.7
+p50 / p95 / p99 por corrida (ms):
+  10u_c1   siguiente 65/392/1809 · enviar 121/838/1322 · revision 46/343/1079
+  10u_c2   siguiente 57/223/685 · enviar 115/603/2078 · revision 38/250/830
+  10u_c3   siguiente 60/282/1021 · enviar 123/780/1288 · revision 46/225/914
+docker stats en la ventana medida (CPU en % de un núcleo; memoria en MiB):
+  contenedor       muestras  CPU media  CPU máx.  mem máx.
+  gateway               130       31.7      60.7        46
+  mongo2                130       25.5     101.0       558
+  mongo3                130       23.9      98.3       546
+  mongo1                130       23.2     102.5       518
+  sesion                130       11.0      33.6        47
+  registro              130        8.5      28.6        53
+  historial             130        5.9      27.5        47
+  analitica             130        2.8      80.2       790
+  simulador             126        2.2       3.8        28
+  valkey                130        2.0       7.5         9
+  cola-eventos          130        1.8       7.0        13
+  spark-master          130        1.2       6.5       307
+  spark-worker          130        0.2       0.4      1843
+
+=== 40 usuarios virtuales (3 corridas de 90 s medidos)
+endpoint                            n      p50      p95      p99    2xx   4xx  5xx/0
+POST /tareas/siguiente           2912    509.6   1639.3   6266.5   2829     0     83
+POST /tareas/{id}/enviar         2906   1076.8   4348.4   9689.8   2849     0     57
+POST /tareas/{id}/revision       1538    230.3   1105.5   3864.5   1525     0     13
+por corrida: peticiones · envíos 200 · envíos/min · errores 5xx o sin respuesta
+  40u_c1     2407 ·   956 ·   637.3 · 9
+  40u_c2     2474 ·   959 ·   639.3 · 68
+  40u_c3     2475 ·   934 ·   622.7 · 76
+envíos/min: media 633.1, mín. 622.7, máx. 639.3
+p50 / p95 / p99 por corrida (ms):
+  40u_c1   siguiente 531/1820/3811 · enviar 1195/4432/7217 · revision 235/1245/2457
+  40u_c2   siguiente 515/1276/3315 · enviar 1226/3590/9444 · revision 270/1083/3309
+  40u_c3   siguiente 472/1764/9804 · enviar 872/6867/10011 · revision 201/1007/7007
+docker stats en la ventana medida (CPU en % de un núcleo; memoria en MiB):
+  contenedor       muestras  CPU media  CPU máx.  mem máx.
+  gateway               133       66.1     127.9        63
+  mongo2                133       31.1     100.5       596
+  mongo3                133       27.9     100.1       561
+  mongo1                133       24.4     100.2       549
+  sesion                133       20.4      49.1        49
+  registro              133       14.7      41.3        54
+  simulador             130        4.9       8.9        57
+  historial             133        4.8      26.1        51
+  valkey                133        2.6      10.5         9
+  cola-eventos          133        1.9      10.7        18
+  analitica             133        1.8      19.8       793
+  spark-master          133        1.2       5.9       308
+  spark-worker          133        0.2       1.7      1843
+
+=== 100 usuarios virtuales (3 corridas de 90 s medidos)
+endpoint                            n      p50      p95      p99    2xx   4xx  5xx/0
+POST /tareas/siguiente           2787   2472.6   6056.5  10010.9   2437     0    350
+POST /tareas/{id}/enviar         2645   4772.8  10011.1  10013.5   2286     0    359
+POST /tareas/{id}/revision       2210    609.7   3505.1   6718.9   2148     0     62
+por corrida: peticiones · envíos 200 · envíos/min · errores 5xx o sin respuesta
+  100u_c1    2515 ·   680 ·   453.3 · 404
+  100u_c2    2462 ·   722 ·   481.3 · 269
+  100u_c3    2665 ·   884 ·   589.3 · 98
+envíos/min: media 508.0, mín. 453.3, máx. 589.3
+p50 / p95 / p99 por corrida (ms):
+  100u_c1  siguiente 2368/6192/10011 · enviar 4925/10011/10013 · revision 610/3960/10010
+  100u_c2  siguiente 2569/6253/10011 · enviar 4750/10012/10015 · revision 604/4257/10011
+  100u_c3  siguiente 2443/5745/8897 · enviar 4693/10010/10013 · revision 607/1730/4873
+docker stats en la ventana medida (CPU en % de un núcleo; memoria en MiB):
+  contenedor       muestras  CPU media  CPU máx.  mem máx.
+  gateway               137       79.7     122.0        71
+  mongo2                137       31.3     103.6       594
+  mongo3                137       24.6     102.5       560
+  mongo1                137       22.2     100.7       560
+  sesion                137       18.1      39.5        49
+  registro              137       14.8      61.9        62
+  simulador             134        5.0      12.8       112
+  historial             137        3.4      25.4        57
+  analitica             137        2.4      21.5       789
+  valkey                137        2.4       9.2         6
+  cola-eventos          137        1.8      14.8        26
+  spark-master          137        1.3       9.6       310
+  spark-worker          137        0.2       5.1      1846
